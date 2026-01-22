@@ -2,25 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Jishnu Roy Chaudhury — Liquid Breath Stable</title>
+  <title>Jishnu Roy Chaudhury — Layout Tuned</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
   <style>
     html, body { 
       margin: 0; padding: 0; background: #000; color: #fff; 
-      overflow-x: hidden; 
-      scroll-behavior: smooth;
+      overflow-x: hidden; scroll-behavior: smooth;
     }
-    
     @media (max-width: 768px) {
         html, body { overflow: hidden; }
         canvas { touch-action: none; }
     }
-
     #main-wrapper {
-      position: relative; width: 100%; height: 300vh;
-      background: #000;
+      position: relative; width: 100%; height: 400vh;
+      background: #000; transition: background 0.1s linear;
     }
     #stage-container {
       position: fixed; top: 0; left: 0;
@@ -30,10 +27,24 @@
     canvas { display: block; }
     
     .content-overlay { position: relative; z-index: 10; pointer-events: none; }
+    
     .section {
       height: 100vh; display: flex; align-items: center; justify-content: center;
-      mix-blend-mode: difference; padding: 0 10%; box-sizing: border-box;
+      mix-blend-mode: difference; 
+      padding: 0 10%; box-sizing: border-box;
     }
+
+    .links-container {
+        width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 15px;
+    }
+    .nav-link {
+        font-family: 'Clash Display', sans-serif;
+        font-size: clamp(50px, 10vw, 120px);
+        color: white; text-decoration: none; pointer-events: auto;
+        line-height: 0.9; transition: transform 0.3s ease, opacity 0.3s ease;
+        cursor: pointer;
+    }
+    .nav-link:hover { transform: translateX(30px); opacity: 0.8; }
 
     #title, #hello-container, #bio-text {
       text-align: center; font-family: 'Clash Display', sans-serif;
@@ -47,40 +58,18 @@
     .mobile-nav-zone {
       position: fixed; left: 0; width: 100%; height: 80px;
       display: none; align-items: center; justify-content: center;
-      z-index: 100; pointer-events: auto;
-      mix-blend-mode: difference;
+      z-index: 100; pointer-events: auto; mix-blend-mode: difference;
     }
     .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
     .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent); }
-
-    .chevron {
-      width: 20px; height: 20px;
-      border-right: 3px solid white;
-      border-bottom: 3px solid white;
-      transition: opacity 0.3s ease;
-    }
+    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
     .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
     .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
-    
     @media (max-width: 768px) { .mobile-nav-zone { display: flex; } }
-
-    .letter { 
-        display: inline-block; min-width: 0.6em; text-align: center;
-        /* Smoother transition for variable weight changes */
-        transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), font-weight 0.4s linear;
-        will-change: font-weight, transform;
-    }
+    .letter { display: inline-block; min-width: 0.6em; text-align: center; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), font-weight 0.4s linear; will-change: font-weight, transform; }
     .bold { font-weight: 700; }
   </style>
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js"
-    }
-  }
-  </script>
+  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
 
@@ -93,6 +82,14 @@
       <section class="section" id="sec-0"><div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div></section>
       <section class="section" id="sec-1"><div id="hello-container"><span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span></div></section>
       <section class="section" id="sec-2"><div id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</div></section>
+      
+      <section class="section" id="sec-3">
+        <div class="links-container" id="nav-links-box">
+          <a href="#" class="nav-link" id="link-work">work</a>
+          <a href="#" class="nav-link" id="link-play">play</a>
+          <a href="#" class="nav-link" id="link-facil">facilitation</a>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -102,18 +99,34 @@
 
     let currentSection = 0;
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth < 768);
-
     window.handleNav = (dir) => {
-      currentSection = Math.max(0, Math.min(2, currentSection + dir));
+      currentSection = Math.max(0, Math.min(3, currentSection + dir));
       window.scrollTo({ top: currentSection * window.innerHeight, behavior: 'smooth' });
     };
 
     const titleEl = document.getElementById('title');
     const helloEl = document.getElementById('sec-1');
     const bioEl = document.getElementById('bio-text');
+    const linksEl = document.getElementById('nav-links-box'); 
     const stage = document.getElementById('stage-container');
     const helloLetters = document.querySelectorAll('.letter');
     
+    // --- HOVER STATE LOGIC ---
+    let targetWork = 0, currentWork = 0;
+    let targetPlay = 0, currentPlay = 0;
+    let targetFacil = 0, currentFacil = 0;
+
+    const linkWork = document.getElementById('link-work');
+    const linkPlay = document.getElementById('link-play');
+    const linkFacil = document.getElementById('link-facil');
+
+    linkWork.addEventListener('mouseenter', () => targetWork = 1);
+    linkWork.addEventListener('mouseleave', () => targetWork = 0);
+    linkPlay.addEventListener('mouseenter', () => targetPlay = 1);
+    linkPlay.addEventListener('mouseleave', () => targetPlay = 0);
+    linkFacil.addEventListener('mouseenter', () => targetFacil = 1);
+    linkFacil.addEventListener('mouseleave', () => targetFacil = 0);
+
     let helloInView = false, helloStartTime = 0;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -134,13 +147,16 @@
         uInvert: { value: 0.0 }, uMouse: { value: new THREE.Vector3(0, 0, 5) },
         uColorA: { value: new THREE.Color(0xffffff) },
         uColorB: { value: new THREE.Color(0x00ffff) },
-        uScrollRatio: { value: 0.0 }, uScrollY: { value: 0.0 }
+        uScrollRatio: { value: 0.0 }, uScrollY: { value: 0.0 },
+        uWork: { value: 0.0 }, uPlay: { value: 0.0 }, uFacil: { value: 0.0 }
       },
       vertexShader: `
         varying vec3 vNormal; varying vec3 vToLight; varying float vScroll;
         attribute vec3 aInstancePos; attribute float aRand;
         uniform float uTime; uniform float uGrowth; uniform float uTargetScale;
         uniform float uScrollRatio; uniform float uScrollY; uniform vec3 uMouse;
+        uniform float uWork; uniform float uPlay; uniform float uFacil;
+
         mat4 rotationMatrix(vec3 axis, float angle) {
             axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
             return mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
@@ -152,17 +168,42 @@
           vScroll = uScrollRatio;
           vec3 pos = aInstancePos;
           pos.y += uScrollY;
+
+          float orbitBlend = smoothstep(0.4, 0.55, uScrollRatio) * (1.0 - smoothstep(0.65, 0.75, uScrollRatio));
+          float navBlend = smoothstep(0.75, 0.9, uScrollRatio);
+
           float driftX = sin(uTime * 0.6 + aRand * 20.0) * 0.25;
           float driftY = cos(uTime * 0.4 + aRand * 15.0) * 0.25;
-          float orbitBlend = smoothstep(0.4, 0.9, uScrollRatio);
-          float angle = uTime * 0.5 + aRand * 6.28; float radius = 5.0 + aRand * 5.0;
-          float orbitX = cos(angle) * radius; float orbitY = sin(angle) * radius;
-          pos.x += mix(driftX, orbitX - pos.x, orbitBlend); pos.y += mix(driftY, orbitY - pos.y, orbitBlend);
+
+          float angle = uTime * 0.5 + aRand * 6.28;
+          float orbitX = cos(angle) * (5.0 + aRand * 5.0);
+          float orbitY = sin(angle) * (5.0 + aRand * 5.0);
+
+          // CHANGED: navX from 6.0 to 3.5 to bring them closer to left
+          float navX = 3.5 + aRand * 6.0; 
+          
+          vec3 rigidPos = pos; rigidPos.x = navX; 
+          float curvyOffset = sin(uTime * 3.0 + pos.y * 0.5) * 1.5;
+          float flowOffset = mod(uTime * 4.0 + aRand * 10.0, 20.0) - 10.0;
+
+          vec3 finalPos = pos + vec3(driftX, driftY, 0.0);
+          finalPos.x = mix(finalPos.x, orbitX, orbitBlend);
+          finalPos.y = mix(finalPos.y, orbitY, orbitBlend);
+
+          vec3 baseNavPos = finalPos;
+          baseNavPos.x = mix(baseNavPos.x, navX, navBlend);
+
+          // Interactions
+          baseNavPos = mix(baseNavPos, vec3(navX, pos.y, pos.z), uWork * navBlend);
+          baseNavPos.x += curvyOffset * uPlay * navBlend;
+          baseNavPos.y -= flowOffset * uFacil * navBlend;
+
+          finalPos = baseNavPos;
+
           float scale = mix(1.0, uTargetScale, smoothstep(0.0, 1.0, uGrowth));
-          vec3 axis = normalize(vec3(sin(aRand * 10.0), cos(aRand * 12.0), sin(aRand * 15.0)));
-          mat4 rot = rotationMatrix(axis, uTime * 0.8 + aRand * 6.28);
+          mat4 rot = rotationMatrix(normalize(vec3(sin(aRand * 10.0), cos(aRand * 12.0), sin(aRand * 15.0))), uTime * 0.8 + aRand * 6.28);
           vNormal = (rot * vec4(normal, 0.0)).xyz;
-          vec4 worldPos = vec4(pos + (rot * vec4(position * scale, 1.0)).xyz, 1.0);
+          vec4 worldPos = vec4(finalPos + (rot * vec4(position * scale, 1.0)).xyz, 1.0);
           vToLight = uMouse - worldPos.xyz;
           gl_Position = projectionMatrix * modelViewMatrix * worldPos;
         }
@@ -229,7 +270,7 @@
       entries.forEach(e => { 
         if(e.target.id === 'sec-1') {
             if(e.isIntersecting) { helloInView = true; helloStartTime = performance.now(); } 
-            else { helloInView = false; helloLetters.forEach(l => { l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; }); }
+            else { helloInView = false; helloLetters.forEach(l => { l.style.textTransform = 'lowercase'; l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; }); }
         }
       });
     }, { threshold: 0.1 });
@@ -238,46 +279,35 @@
     function animate(now) {
       requestAnimationFrame(animate);
       const scrollY = window.scrollY;
+      const scrollRatio = scrollY / (window.innerHeight * 3);
       const worldScrollY = (scrollY / window.innerHeight) * 18.5;
+      
       material.uniforms.uTime.value = now * 0.001;
-      material.uniforms.uScrollRatio.value = scrollY / (window.innerHeight * 2);
+      material.uniforms.uScrollRatio.value = scrollRatio;
       material.uniforms.uScrollY.value = worldScrollY;
+
+      currentWork += (targetWork - currentWork) * 0.1;
+      currentPlay += (targetPlay - currentPlay) * 0.1;
+      currentFacil += (targetFacil - currentFacil) * 0.1;
+      material.uniforms.uWork.value = currentWork;
+      material.uniforms.uPlay.value = currentPlay;
+      material.uniforms.uFacil.value = currentFacil;
 
       const currentIdx = Math.round(scrollY / window.innerHeight);
       document.getElementById('nav-up').style.opacity = currentIdx === 0 ? "0.1" : "1";
-      document.getElementById('nav-down').style.opacity = currentIdx === 2 ? "0.1" : "1";
+      document.getElementById('nav-down').style.opacity = currentIdx === 3 ? "0.1" : "1";
 
       if (helloInView) {
         const elapsed = (now - helloStartTime) * 0.001;
-        // Breathing frequency
-        const breathCycle = Math.sin(elapsed * 0.1) * 0.5 + 0.5; 
-        const currentFreq = 0.3 + (breathCycle * 1.0); 
-        const randomSeed = Math.floor(now / 450); 
-
+        const normalizedWave = (Math.sin(elapsed * 0.5) + 1) / 2;
         helloLetters.forEach((letter, i) => {
           let shouldCap = false, weight = 400, yOff = 0;
-          
-          // LIQUID BREATH LOGIC
-          const wave = Math.sin(elapsed * currentFreq - i * 0.8);
-          const normalizedWave = (wave + 1) / 2; // 0.0 to 1.0
-
-          if (elapsed > 8) {
-            if (wave > 0.55) { shouldCap = true; }
-            // Maps the sine wave to a range from 200 (Thin) to 900 (Black)
-            weight = 200 + (normalizedWave * 700);
-            yOff = wave * 10;
+          const wave = Math.sin(elapsed * 0.3 - i * 0.8);
+          if (elapsed > 8) { if (wave > 0.55) shouldCap = true; weight = 200 + (normalizedWave * 700); yOff = wave * 10; }
+          if (elapsed > 3) { 
+            const noise = (Math.sin(Math.floor(now / 450) + i * 133.7) + 1) / 2;
+            if (noise < 0.03 + (Math.min(elapsed, 30) * 0.001)) { shouldCap = !shouldCap; weight = noise > 0.5 ? 900 : 100; yOff += (noise - 0.5) * 5; }
           }
-          
-          // Subtle glitch logic preserved
-          if (elapsed > 3) {
-            const noise = (Math.sin(randomSeed + i * 133.7) + 1) / 2;
-            if (noise < 0.03 + (Math.min(elapsed, 30) * 0.001)) { 
-                shouldCap = !shouldCap; 
-                weight = noise > 0.5 ? 900 : 100; 
-                yOff += (noise - 0.5) * 5; 
-            }
-          }
-
           letter.style.textTransform = shouldCap ? 'uppercase' : 'lowercase';
           letter.style.fontWeight = Math.round(weight);
           letter.style.transform = `translateY(${yOff}px)`;
@@ -294,6 +324,7 @@
           titleEl.classList.toggle('inverted-ui');
           helloEl.classList.toggle('inverted-ui');
           bioEl.classList.toggle('inverted-ui');
+          linksEl.classList.toggle('inverted-ui'); 
           document.querySelectorAll('.mobile-nav-zone').forEach(z => z.classList.toggle('inverted-ui'));
           triggered = false; count = 0; mesh.count = 0;
           material.uniforms.uGrowth.value = 0;
@@ -302,6 +333,7 @@
       renderer.render(scene, camera);
     }
     animate(0);
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   </script>
 </body>
 </html>

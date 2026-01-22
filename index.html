@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Jishnu Roy Chaudhury — Unified Art</title>
+  <title>Jishnu Roy Chaudhury — Mobile Nav</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@400,700&display=swap" rel="stylesheet">
   <style>
     html, body { 
       margin: 0; padding: 0; background: #000; color: #fff; 
-      overflow-x: hidden; scroll-behavior: auto;
+      overflow-x: hidden; scroll-behavior: smooth;
     }
     #main-wrapper {
       position: relative; width: 100%; min-height: 300vh;
@@ -31,18 +31,34 @@
     #title, #hello-container, #bio-text {
       text-align: center; font-family: 'Clash Display', sans-serif;
       line-height: 1.1; color: white; user-select: none;
-      transition: filter 0.3s ease;
       text-shadow: 0 0 15px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,0.8);
     }
     #title { font-size: clamp(28px, 6vw, 72px); }
-    #hello-container {
-      display: flex; gap: 0.1em; font-size: clamp(40px, 12vw, 160px);
-      text-transform: lowercase;
+    #hello-container { display: flex; gap: 0.1em; font-size: clamp(40px, 12vw, 160px); text-transform: lowercase; }
+    #bio-text { font-size: clamp(16px, 3vw, 32px); max-width: 900px; line-height: 1.4; font-weight: 400; }
+
+    /* --- MOBILE NAV STYLES --- */
+    .mobile-nav {
+      position: fixed; right: 20px; top: 50%;
+      transform: translateY(-50%);
+      display: none; /* Hidden by default */
+      flex-direction: column; gap: 40px;
+      z-index: 100; pointer-events: auto;
+      mix-blend-mode: difference;
     }
-    #bio-text {
-      font-size: clamp(16px, 3vw, 32px);
-      max-width: 900px; line-height: 1.4; font-weight: 400;
+
+    .chevron {
+      width: 30px; height: 30px;
+      border-right: 4px solid white;
+      border-bottom: 4px solid white;
+      transition: opacity 0.3s ease;
     }
+    .chevron.up { transform: rotate(-135deg); }
+    .chevron.down { transform: rotate(45deg); }
+    
+    /* Reveal only on mobile */
+    @media (max-width: 768px) { .mobile-nav { display: flex; } }
+
     .letter { 
         display: inline-block; min-width: 0.6em; text-align: center;
         transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), font-weight 0.4s ease;
@@ -62,25 +78,30 @@
 </head>
 <body>
 
+  <div class="mobile-nav" id="mobile-nav">
+    <div class="chevron up" id="nav-up"></div>
+    <div class="chevron down" id="nav-down"></div>
+  </div>
+
   <div id="main-wrapper">
     <div id="stage-container"></div>
     <div class="content-overlay">
-      <section class="section">
+      <section class="section" id="sec-1">
         <div id="title">
           <span style="display:block"><span class="bold">jishnu</span>has</span>
           <span style="display:block">an<span class="bold">artpage</span></span>
         </div>
       </section>
 
-      <section class="section" id="section-hello">
+      <section class="section" id="sec-2">
         <div id="hello-container">
           <span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span>
         </div>
       </section>
 
-      <section class="section" id="section-bio">
+      <section class="section" id="sec-3">
         <div id="bio-text">
-          I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields including engineering, visual art, music, branding, education and a whole lot more.
+          I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.
         </div>
       </section>
     </div>
@@ -91,14 +112,44 @@
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
     const titleEl = document.getElementById('title');
-    const helloEl = document.getElementById('hello-container');
+    const helloEl = document.getElementById('sec-2');
     const bioEl = document.getElementById('bio-text');
     const stage = document.getElementById('stage-container');
     const helloLetters = document.querySelectorAll('.letter');
     
-    // --- DETECTION ---
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth < 768);
 
+    // --- MOBILE NAV LOGIC ---
+    if (isMobile) {
+      const btnUp = document.getElementById('nav-up');
+      const btnDown = document.getElementById('nav-down');
+
+      const sections = ['sec-1', 'sec-2', 'sec-3'];
+      let currentIdx = 0;
+
+      btnDown.addEventListener('click', () => {
+        if (currentIdx < sections.length - 1) {
+          currentIdx++;
+          document.getElementById(sections[currentIdx]).scrollIntoView();
+        }
+      });
+
+      btnUp.addEventListener('click', () => {
+        if (currentIdx > 0) {
+          currentIdx--;
+          document.getElementById(sections[currentIdx]).scrollIntoView();
+        }
+      });
+
+      // Sync index on manual scroll
+      window.addEventListener('scroll', () => {
+        currentIdx = Math.round(window.scrollY / window.innerHeight);
+        btnUp.style.opacity = currentIdx === 0 ? "0.2" : "1";
+        btnDown.style.opacity = currentIdx === sections.length - 1 ? "0.2" : "1";
+      });
+    }
+
+    // --- THREE.JS (Stable Architecture) ---
     let helloInView = false, helloStartTime = 0;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -231,24 +282,11 @@
       if (count >= 500) { triggered = true; triggerTime = performance.now(); isDrawing = false; }
     };
 
-    // --- MOBILE SENSITIVE HANDLERS (HYBRID) ---
     if (isMobile) {
-      window.addEventListener('touchstart', (e) => {
-        isDrawing = true;
-        const touch = e.touches[0];
-        updateInteraction(touch.clientX, touch.clientY);
-      }, { passive: true });
-
-      window.addEventListener('touchmove', (e) => {
-        if (isDrawing) {
-          const touch = e.touches[0];
-          updateInteraction(touch.clientX, touch.clientY);
-        }
-      }, { passive: true });
-
+      window.addEventListener('touchstart', (e) => { isDrawing = true; updateInteraction(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+      window.addEventListener('touchmove', (e) => { if (isDrawing) updateInteraction(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
       window.addEventListener('touchend', () => isDrawing = false);
     } else {
-      // --- DESKTOP HANDLERS (CLICK & DRAG) ---
       window.addEventListener('mousedown', (e) => { isDrawing = true; updateInteraction(e.clientX, e.clientY); });
       window.addEventListener('mousemove', (e) => { if(isDrawing) updateInteraction(e.clientX, e.clientY); });
       window.addEventListener('mouseup', () => isDrawing = false);
@@ -256,13 +294,13 @@
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => { 
-        if(e.target.id === 'section-hello') {
+        if(e.target.id === 'sec-2') {
             if(e.isIntersecting) { helloInView = true; helloStartTime = performance.now(); } 
             else { helloInView = false; helloLetters.forEach(l => { l.style.textTransform = 'lowercase'; l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; }); }
         }
       });
     }, { threshold: 0.1 });
-    observer.observe(document.getElementById('section-hello'));
+    observer.observe(document.getElementById('sec-2'));
 
     function animate(now) {
       requestAnimationFrame(animate);
@@ -305,6 +343,7 @@
           titleEl.classList.toggle('inverted-ui');
           helloEl.classList.toggle('inverted-ui');
           bioEl.classList.toggle('inverted-ui');
+          document.getElementById('mobile-nav').classList.toggle('inverted-ui');
           triggered = false; count = 0; mesh.count = 0;
           material.uniforms.uGrowth.value = 0;
         }
@@ -312,12 +351,7 @@
       renderer.render(scene, camera);
     }
     animate(0);
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   </script>
 </body>
 </html>

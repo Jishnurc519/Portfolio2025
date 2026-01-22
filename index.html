@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Jishnu Roy Chaudhury — New Media Art</title>
+  <title>Jishnu Roy Chaudhury — Mobile Optimized</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@400,700&display=swap" rel="stylesheet">
@@ -10,6 +10,8 @@
     html, body { 
       margin: 0; padding: 0; background: #000; color: #fff; 
       overflow-x: hidden; scroll-behavior: auto;
+      /* Prevent pull-to-refresh on mobile */
+      overscroll-behavior-y: none;
     }
     #main-wrapper {
       position: relative; width: 100%; min-height: 300vh;
@@ -40,7 +42,7 @@
       text-transform: lowercase;
     }
     #bio-text {
-      font-size: clamp(18px, 3vw, 36px);
+      font-size: clamp(16px, 3vw, 32px);
       max-width: 900px; line-height: 1.4; font-weight: 400;
     }
     .letter { 
@@ -99,7 +101,6 @@
     let helloInView = false, helloStartTime = 0;
 
     const scene = new THREE.Scene();
-    // Camera is now FIXED
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 15);
 
@@ -119,7 +120,7 @@
         uColorA: { value: new THREE.Color(0xffffff) },
         uColorB: { value: new THREE.Color(0x00ffff) },
         uScrollRatio: { value: 0.0 },
-        uScrollY: { value: 0.0 } // Passed to shader to move cubes UP
+        uScrollY: { value: 0.0 }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -146,14 +147,11 @@
         void main() {
           vScroll = uScrollRatio;
           vec3 pos = aInstancePos;
-          
-          // Move the cubes UP to simulate camera moving DOWN
           pos.y += uScrollY;
 
           float driftX = sin(uTime * 0.6 + aRand * 20.0) * 0.25;
           float driftY = cos(uTime * 0.4 + aRand * 15.0) * 0.25;
           
-          // Blend into orbit for last section
           float orbitBlend = smoothstep(0.4, 0.9, uScrollRatio);
           float angle = uTime * 0.5 + aRand * 6.28;
           float radius = 5.0 + aRand * 5.0;
@@ -204,9 +202,11 @@
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let count = 0, triggered = false, triggerTime = 0, isDrawing = false, invertCycle = false;
+    
+    // Mobile specific: Timer to distinguish tap/scroll from hold
+    let spawnTimer = null;
+    const isMobile = 'ontouchstart' in window;
 
-    // --- THE FIXED SPAWNER ---
-    // Since camera never moves, the spawn plane is always at Z=6
     const updateInteraction = (x, y) => {
       const mx = (x / window.innerWidth) * 2 - 1;
       const my = -(y / window.innerHeight) * 2 + 1;
@@ -217,16 +217,17 @@
       pointer.x = mx; pointer.y = my;
       raycaster.setFromCamera(pointer, camera);
       const intersect = new THREE.Vector3();
-      // We intersect the plane at its baseline, then offset by scroll in the shader
       raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
       
       const currentScrollY = (window.scrollY / window.innerHeight) * 18.5;
+      
+      // Spawn density adjustment for mobile
+      const batchSize = isMobile ? 1 : 3;
 
-      for(let i = 0; i < 3; i++) {
+      for(let i = 0; i < batchSize; i++) {
         if(count >= 8000) break;
-        aInstancePos[count * 3] = intersect.x + (Math.random() - 0.5) * 0.3;
-        // SUBTRACT the current scroll offset so it stays under the finger
-        aInstancePos[count * 3 + 1] = intersect.y - currentScrollY + (Math.random() - 0.5) * 0.3;
+        aInstancePos[count * 3] = intersect.x + (Math.random() - 0.5) * (isMobile ? 0.6 : 0.3);
+        aInstancePos[count * 3 + 1] = intersect.y - currentScrollY + (Math.random() - 0.5) * (isMobile ? 0.6 : 0.3);
         aInstancePos[count * 3 + 2] = intersect.z;
         aRand[count] = Math.random(); 
         count++;
@@ -238,9 +239,35 @@
       if (count >= 500) { triggered = true; triggerTime = performance.now(); isDrawing = false; }
     };
 
-    window.addEventListener('pointerdown', (e) => { isDrawing = true; updateInteraction(e.clientX, e.clientY); });
-    window.addEventListener('pointermove', (e) => { updateInteraction(e.clientX, e.clientY); });
-    window.addEventListener('pointerup', () => isDrawing = false);
+    // --- MOBILE SENSITIVE HANDLERS ---
+    window.addEventListener('pointerdown', (e) => {
+        if (isMobile) {
+            // For mobile, we wait 200ms. If the finger hasn't moved much, we start spawning.
+            spawnTimer = setTimeout(() => {
+                isDrawing = true;
+                updateInteraction(e.clientX, e.clientY);
+            }, 200);
+        } else {
+            isDrawing = true;
+            updateInteraction(e.clientX, e.clientY);
+        }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+        if (isDrawing) {
+            updateInteraction(e.clientX, e.clientY);
+        } else if (isMobile && spawnTimer) {
+            // If the user moves their finger significantly before the 200ms, it's a scroll.
+            // Clear the timer so no cubes spawn.
+            clearTimeout(spawnTimer);
+            spawnTimer = null;
+        }
+    });
+
+    window.addEventListener('pointerup', () => {
+        isDrawing = false;
+        if (spawnTimer) clearTimeout(spawnTimer);
+    });
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => { 
@@ -258,7 +285,6 @@
       const scrollRatio = scrollY / (window.innerHeight * 2); 
       const worldScrollY = (scrollY / window.innerHeight) * 18.5;
       
-      // Update Uniforms
       material.uniforms.uTime.value = now * 0.001;
       material.uniforms.uScrollRatio.value = scrollRatio;
       material.uniforms.uScrollY.value = worldScrollY;

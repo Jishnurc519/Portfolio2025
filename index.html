@@ -9,9 +9,13 @@
   <style>
     html, body { 
       margin: 0; padding: 0; background: #000; color: #fff; 
-      overflow: hidden; /* Lock scroll, we handle it manually */
+      overflow: hidden; /* Standard lock */
       height: 100dvh; width: 100vw;
-      position: fixed; /* Prevents bounce on iOS */
+    }
+    
+    /* Only fix position on mobile to prevent bounce */
+    @media (max-width: 768px) {
+        body { position: fixed; }
     }
     
     #stage-container {
@@ -24,41 +28,25 @@
     .content-overlay { 
       position: relative; z-index: 10; pointer-events: none; 
       width: 100%;
-      /* Transform logic handles the scrolling */
       transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1.0);
     }
     
     .section {
-      height: 100dvh; /* Dynamic Height for Mobile */
+      height: 100dvh; 
       width: 100vw;
       display: flex; 
       flex-direction: column;
       align-items: center; 
-      justify-content: center; /* Vertical Center */
+      justify-content: center; 
       mix-blend-mode: difference; 
       padding: 20px; 
       box-sizing: border-box;
     }
 
-    /* SPECIFIC ALIGNMENTS */
-    /* Section 0 (Title): Dead Center */
     #sec-0 { text-align: center; }
-    
-    /* Section 1 (Hello): Dead Center */
-    #sec-1 { }
+    #sec-3 { align-items: flex-start; padding-left: 10vw; }
 
-    /* Section 2 (Bio): Dead Center */
-    #sec-2 { }
-
-    /* Section 3 (Links): Mobile needs special alignment */
-    #sec-3 { 
-        align-items: flex-start; /* Default left */
-        padding-left: 10vw;
-    }
-
-    .links-container {
-        display: flex; flex-direction: column; gap: 15px;
-    }
+    .links-container { display: flex; flex-direction: column; gap: 15px; }
     
     .nav-link {
         font-family: 'Clash Display', sans-serif;
@@ -69,12 +57,8 @@
     }
     .nav-link:hover { transform: translateX(30px); opacity: 0.8; }
 
-    /* MOBILE TWEAKS */
     @media (max-width: 768px) {
-        #sec-3 { 
-            justify-content: center; /* Vertically center the links on mobile too */
-            padding-left: 10%; 
-        }
+        #sec-3 { justify-content: center; padding-left: 10%; }
         .nav-link { font-size: 14vw; } 
     }
 
@@ -91,6 +75,7 @@
       position: fixed; left: 0; width: 100%; height: 100px;
       display: none; align-items: center; justify-content: center;
       z-index: 100; pointer-events: auto; mix-blend-mode: difference;
+      cursor: pointer;
     }
     .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
     .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent); }
@@ -113,15 +98,9 @@
   <div id="main-wrapper">
     <div id="stage-container"></div>
     <div class="content-overlay" id="content-slider">
-      <section class="section" id="sec-0">
-        <div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div>
-      </section>
-      <section class="section" id="sec-1">
-        <div id="hello-container"><span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span></div>
-      </section>
-      <section class="section" id="sec-2">
-        <div id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</div>
-      </section>
+      <section class="section" id="sec-0"><div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div></section>
+      <section class="section" id="sec-1"><div id="hello-container"><span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span></div></section>
+      <section class="section" id="sec-2"><div id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</div></section>
       <section class="section" id="sec-3">
         <div class="links-container" id="nav-links-box">
           <a href="work.html" class="nav-link" id="link-work">work</a>
@@ -139,17 +118,36 @@
     let currentSection = 0;
     const slider = document.getElementById('content-slider');
     
-    // UPDATED NAV LOGIC: Using Transforms instead of ScrollTo
-    // This is smoother on mobile and guarantees alignment with 100dvh
+    // NAVIGATION LOGIC
     window.handleNav = (dir) => {
       currentSection = Math.max(0, Math.min(3, currentSection + dir));
-      // Translate Y by 100vh * index
       slider.style.transform = `translateY(-${currentSection * 100}dvh)`;
-      
-      // Update opacity of chevrons
       document.getElementById('nav-up').style.opacity = currentSection === 0 ? "0.1" : "1";
       document.getElementById('nav-down').style.opacity = currentSection === 3 ? "0.1" : "1";
     };
+
+    // --- DESKTOP SCROLL SUPPORT ---
+    let lastWheel = 0;
+    
+    // Mouse Wheel
+    window.addEventListener('wheel', (e) => {
+        const now = performance.now();
+        // 1000ms cooldown to prevent rapid scrolling
+        if (now - lastWheel < 1000) return; 
+        
+        // Threshold to ignore tiny trackpad movements
+        if (Math.abs(e.deltaY) < 10) return;
+
+        const dir = e.deltaY > 0 ? 1 : -1;
+        handleNav(dir);
+        lastWheel = now;
+    }, {passive: true});
+
+    // Keyboard Arrow Keys
+    window.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowDown') handleNav(1);
+        if(e.key === 'ArrowUp') handleNav(-1);
+    });
 
     const isMobileCheck = () => window.innerWidth < 768;
     let isMobile = isMobileCheck();
@@ -161,7 +159,7 @@
     const stage = document.getElementById('stage-container');
     const helloLetters = document.querySelectorAll('.letter');
     
-    // --- HOVER STATE LOGIC ---
+    // --- HOVER LOGIC ---
     let targetWork = 0, currentWork = 0;
     let targetPlay = 0, currentPlay = 0;
     let targetFacil = 0, currentFacil = 0;
@@ -181,10 +179,7 @@
     addHover(linkPlay, (v) => targetPlay = v);
     addHover(linkFacil, (v) => targetFacil = v);
 
-    // "Hello" Animation Logic based on currentSection
     let helloInView = false, helloStartTime = 0;
-    
-    // 3D Scene Setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 15);
@@ -226,7 +221,7 @@
         void main() {
           vScroll = uScrollRatio;
           vec3 pos = aInstancePos;
-          pos.y += uScrollY; // Move particles based on scroll
+          pos.y += uScrollY;
 
           float orbitBlend = smoothstep(0.4, 0.55, uScrollRatio) * (1.0 - smoothstep(0.65, 0.75, uScrollRatio));
           float navBlend = smoothstep(0.75, 0.9, uScrollRatio);
@@ -302,7 +297,6 @@
       raycaster.setFromCamera(pointer, camera);
       const intersect = new THREE.Vector3();
       raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
-      // Adjust spawn height based on current section
       const currentScrollY = currentSection * 18.5; 
       for(let i = 0; i < 3; i++) {
         if(count >= 8000) break;
@@ -330,17 +324,9 @@
     function animate(now) {
       requestAnimationFrame(animate);
       
-      // Interpolate Scroll Ratio based on current section (0 to 3)
-      // 0 = 0.0, 3 = 1.0
       const targetScrollRatio = currentSection / 3.0;
-      // We manually animate this value slightly for smooth uniform transition if needed, 
-      // but let's just pass it directly as the transform handles the visual slide.
-      // However, the shader needs a 0.0 -> 1.0 value to change the particle formations.
-      // We need to damp this value so particles morph smoothly as the div slides.
       material.uniforms.uScrollRatio.value += (targetScrollRatio - material.uniforms.uScrollRatio.value) * 0.05;
-      
-      // Calculate World Y for particles to rise up
-      const targetWorldScrollY = material.uniforms.uScrollRatio.value * 18.5 * 3; // Approx multiplier
+      const targetWorldScrollY = material.uniforms.uScrollRatio.value * 18.5 * 3; 
       material.uniforms.uScrollY.value = targetWorldScrollY;
 
       material.uniforms.uTime.value = now * 0.001;
@@ -352,7 +338,6 @@
       material.uniforms.uPlay.value = currentPlay;
       material.uniforms.uFacil.value = currentFacil;
 
-      // Hello Animation Trigger
       if(currentSection === 1 && !helloInView) { helloInView = true; helloStartTime = performance.now(); }
       if(currentSection !== 1) { helloInView = false; }
 
@@ -372,7 +357,6 @@
           letter.style.transform = `translateY(${yOff}px)`;
         });
       } else {
-         // Reset letters when not in view
          helloLetters.forEach(l => { l.style.textTransform = 'lowercase'; l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; });
       }
 
@@ -402,7 +386,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         isMobile = isMobileCheck();
         material.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
-        // Re-align slider on resize
         window.handleNav(0);
     };
     window.addEventListener('resize', handleResize);

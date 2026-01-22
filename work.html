@@ -29,49 +29,45 @@
     canvas { display: block; }
     #stage-container.inverted-bg { background: #ffffff; }
 
-    /* --- MOBILE NAV UI --- */
+    /* --- MOBILE NAV ZONES --- */
     .mobile-nav-zone {
-      position: fixed; left: 0; width: 100%; height: 80px;
+      position: fixed; left: 0; width: 100%; height: 100px; /* Larger tap area */
       display: none; align-items: center; justify-content: center;
-      z-index: 100; pointer-events: auto; mix-blend-mode: difference;
+      z-index: 200; /* Higher Z-index to ensure clickable */
+      pointer-events: auto; mix-blend-mode: difference;
       cursor: pointer;
+      /* Visual Debugging: remove background in prod, useful to see tap area */
+      /* background: rgba(255,0,0,0.1); */ 
     }
-    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
-    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent); }
+    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
+    
     .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
     .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
     .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
 
-    /* --- THEME CLASSES --- */
+    /* --- THEME & ACTIVE STATES --- */
     body.inverted-theme { color: #000; }
-    body.inverted-theme .project-item { border-top: 1px solid rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.0); }
-    body.inverted-theme .project-tags { color: #b300b3; }
-    body.inverted-theme .back-btn { color: #000; }
     
-    /* --- HOVER & ACTIVE STATE LOGIC --- */
-    
-    /* Default Theme: Active/Hover = White BG, Black Text */
-    .project-item.active, .project-item:hover { 
-        background: #ffffff; 
-        color: #000; 
-        border-top: 1px solid #ffffff; 
+    /* Active State (The Negate Effect) */
+    .project-item.active { 
+        background: #ffffff !important; 
+        color: #000 !important; 
+        border-top: 1px solid #ffffff !important; 
         transform: scale(1.02);
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
-    .project-item.active .project-tags, .project-item:hover .project-tags { color: #ff00ff; }
+    .project-item.active .project-tags { color: #ff00ff !important; }
+    .project-item.active * { color: #000 !important; }
 
-    /* Inverted Theme: Active/Hover = Black BG, White Text */
-    body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover { 
-        background: #000000; 
-        color: #fff; 
-        border-top: 1px solid #000000; 
+    /* Inverted Theme Active State */
+    body.inverted-theme .project-item.active { 
+        background: #000000 !important; 
+        color: #fff !important; 
+        border-top: 1px solid #000000 !important; 
     }
-    body.inverted-theme .project-item.active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #00ffff; }
-
-    /* Force Inner Text Inheritance */
-    .project-item.active .project-year, .project-item:hover .project-year,
-    .project-item.active .project-title, .project-item:hover .project-title,
-    .project-item.active .project-desc, .project-item:hover .project-desc { color: inherit; }
+    body.inverted-theme .project-item.active .project-tags { color: #00ffff !important; }
+    body.inverted-theme .project-item.active * { color: #fff !important; }
 
     #main-wrapper {
       position: relative;
@@ -80,17 +76,25 @@
       margin: 0 auto;
       z-index: 10;
       pointer-events: none; 
-      /* Essential for transform scrolling */
-      transform-origin: top center;
       will-change: transform;
+      /* Initial padding for the header */
+      padding-top: 35vh; 
+      padding-bottom: 35vh;
     }
 
-    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin-bottom: 5px; line-height: 0.9; }
-    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-bottom: 80px; display: block; }
+    /* HEADER */
+    #header-section {
+        margin-bottom: 80vh; /* Huge gap after header */
+        text-align: left;
+        pointer-events: auto;
+    }
+
+    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
+    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
 
     .project-list {
-      display: flex; flex-direction: column; gap: 60px;
-      pointer-events: auto; padding-bottom: 100px; 
+      display: flex; flex-direction: column; gap: 80vh; /* Huge gap between projects */
+      pointer-events: auto; 
     }
 
     .project-item {
@@ -100,54 +104,43 @@
       background: rgba(0,0,0,0.0); border-radius: 8px;
     }
 
-    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; transition: color 0.15s ease; }
+    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
     .project-details { display: flex; flex-direction: column; gap: 10px; }
-    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; transition: color 0.15s ease; }
+    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
     .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff; transition: color 0.1s linear; }
-    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; transition: color 0.15s ease; }
+    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
 
     .back-btn {
       position: fixed; bottom: 40px; left: 5vw;
       font-size: 18px; text-decoration: none; color: white; font-weight: 600; 
       z-index: 100; pointer-events: auto; transition: color 0.1s linear;
     }
+    body.inverted-theme .back-btn { color: #000; }
 
-    /* MOBILE SPECIFIC OVERRIDES */
     @media (max-width: 768px) {
       html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; }
       .mobile-nav-zone { display: flex; }
-      
-      .project-item { grid-template-columns: 1fr; gap: 5px; margin-bottom: 20px; }
-      
-      /* Huge gap to separate projects into "Slides" */
-      .project-list { gap: 60vh; padding-bottom: 50vh; }
-      
-      #main-wrapper { 
-        height: auto; 
-        padding-top: 15vh;
-        /* Ensure content exists to be scrolled */
-        min-height: 100vh;
-      }
+      .project-item { grid-template-columns: 1fr; gap: 5px; }
     }
   </style>
   <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
 
-  <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up"></div></div>
-  <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down"></div></div>
+  <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
+  <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
 
   <div id="stage-container"></div>
   <a href="index.html" class="back-btn" onclick="return checkInteraction(event)">← Back</a>
 
   <div id="main-wrapper">
-    <div id="header-section">
+    <div id="header-section" class="scroll-target">
       <h1>selected<br>works</h1>
       <span class="subtitle">Interactive Installations & Creative Technology</span>
     </div>
 
     <div class="project-list">
-      <div class="project-item" onclick="handleProjectClick(event)">
+      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
         <span class="project-year">2026</span>
         <div class="project-details">
           <h2 class="project-title">Frequencies Listening Room</h2>
@@ -155,7 +148,7 @@
           <p class="project-desc">A comprehensive audio-visual installation featuring immersive projection mapping and DMX lighting synchronization.</p>
         </div>
       </div>
-      <div class="project-item" onclick="handleProjectClick(event)">
+      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
         <span class="project-year">2026</span>
         <div class="project-details">
           <h2 class="project-title">Particle Lenia System</h2>
@@ -163,7 +156,7 @@
           <p class="project-desc">Simulates thousands of particles exhibiting organic, life-like behaviors such as "Orbs" and "Swimmers".</p>
         </div>
       </div>
-      <div class="project-item" onclick="handleProjectClick(event)">
+      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
         <span class="project-year">2025</span>
         <div class="project-details">
           <h2 class="project-title">The Compass Point</h2>
@@ -171,7 +164,7 @@
           <p class="project-desc">Concept design for an interactive information desk acting as a hub for orientation.</p>
         </div>
       </div>
-      <div class="project-item" onclick="handleProjectClick(event)">
+      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
         <span class="project-year">2025</span>
         <div class="project-details">
           <h2 class="project-title">Tuya Smart Home Integration</h2>
@@ -186,50 +179,73 @@
     import * as THREE from 'three';
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-    // --- NAVIGATION LOGIC ---
+    // --- NAVIGATION ENGINE ---
     let currentIndex = 0;
-    const projectItems = document.querySelectorAll('.project-item');
-    const totalTargets = 1 + projectItems.length; // Header + Projects
+    let targets = []; // Array to hold Header + Projects
     const wrapper = document.getElementById('main-wrapper');
-    const header = document.getElementById('header-section');
     const isMobile = window.innerWidth < 768;
+
+    // Initialize Targets
+    function initTargets() {
+        const header = document.getElementById('header-section');
+        const projects = document.querySelectorAll('.project-item');
+        targets = [header, ...projects];
+        updateChevronVisibility();
+    }
+    
+    // Call immediately
+    initTargets();
+
+    function updateChevronVisibility() {
+        const upBtn = document.getElementById('nav-up');
+        const downBtn = document.getElementById('nav-down');
+        if(!upBtn || !downBtn) return;
+        
+        upBtn.style.opacity = currentIndex === 0 ? '0.2' : '1';
+        downBtn.style.opacity = currentIndex === targets.length - 1 ? '0.2' : '1';
+    }
 
     window.handleNav = (dir) => {
         if (!isMobile) return;
         
-        // Update Index
-        const nextIndex = Math.max(0, Math.min(totalTargets - 1, currentIndex + dir));
-        if (nextIndex === currentIndex) return; // Boundary hit
+        const nextIndex = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
+        if (nextIndex === currentIndex) return; // No change
         
         currentIndex = nextIndex;
+        updateChevronVisibility();
         
-        // 1. Calculate Scroll Position
-        let targetY = 0;
-        if (currentIndex === 0) {
-            targetY = 0; // Top
-        } else {
-            const targetEl = projectItems[currentIndex - 1];
-            // Center element vertically: OffsetTop - (ScreenHeight/2 - ElementHeight/2)
-            // Simplified: OffsetTop - 15vh padding
-            targetY = targetEl.offsetTop - (window.innerHeight * 0.15);
-        }
+        const targetEl = targets[currentIndex];
         
-        // 2. Apply Scroll
-        wrapper.style.transform = `translateY(${-targetY}px)`;
-        wrapper.style.transition = "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
+        // --- CENTER ALIGNMENT MATH ---
+        // We want the center of the target element to be at the center of the viewport
+        // Target Center Y (relative to wrapper top) = targetEl.offsetTop + (targetEl.height / 2)
+        // Viewport Center Y = window.innerHeight / 2
+        // We need to shift wrapper up by: Target Center Y - Viewport Center Y
+        
+        const elementCenter = targetEl.offsetTop + (targetEl.offsetHeight / 2);
+        const viewportCenter = window.innerHeight / 2;
+        const shiftAmount = elementCenter - viewportCenter;
+        
+        // Apply Transform
+        // We treat the wrapper's top-left as the anchor.
+        wrapper.style.transform = `translateY(${-shiftAmount}px)`;
+        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)"; // Smooth easeOutExpo
 
-        // 3. Apply Active State Logic
-        // Remove active class from ALL items first
-        projectItems.forEach(item => item.classList.remove('active'));
+        // --- ACTIVE STATE LOGIC ---
+        // Clean up all active classes
+        targets.forEach(t => {
+            if(t.classList.contains('project-item')) t.classList.remove('active');
+        });
 
-        // If we are on a project (index > 0), activate it
+        // Apply active class if it's a project (Index > 0)
         if (currentIndex > 0) {
-            projectItems[currentIndex - 1].classList.add('active');
+            targetEl.classList.add('active');
         }
     };
 
     // --- INTERACTION GUARD ---
     window.checkInteraction = (e) => {
+        // If holding for > 200ms, assume it was a charge, block click
         if (chargeTime > 200) { 
             e.preventDefault(); e.stopPropagation(); return false;
         }
@@ -265,7 +281,6 @@
         attribute vec3 aInstancePos; attribute float aRand;
         uniform float uTime; uniform vec3 uMouse;
         uniform float uClickStrength; uniform float uCharge; uniform float uGrowth;
-
         mat4 rotationMatrix(vec3 axis, float angle) {
             axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
             return mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
@@ -273,27 +288,19 @@
                         oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
                         0.0, 0.0, 0.0, 1.0);
         }
-
         void main() {
           vec3 pos = aInstancePos;
           float driftSpeed = 1.0 - (uCharge * 0.8);
           float driftX = sin(uTime * 0.3 + aRand * 10.0) * 0.5 * driftSpeed;
           float driftY = cos(uTime * 0.2 + aRand * 8.0) * 0.5 * driftSpeed;
           pos.x += driftX; pos.y += driftY;
-
-          float shake = sin(uTime * 50.0 + aRand * 10.0) * (uCharge * 0.1);
-          pos += shake;
-
+          float shake = sin(uTime * 50.0 + aRand * 10.0) * (uCharge * 0.1); pos += shake;
           float dist = distance(pos.xy, uMouse.xy);
           float baseRadius = 5.0; float baseInfluence = smoothstep(baseRadius, 0.0, dist) * 1.5;
           float clickRadius = 60.0; float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
-
           float totalForce = mix(baseInfluence, clickInfluence, uClickStrength);
           totalForce += uCharge * 2.0; 
-
-          vec3 pullDir = normalize(uMouse - pos);
-          pos += pullDir * totalForce; 
-
+          vec3 pullDir = normalize(uMouse - pos); pos += pullDir * totalForce; 
           vec3 axis = normalize(vec3(sin(aRand), cos(aRand), aRand));
           mat4 rot = rotationMatrix(axis, uTime * (0.5 + uCharge * 5.0) + aRand);
           vNormal = (rot * vec4(normal, 0.0)).xyz;
@@ -311,7 +318,6 @@
           vec3 normal = normalize(vNormal); vec3 lightDir = normalize(vToLight);
           float diff = max(dot(normal, lightDir), 0.0);
           float fresnel = pow(1.0 - dot(normal, vec3(0,0,1)), 3.0);
-          
           vec3 cyanState = vec3(0.05) + uColorA * diff + fresnel * 0.25;
           cyanState = mix(cyanState, vec3(1.0), uCharge * 0.8);
           vec3 magentaState = vec3(0.0) + uColorB * diff + fresnel * 0.4;
@@ -325,7 +331,6 @@
     const count = 500;
     const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), material, count);
     mesh.frustumCulled = false; scene.add(mesh);
-
     const aInstancePos = new Float32Array(count * 3);
     const aRand = new Float32Array(count);
     const spreadX = isMobile ? 20 : 70;
@@ -369,46 +374,29 @@
     window.addEventListener('touchmove', (e) => updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
 
     let lastTime = 0;
-
     function animate(time) {
       requestAnimationFrame(animate);
       const dt = time - lastTime; lastTime = time;
       material.uniforms.uTime.value = time * 0.001;
-
       const targetStrength = isHolding && !isExploding ? 1.0 : 0.0;
       currentClickStrength += (targetStrength - currentClickStrength) * 0.05;
-      
-      if (isHolding && !isExploding) {
-        chargeTime = Math.min(chargeTime + dt, CHARGE_LIMIT);
-      } else if (!isExploding) {
-        chargeTime = Math.max(0, chargeTime - dt * 3.0);
-      }
-
-      if (chargeTime >= CHARGE_LIMIT && !isExploding) {
-        isExploding = true; explosionProgress = 0; invertCycle = false;
-      }
-
+      if (isHolding && !isExploding) { chargeTime = Math.min(chargeTime + dt, CHARGE_LIMIT); } 
+      else if (!isExploding) { chargeTime = Math.max(0, chargeTime - dt * 3.0); }
+      if (chargeTime >= CHARGE_LIMIT && !isExploding) { isExploding = true; explosionProgress = 0; invertCycle = false; }
       material.uniforms.uCharge.value = chargeTime / CHARGE_LIMIT;
       material.uniforms.uClickStrength.value = currentClickStrength;
-
       if (isExploding) {
-        explosionProgress += dt * 0.004; 
-        material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
-
+        explosionProgress += dt * 0.004; material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
         if (explosionProgress > 0.4 && !invertCycle) {
           invertCycle = true;
-          const bg = document.getElementById('stage-container');
-          const body = document.body;
+          const bg = document.getElementById('stage-container'); const body = document.body;
           if (bg.classList.contains('inverted-bg')) {
              bg.classList.remove('inverted-bg'); body.classList.remove('inverted-theme'); material.uniforms.uInvert.value = 0.0;
           } else {
              bg.classList.add('inverted-bg'); body.classList.add('inverted-theme'); material.uniforms.uInvert.value = 1.0;
           }
         }
-
-        if (explosionProgress >= 1.0) {
-           isExploding = false; material.uniforms.uGrowth.value = 0; chargeTime = 0;
-        }
+        if (explosionProgress >= 1.0) { isExploding = false; material.uniforms.uGrowth.value = 0; chargeTime = 0; }
       }
       renderer.render(scene, camera);
     }
@@ -417,7 +405,9 @@
     window.addEventListener('resize', () => { 
         camera.aspect = window.innerWidth / window.innerHeight; 
         camera.updateProjectionMatrix(); 
-        renderer.setSize(window.innerWidth, window.innerHeight); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // re-center current item on resize if needed
+        if(isMobile) handleNav(0); 
     });
   </script>
 </body>

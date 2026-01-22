@@ -31,13 +31,11 @@
 
     /* --- MOBILE NAV ZONES --- */
     .mobile-nav-zone {
-      position: fixed; left: 0; width: 100%; height: 100px; /* Larger tap area */
+      position: fixed; left: 0; width: 100%; height: 100px; 
       display: none; align-items: center; justify-content: center;
-      z-index: 200; /* Higher Z-index to ensure clickable */
+      z-index: 200; /* High Z-Index was blocking the button */
       pointer-events: auto; mix-blend-mode: difference;
       cursor: pointer;
-      /* Visual Debugging: remove background in prod, useful to see tap area */
-      /* background: rgba(255,0,0,0.1); */ 
     }
     .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
     .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
@@ -49,7 +47,6 @@
     /* --- THEME & ACTIVE STATES --- */
     body.inverted-theme { color: #000; }
     
-    /* Active State (The Negate Effect) */
     .project-item.active { 
         background: #ffffff !important; 
         color: #000 !important; 
@@ -60,7 +57,6 @@
     .project-item.active .project-tags { color: #ff00ff !important; }
     .project-item.active * { color: #000 !important; }
 
-    /* Inverted Theme Active State */
     body.inverted-theme .project-item.active { 
         background: #000000 !important; 
         color: #fff !important; 
@@ -77,14 +73,12 @@
       z-index: 10;
       pointer-events: none; 
       will-change: transform;
-      /* Initial padding for the header */
       padding-top: 35vh; 
       padding-bottom: 35vh;
     }
 
-    /* HEADER */
     #header-section {
-        margin-bottom: 80vh; /* Huge gap after header */
+        margin-bottom: 80vh; 
         text-align: left;
         pointer-events: auto;
     }
@@ -93,7 +87,7 @@
     .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
 
     .project-list {
-      display: flex; flex-direction: column; gap: 80vh; /* Huge gap between projects */
+      display: flex; flex-direction: column; gap: 80vh; 
       pointer-events: auto; 
     }
 
@@ -110,12 +104,18 @@
     .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff; transition: color 0.1s linear; }
     .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
 
+    /* UPDATED BACK BUTTON */
     .back-btn {
-      position: fixed; bottom: 40px; left: 5vw;
+      position: fixed; 
+      top: 40px; /* Moved to TOP */
+      left: 5vw;
       font-size: 18px; text-decoration: none; color: white; font-weight: 600; 
-      z-index: 100; pointer-events: auto; transition: color 0.1s linear;
+      z-index: 300; /* Highest Z-index */
+      pointer-events: auto; 
+      transition: color 0.1s linear;
+      mix-blend-mode: difference; /* Ensures visibility on any background */
     }
-    body.inverted-theme .back-btn { color: #000; }
+    body.inverted-theme .back-btn { color: #fff; /* Blend mode handles contrast, but we keep this consistent */ }
 
     @media (max-width: 768px) {
       html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; }
@@ -131,7 +131,8 @@
   <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
 
   <div id="stage-container"></div>
-  <a href="index.html" class="back-btn" onclick="return checkInteraction(event)">← Back</a>
+  
+  <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
 
   <div id="main-wrapper">
     <div id="header-section" class="scroll-target">
@@ -181,11 +182,10 @@
 
     // --- NAVIGATION ENGINE ---
     let currentIndex = 0;
-    let targets = []; // Array to hold Header + Projects
+    let targets = []; 
     const wrapper = document.getElementById('main-wrapper');
     const isMobile = window.innerWidth < 768;
 
-    // Initialize Targets
     function initTargets() {
         const header = document.getElementById('header-section');
         const projects = document.querySelectorAll('.project-item');
@@ -193,7 +193,6 @@
         updateChevronVisibility();
     }
     
-    // Call immediately
     initTargets();
 
     function updateChevronVisibility() {
@@ -209,35 +208,26 @@
         if (!isMobile) return;
         
         const nextIndex = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
-        if (nextIndex === currentIndex) return; // No change
+        if (nextIndex === currentIndex) return; 
         
         currentIndex = nextIndex;
         updateChevronVisibility();
         
         const targetEl = targets[currentIndex];
         
-        // --- CENTER ALIGNMENT MATH ---
-        // We want the center of the target element to be at the center of the viewport
-        // Target Center Y (relative to wrapper top) = targetEl.offsetTop + (targetEl.height / 2)
-        // Viewport Center Y = window.innerHeight / 2
-        // We need to shift wrapper up by: Target Center Y - Viewport Center Y
-        
         const elementCenter = targetEl.offsetTop + (targetEl.offsetHeight / 2);
         const viewportCenter = window.innerHeight / 2;
         const shiftAmount = elementCenter - viewportCenter;
         
-        // Apply Transform
-        // We treat the wrapper's top-left as the anchor.
         wrapper.style.transform = `translateY(${-shiftAmount}px)`;
-        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)"; // Smooth easeOutExpo
+        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)"; 
 
-        // --- ACTIVE STATE LOGIC ---
-        // Clean up all active classes
+        // Remove active class from ALL items
         targets.forEach(t => {
             if(t.classList.contains('project-item')) t.classList.remove('active');
         });
 
-        // Apply active class if it's a project (Index > 0)
+        // Apply active class if it's a project
         if (currentIndex > 0) {
             targetEl.classList.add('active');
         }
@@ -245,7 +235,6 @@
 
     // --- INTERACTION GUARD ---
     window.checkInteraction = (e) => {
-        // If holding for > 200ms, assume it was a charge, block click
         if (chargeTime > 200) { 
             e.preventDefault(); e.stopPropagation(); return false;
         }
@@ -351,7 +340,11 @@
     let isExploding = false; let explosionProgress = 0;
     let currentClickStrength = 0; let invertCycle = false;
 
-    const startHold = () => { isHolding = true; };
+    const startHold = (e) => { 
+        // Ignore clicks on back button or nav chevrons
+        if(e.target.closest('.back-btn') || e.target.closest('.mobile-nav-zone')) return;
+        isHolding = true; 
+    };
     const stopHold = () => { isHolding = false; };
 
     window.addEventListener('touchmove', (e) => { if(isMobile) e.preventDefault(); }, {passive: false});
@@ -406,7 +399,6 @@
         camera.aspect = window.innerWidth / window.innerHeight; 
         camera.updateProjectionMatrix(); 
         renderer.setSize(window.innerWidth, window.innerHeight);
-        // re-center current item on resize if needed
         if(isMobile) handleNav(0); 
     });
   </script>

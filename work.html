@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Jishnu Roy Chaudhury — Work</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <style>
+    html, body { 
+      margin: 0; padding: 0; 
+      background: transparent; 
+      color: #fff; 
+      font-family: 'Clash Display', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    #stage-container {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: -1; 
+      background: #000; 
+      transition: background 0.05s linear; 
+    }
+    canvas { display: block; }
+    #stage-container.inverted-bg { background: #ffffff; }
+
+    #main-wrapper {
+      position: relative;
+      padding: 10vw 5vw;
+      max-width: 1200px;
+      margin: 0 auto;
+      z-index: 10;
+      mix-blend-mode: difference; 
+      pointer-events: none; 
+    }
+
+    h1 {
+      font-size: clamp(40px, 8vw, 100px);
+      font-weight: 700;
+      margin-bottom: 5px;
+      line-height: 0.9;
+    }
+    
+    .subtitle {
+      font-size: clamp(16px, 2vw, 24px);
+      font-weight: 400;
+      opacity: 0.8;
+      margin-bottom: 80px;
+      display: block;
+    }
+
+    .project-list {
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+      pointer-events: auto; 
+    }
+
+    .project-item {
+      border-top: 1px solid rgba(255, 255, 255, 0.4);
+      padding-top: 20px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      background: rgba(0,0,0,0.0); 
+    }
+
+    .project-item:hover {
+      opacity: 1;
+      transform: translateX(10px);
+      background: rgba(255,255,255,0.1); 
+    }
+
+    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
+    .project-details { display: flex; flex-direction: column; gap: 10px; }
+    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
+    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff; }
+    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
+
+    .back-btn {
+      position: fixed; bottom: 40px; left: 5vw;
+      font-size: 18px; text-decoration: none; color: white;
+      font-weight: 600; mix-blend-mode: difference;
+      z-index: 100; pointer-events: auto;
+    }
+
+    @media (max-width: 768px) {
+      .project-item { grid-template-columns: 1fr; gap: 5px; }
+      .project-year { margin-bottom: 5px; }
+    }
+  </style>
+  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
+</head>
+<body>
+
+  <div id="stage-container"></div>
+  <a href="index.html" class="back-btn">← Back</a>
+
+  <div id="main-wrapper">
+    <h1>selected<br>works</h1>
+    <span class="subtitle">Interactive Installations & Creative Technology</span>
+
+    <div class="project-list">
+      <div class="project-item">
+        <span class="project-year">2026</span>
+        <div class="project-details">
+          <h2 class="project-title">Frequencies Listening Room</h2>
+          <span class="project-tags">Projection Mapping • Lighting Control</span>
+          <p class="project-desc">A comprehensive audio-visual installation featuring immersive projection mapping and DMX lighting synchronization.</p>
+        </div>
+      </div>
+      <div class="project-item">
+        <span class="project-year">2026</span>
+        <div class="project-details">
+          <h2 class="project-title">Particle Lenia System</h2>
+          <span class="project-tags">GLSL • Generative Art</span>
+          <p class="project-desc">Simulates thousands of particles exhibiting organic, life-like behaviors such as "Orbs" and "Swimmers".</p>
+        </div>
+      </div>
+      <div class="project-item">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <h2 class="project-title">The Compass Point</h2>
+          <span class="project-tags">Spatial Design • Interactive Furniture</span>
+          <p class="project-desc">Concept design for an interactive information desk acting as a hub for orientation.</p>
+        </div>
+      </div>
+      <div class="project-item">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <h2 class="project-title">Tuya Smart Home Integration</h2>
+          <span class="project-tags">IoT • Python • TouchDesigner</span>
+          <p class="project-desc">Custom integration bridging consumer smart home hardware with professional performance software.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+    const stage = document.getElementById('stage-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 15);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setClearColor(0x000000, 0); 
+    stage.appendChild(renderer.domElement);
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: { 
+        uTime: { value: 0 },
+        uMouse: { value: new THREE.Vector3(0, 0, -100) },
+        uClickStrength: { value: 0.0 }, 
+        uCharge: { value: 0.0 }, 
+        uGrowth: { value: 0.0 },
+        uInvert: { value: 0.0 },
+        uColorA: { value: new THREE.Color(0x888888) },
+        uColorB: { value: new THREE.Color(0x00ffff) }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vToLight;
+        attribute vec3 aInstancePos;
+        attribute float aRand;
+        uniform float uTime;
+        uniform vec3 uMouse;
+        uniform float uClickStrength;
+        uniform float uCharge;
+        uniform float uGrowth;
+
+        mat4 rotationMatrix(vec3 axis, float angle) {
+            axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
+            return mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                        oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,  0.0,
+                        oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                        0.0, 0.0, 0.0, 1.0);
+        }
+
+        void main() {
+          vec3 pos = aInstancePos;
+          
+          float driftSpeed = 1.0 - (uCharge * 0.8);
+          float driftX = sin(uTime * 0.3 + aRand * 10.0) * 0.5 * driftSpeed;
+          float driftY = cos(uTime * 0.2 + aRand * 8.0) * 0.5 * driftSpeed;
+          pos.x += driftX; pos.y += driftY;
+
+          float shake = sin(uTime * 50.0 + aRand * 10.0) * (uCharge * 0.1);
+          pos += shake;
+
+          float dist = distance(pos.xy, uMouse.xy);
+          float baseRadius = 5.0; float baseInfluence = smoothstep(baseRadius, 0.0, dist) * 1.5;
+          float clickRadius = 25.0; float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
+
+          float totalForce = mix(baseInfluence, clickInfluence, uClickStrength);
+          totalForce += uCharge * 2.0; 
+
+          vec3 pullDir = normalize(uMouse - pos);
+          pos += pullDir * totalForce; 
+
+          vec3 axis = normalize(vec3(sin(aRand), cos(aRand), aRand));
+          mat4 rot = rotationMatrix(axis, uTime * (0.5 + uCharge * 5.0) + aRand);
+          vNormal = (rot * vec4(normal, 0.0)).xyz;
+          
+          float size = mix(1.2, 50.0, uGrowth); 
+          size += sin(uTime * 20.0) * uCharge * 0.5;
+
+          vec4 worldPos = vec4(pos + (rot * vec4(position * size, 1.0)).xyz, 1.0);
+          vToLight = uMouse - worldPos.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * worldPos;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal; varying vec3 vToLight;
+        uniform vec3 uColorA; uniform vec3 uColorB;
+        uniform float uInvert; uniform float uCharge;
+        void main() {
+          vec3 normal = normalize(vNormal); vec3 lightDir = normalize(vToLight);
+          float diff = max(dot(normal, lightDir), 0.0);
+          float fresnel = pow(1.0 - dot(normal, vec3(0,0,1)), 3.0);
+          vec3 baseColor = mix(uColorA, uColorB, diff + fresnel);
+          baseColor = mix(baseColor, vec3(1.0), uCharge * 0.8);
+          vec3 invertedColor = vec3(0.0);
+          gl_FragColor = vec4(mix(baseColor, invertedColor, uInvert), 1.0);
+        }
+      `
+    });
+
+    const count = 500;
+    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), material, count);
+    mesh.frustumCulled = false; scene.add(mesh);
+
+    const aInstancePos = new Float32Array(count * 3);
+    const aRand = new Float32Array(count);
+    for(let i = 0; i < count; i++) {
+        aInstancePos[i * 3] = (Math.random() - 0.5) * 35;
+        aInstancePos[i * 3 + 1] = (Math.random() - 0.5) * 25;
+        aInstancePos[i * 3 + 2] = -6 + (Math.random() - 0.5) * 4; 
+        aRand[i] = Math.random();
+    }
+    mesh.geometry.setAttribute('aInstancePos', new THREE.InstancedBufferAttribute(aInstancePos, 3));
+    mesh.geometry.setAttribute('aRand', new THREE.InstancedBufferAttribute(aRand, 1));
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    
+    let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 4000;
+    let isExploding = false; let explosionProgress = 0;
+    let currentClickStrength = 0; // The smoothed value
+    let invertCycle = false;
+
+    const startHold = () => { isHolding = true; };
+    const stopHold = () => { isHolding = false; };
+
+    window.addEventListener('mousedown', startHold);
+    window.addEventListener('touchstart', startHold, {passive: true});
+    window.addEventListener('mouseup', stopHold);
+    window.addEventListener('touchend', stopHold);
+    window.addEventListener('mouseleave', stopHold);
+
+    const updateMouse = (x, y) => {
+        const mx = (x / window.innerWidth) * 2 - 1;
+        const my = -(y / window.innerHeight) * 2 + 1;
+        pointer.set(mx, my);
+        raycaster.setFromCamera(pointer, camera);
+        const intersect = new THREE.Vector3();
+        raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
+        material.uniforms.uMouse.value.set(intersect.x, intersect.y, intersect.z);
+    };
+    window.addEventListener('mousemove', (e) => updateMouse(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
+
+    let lastTime = 0;
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+      const dt = time - lastTime; lastTime = time;
+      material.uniforms.uTime.value = time * 0.001;
+
+      // 1. SMOOTH ATTRACTION LOGIC
+      // Target is 1.0 if holding, 0.0 if not.
+      // We lerp currentClickStrength towards the target.
+      const targetStrength = isHolding && !isExploding ? 1.0 : 0.0;
+      const lerpSpeed = 0.05; // 5% per frame = nice smooth ease
+      currentClickStrength += (targetStrength - currentClickStrength) * lerpSpeed;
+      
+      // 2. CHARGE TIME LOGIC (Separate from physics strength)
+      if (isHolding && !isExploding) {
+        chargeTime = Math.min(chargeTime + dt, CHARGE_LIMIT);
+      } else if (!isExploding) {
+        chargeTime = Math.max(0, chargeTime - dt * 3.0); // Fast decay
+      }
+
+      if (chargeTime >= CHARGE_LIMIT && !isExploding) {
+        isExploding = true; explosionProgress = 0; invertCycle = false;
+      }
+
+      material.uniforms.uCharge.value = chargeTime / CHARGE_LIMIT;
+      material.uniforms.uClickStrength.value = currentClickStrength;
+
+      // 3. EXPLOSION LOGIC
+      if (isExploding) {
+        explosionProgress += dt * 0.002; 
+        material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
+
+        if (explosionProgress > 0.1 && !invertCycle) {
+          invertCycle = true;
+          const bg = document.getElementById('stage-container');
+          if (bg.classList.contains('inverted-bg')) {
+             bg.classList.remove('inverted-bg'); material.uniforms.uInvert.value = 0.0;
+          } else {
+             bg.classList.add('inverted-bg'); material.uniforms.uInvert.value = 1.0;
+          }
+        }
+
+        if (explosionProgress >= 1.0) {
+           isExploding = false; material.uniforms.uGrowth.value = 0; chargeTime = 0;
+        }
+      }
+      renderer.render(scene, camera);
+    }
+    animate(0);
+
+    window.addEventListener('resize', () => { 
+        camera.aspect = window.innerWidth / window.innerHeight; 
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight); 
+    });
+  </script>
+</body>
+</html>

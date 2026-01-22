@@ -2,41 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Jishnu Roy Chaudhury — Mobile Final</title>
+  <title>Jishnu Roy Chaudhury</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
   <style>
     html, body { 
       margin: 0; padding: 0; background: #000; color: #fff; 
-      overflow-x: hidden; scroll-behavior: smooth;
+      overflow: hidden; /* Lock scroll, we handle it manually */
+      height: 100dvh; width: 100vw;
+      position: fixed; /* Prevents bounce on iOS */
     }
-    @media (max-width: 768px) {
-        html, body { overflow: hidden; }
-        canvas { touch-action: none; }
-    }
-    #main-wrapper {
-      position: relative; width: 100%; height: 400vh;
-      background: #000; transition: background 0.1s linear;
-    }
+    
     #stage-container {
       position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh; z-index: 1;
+      width: 100vw; height: 100dvh; z-index: 1;
     }
     .inverted-ui { filter: invert(1); }
     canvas { display: block; }
     
-    .content-overlay { position: relative; z-index: 10; pointer-events: none; }
+    .content-overlay { 
+      position: relative; z-index: 10; pointer-events: none; 
+      width: 100%;
+      /* Transform logic handles the scrolling */
+      transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1.0);
+    }
     
     .section {
-      height: 100vh; display: flex; align-items: center; justify-content: center;
+      height: 100dvh; /* Dynamic Height for Mobile */
+      width: 100vw;
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center; /* Vertical Center */
       mix-blend-mode: difference; 
-      padding: 0 10%; box-sizing: border-box;
+      padding: 20px; 
+      box-sizing: border-box;
+    }
+
+    /* SPECIFIC ALIGNMENTS */
+    /* Section 0 (Title): Dead Center */
+    #sec-0 { text-align: center; }
+    
+    /* Section 1 (Hello): Dead Center */
+    #sec-1 { }
+
+    /* Section 2 (Bio): Dead Center */
+    #sec-2 { }
+
+    /* Section 3 (Links): Mobile needs special alignment */
+    #sec-3 { 
+        align-items: flex-start; /* Default left */
+        padding-left: 10vw;
     }
 
     .links-container {
-        width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 15px;
+        display: flex; flex-direction: column; gap: 15px;
     }
+    
     .nav-link {
         font-family: 'Clash Display', sans-serif;
         font-size: clamp(50px, 10vw, 120px);
@@ -46,12 +69,11 @@
     }
     .nav-link:hover { transform: translateX(30px); opacity: 0.8; }
 
-    /* MOBILE LAYOUT ADJUSTMENTS */
+    /* MOBILE TWEAKS */
     @media (max-width: 768px) {
         #sec-3 { 
-            align-items: flex-end; /* Text at bottom */
-            justify-content: flex-start; /* Left align */
-            padding-bottom: 20vh; /* Space from bottom edge */
+            justify-content: center; /* Vertically center the links on mobile too */
+            padding-left: 10%; 
         }
         .nav-link { font-size: 14vw; } 
     }
@@ -66,7 +88,7 @@
     #bio-text { font-size: clamp(16px, 3.5vw, 32px); max-width: 900px; line-height: 1.4; }
 
     .mobile-nav-zone {
-      position: fixed; left: 0; width: 100%; height: 80px;
+      position: fixed; left: 0; width: 100%; height: 100px;
       display: none; align-items: center; justify-content: center;
       z-index: 100; pointer-events: auto; mix-blend-mode: difference;
     }
@@ -75,7 +97,9 @@
     .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
     .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
     .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
+    
     @media (max-width: 768px) { .mobile-nav-zone { display: flex; } }
+    
     .letter { display: inline-block; min-width: 0.6em; text-align: center; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), font-weight 0.4s linear; will-change: font-weight, transform; }
     .bold { font-weight: 700; }
   </style>
@@ -88,11 +112,16 @@
 
   <div id="main-wrapper">
     <div id="stage-container"></div>
-    <div class="content-overlay">
-      <section class="section" id="sec-0"><div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div></section>
-      <section class="section" id="sec-1"><div id="hello-container"><span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span></div></section>
-      <section class="section" id="sec-2"><div id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</div></section>
-      
+    <div class="content-overlay" id="content-slider">
+      <section class="section" id="sec-0">
+        <div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div>
+      </section>
+      <section class="section" id="sec-1">
+        <div id="hello-container"><span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span></div>
+      </section>
+      <section class="section" id="sec-2">
+        <div id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</div>
+      </section>
       <section class="section" id="sec-3">
         <div class="links-container" id="nav-links-box">
           <a href="work.html" class="nav-link" id="link-work">work</a>
@@ -108,13 +137,22 @@
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
     let currentSection = 0;
-    const isMobileCheck = () => window.innerWidth < 768; // Strict width check
-    let isMobile = isMobileCheck();
-
+    const slider = document.getElementById('content-slider');
+    
+    // UPDATED NAV LOGIC: Using Transforms instead of ScrollTo
+    // This is smoother on mobile and guarantees alignment with 100dvh
     window.handleNav = (dir) => {
       currentSection = Math.max(0, Math.min(3, currentSection + dir));
-      window.scrollTo({ top: currentSection * window.innerHeight, behavior: 'smooth' });
+      // Translate Y by 100vh * index
+      slider.style.transform = `translateY(-${currentSection * 100}dvh)`;
+      
+      // Update opacity of chevrons
+      document.getElementById('nav-up').style.opacity = currentSection === 0 ? "0.1" : "1";
+      document.getElementById('nav-down').style.opacity = currentSection === 3 ? "0.1" : "1";
     };
+
+    const isMobileCheck = () => window.innerWidth < 768;
+    let isMobile = isMobileCheck();
 
     const titleEl = document.getElementById('title');
     const helloEl = document.getElementById('sec-1');
@@ -143,7 +181,10 @@
     addHover(linkPlay, (v) => targetPlay = v);
     addHover(linkFacil, (v) => targetFacil = v);
 
+    // "Hello" Animation Logic based on currentSection
     let helloInView = false, helloStartTime = 0;
+    
+    // 3D Scene Setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 15);
@@ -185,7 +226,7 @@
         void main() {
           vScroll = uScrollRatio;
           vec3 pos = aInstancePos;
-          pos.y += uScrollY;
+          pos.y += uScrollY; // Move particles based on scroll
 
           float orbitBlend = smoothstep(0.4, 0.55, uScrollRatio) * (1.0 - smoothstep(0.65, 0.75, uScrollRatio));
           float navBlend = smoothstep(0.75, 0.9, uScrollRatio);
@@ -197,18 +238,14 @@
           float orbitX = cos(angle) * (5.0 + aRand * 5.0);
           float orbitY = sin(angle) * (5.0 + aRand * 5.0);
 
-          // RESPONSIVE COORDINATES
-          // Desktop: Right side (X=3.5), Center Y (0.0)
-          // Mobile: Center X (0.0), Top Y (+2.5)
           float deskNavX = 3.5 + aRand * 6.0;
-          float mobNavX = (aRand - 0.5) * 5.0; // Tighter spread for phone width
+          float mobNavX = (aRand - 0.5) * 5.0; 
           float targetNavX = mix(deskNavX, mobNavX, uIsMobile);
-          float targetNavYOffset = mix(0.0, 2.5, uIsMobile); // Reduced from 5.0 to 2.5
+          float targetNavYOffset = mix(0.0, 2.5, uIsMobile);
 
           float curvyOffset = sin(uTime * 3.0 + pos.y * 0.5) * 1.5;
           float flowOffset = mod(uTime * 4.0 + aRand * 10.0, 20.0) - 10.0;
 
-          // Composite
           vec3 finalPos = pos + vec3(driftX, driftY, 0.0);
           finalPos.x = mix(finalPos.x, orbitX, orbitBlend);
           finalPos.y = mix(finalPos.y, orbitY, orbitBlend);
@@ -217,7 +254,6 @@
           baseNavPos.x = mix(baseNavPos.x, targetNavX, navBlend);
           baseNavPos.y += mix(0.0, targetNavYOffset, navBlend);
 
-          // Interactions
           baseNavPos = mix(baseNavPos, vec3(targetNavX, pos.y + (uIsMobile * 2.5), pos.z), uWork * navBlend);
           baseNavPos.x += curvyOffset * uPlay * navBlend;
           baseNavPos.y -= flowOffset * uFacil * navBlend;
@@ -266,7 +302,8 @@
       raycaster.setFromCamera(pointer, camera);
       const intersect = new THREE.Vector3();
       raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
-      const currentScrollY = (window.scrollY / window.innerHeight) * 18.5;
+      // Adjust spawn height based on current section
+      const currentScrollY = currentSection * 18.5; 
       for(let i = 0; i < 3; i++) {
         if(count >= 8000) break;
         aInstancePos[count * 3] = intersect.x + (Math.random() - 0.5) * 0.4;
@@ -290,25 +327,23 @@
       window.addEventListener('mouseup', () => isDrawing = false);
     }
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => { 
-        if(e.target.id === 'sec-1') {
-            if(e.isIntersecting) { helloInView = true; helloStartTime = performance.now(); } 
-            else { helloInView = false; helloLetters.forEach(l => { l.style.textTransform = 'lowercase'; l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; }); }
-        }
-      });
-    }, { threshold: 0.1 });
-    observer.observe(document.getElementById('sec-1'));
-
     function animate(now) {
       requestAnimationFrame(animate);
-      const scrollY = window.scrollY;
-      const scrollRatio = scrollY / (window.innerHeight * 3);
-      const worldScrollY = (scrollY / window.innerHeight) * 18.5;
       
+      // Interpolate Scroll Ratio based on current section (0 to 3)
+      // 0 = 0.0, 3 = 1.0
+      const targetScrollRatio = currentSection / 3.0;
+      // We manually animate this value slightly for smooth uniform transition if needed, 
+      // but let's just pass it directly as the transform handles the visual slide.
+      // However, the shader needs a 0.0 -> 1.0 value to change the particle formations.
+      // We need to damp this value so particles morph smoothly as the div slides.
+      material.uniforms.uScrollRatio.value += (targetScrollRatio - material.uniforms.uScrollRatio.value) * 0.05;
+      
+      // Calculate World Y for particles to rise up
+      const targetWorldScrollY = material.uniforms.uScrollRatio.value * 18.5 * 3; // Approx multiplier
+      material.uniforms.uScrollY.value = targetWorldScrollY;
+
       material.uniforms.uTime.value = now * 0.001;
-      material.uniforms.uScrollRatio.value = scrollRatio;
-      material.uniforms.uScrollY.value = worldScrollY;
 
       currentWork += (targetWork - currentWork) * 0.1;
       currentPlay += (targetPlay - currentPlay) * 0.1;
@@ -317,9 +352,9 @@
       material.uniforms.uPlay.value = currentPlay;
       material.uniforms.uFacil.value = currentFacil;
 
-      const currentIdx = Math.round(scrollY / window.innerHeight);
-      document.getElementById('nav-up').style.opacity = currentIdx === 0 ? "0.1" : "1";
-      document.getElementById('nav-down').style.opacity = currentIdx === 3 ? "0.1" : "1";
+      // Hello Animation Trigger
+      if(currentSection === 1 && !helloInView) { helloInView = true; helloStartTime = performance.now(); }
+      if(currentSection !== 1) { helloInView = false; }
 
       if (helloInView) {
         const elapsed = (now - helloStartTime) * 0.001;
@@ -336,6 +371,9 @@
           letter.style.fontWeight = Math.round(weight);
           letter.style.transform = `translateY(${yOff}px)`;
         });
+      } else {
+         // Reset letters when not in view
+         helloLetters.forEach(l => { l.style.textTransform = 'lowercase'; l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; });
       }
 
       if (triggered) {
@@ -364,6 +402,8 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         isMobile = isMobileCheck();
         material.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
+        // Re-align slider on resize
+        window.handleNav(0);
     };
     window.addEventListener('resize', handleResize);
   </script>

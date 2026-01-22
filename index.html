@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Jishnu Roy Chaudhury — Layout Tuned</title>
+  <title>Jishnu Roy Chaudhury — Mobile Optimized</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
@@ -45,6 +45,16 @@
         cursor: pointer;
     }
     .nav-link:hover { transform: translateX(30px); opacity: 0.8; }
+
+    /* MOBILE LAYOUT OVERRIDES */
+    @media (max-width: 768px) {
+        /* On mobile, push links to the bottom so they don't overlap the art on top */
+        #sec-3 { 
+            align-items: flex-end; 
+            padding-bottom: 25vh; /* Lift slightly from absolute bottom */
+        }
+        .nav-link { font-size: 14vw; } /* Bigger text for thumbs */
+    }
 
     #title, #hello-container, #bio-text {
       text-align: center; font-family: 'Clash Display', sans-serif;
@@ -98,7 +108,9 @@
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
     let currentSection = 0;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth < 768);
+    const isMobileCheck = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth < 768);
+    let isMobile = isMobileCheck();
+
     window.handleNav = (dir) => {
       currentSection = Math.max(0, Math.min(3, currentSection + dir));
       window.scrollTo({ top: currentSection * window.innerHeight, behavior: 'smooth' });
@@ -120,12 +132,17 @@
     const linkPlay = document.getElementById('link-play');
     const linkFacil = document.getElementById('link-facil');
 
-    linkWork.addEventListener('mouseenter', () => targetWork = 1);
-    linkWork.addEventListener('mouseleave', () => targetWork = 0);
-    linkPlay.addEventListener('mouseenter', () => targetPlay = 1);
-    linkPlay.addEventListener('mouseleave', () => targetPlay = 0);
-    linkFacil.addEventListener('mouseenter', () => targetFacil = 1);
-    linkFacil.addEventListener('mouseleave', () => targetFacil = 0);
+    // Add touchstart for mobile "hover" effect
+    const addHover = (el, setVar) => {
+      el.addEventListener('mouseenter', () => setVar(1));
+      el.addEventListener('mouseleave', () => setVar(0));
+      el.addEventListener('touchstart', () => setVar(1), {passive: true});
+      el.addEventListener('touchend', () => setVar(0), {passive: true});
+    };
+
+    addHover(linkWork, (v) => targetWork = v);
+    addHover(linkPlay, (v) => targetPlay = v);
+    addHover(linkFacil, (v) => targetFacil = v);
 
     let helloInView = false, helloStartTime = 0;
     const scene = new THREE.Scene();
@@ -148,7 +165,8 @@
         uColorA: { value: new THREE.Color(0xffffff) },
         uColorB: { value: new THREE.Color(0x00ffff) },
         uScrollRatio: { value: 0.0 }, uScrollY: { value: 0.0 },
-        uWork: { value: 0.0 }, uPlay: { value: 0.0 }, uFacil: { value: 0.0 }
+        uWork: { value: 0.0 }, uPlay: { value: 0.0 }, uFacil: { value: 0.0 },
+        uIsMobile: { value: isMobile ? 1.0 : 0.0 }
       },
       vertexShader: `
         varying vec3 vNormal; varying vec3 vToLight; varying float vScroll;
@@ -156,6 +174,7 @@
         uniform float uTime; uniform float uGrowth; uniform float uTargetScale;
         uniform float uScrollRatio; uniform float uScrollY; uniform vec3 uMouse;
         uniform float uWork; uniform float uPlay; uniform float uFacil;
+        uniform float uIsMobile;
 
         mat4 rotationMatrix(vec3 axis, float angle) {
             axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
@@ -179,23 +198,33 @@
           float orbitX = cos(angle) * (5.0 + aRand * 5.0);
           float orbitY = sin(angle) * (5.0 + aRand * 5.0);
 
-          // CHANGED: navX from 6.0 to 3.5 to bring them closer to left
-          float navX = 3.5 + aRand * 6.0; 
-          
-          vec3 rigidPos = pos; rigidPos.x = navX; 
+          // RESPONSIVE LAYOUT LOGIC
+          // Desktop: X = 3.5 (Right side), Y = 0 (Center)
+          // Mobile:  X = 0 (Center), Y = 5.0 (Top half)
+          float deskNavX = 3.5 + aRand * 6.0;
+          float mobNavX = (aRand - 0.5) * 8.0; 
+          float targetNavX = mix(deskNavX, mobNavX, uIsMobile);
+          float targetNavYOffset = mix(0.0, 5.0, uIsMobile);
+
+          // Interactions
           float curvyOffset = sin(uTime * 3.0 + pos.y * 0.5) * 1.5;
           float flowOffset = mod(uTime * 4.0 + aRand * 10.0, 20.0) - 10.0;
 
+          // Composite
           vec3 finalPos = pos + vec3(driftX, driftY, 0.0);
           finalPos.x = mix(finalPos.x, orbitX, orbitBlend);
           finalPos.y = mix(finalPos.y, orbitY, orbitBlend);
 
           vec3 baseNavPos = finalPos;
-          baseNavPos.x = mix(baseNavPos.x, navX, navBlend);
+          baseNavPos.x = mix(baseNavPos.x, targetNavX, navBlend);
+          baseNavPos.y += mix(0.0, targetNavYOffset, navBlend); // Lift up on mobile
 
-          // Interactions
-          baseNavPos = mix(baseNavPos, vec3(navX, pos.y, pos.z), uWork * navBlend);
+          // Apply Interactions
+          // Work: Snap to grid
+          baseNavPos = mix(baseNavPos, vec3(targetNavX, pos.y + (uIsMobile * 5.0), pos.z), uWork * navBlend);
+          // Play: Curvy
           baseNavPos.x += curvyOffset * uPlay * navBlend;
+          // Facil: Flow
           baseNavPos.y -= flowOffset * uFacil * navBlend;
 
           finalPos = baseNavPos;
@@ -333,7 +362,18 @@
       renderer.render(scene, camera);
     }
     animate(0);
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    
+    // Resize & Orientation Change Logic
+    const handleResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight; 
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // Update Mobile Check on Resize
+        isMobile = isMobileCheck();
+        material.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
+    };
+    window.addEventListener('resize', handleResize);
   </script>
 </body>
 </html>

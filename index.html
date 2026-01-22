@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Jishnu Roy Chaudhury — Mobile Optimized</title>
+  <title>Jishnu Roy Chaudhury — Mobile Final</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
@@ -46,14 +46,14 @@
     }
     .nav-link:hover { transform: translateX(30px); opacity: 0.8; }
 
-    /* MOBILE LAYOUT OVERRIDES */
+    /* MOBILE LAYOUT ADJUSTMENTS */
     @media (max-width: 768px) {
-        /* On mobile, push links to the bottom so they don't overlap the art on top */
         #sec-3 { 
-            align-items: flex-end; 
-            padding-bottom: 25vh; /* Lift slightly from absolute bottom */
+            align-items: flex-end; /* Text at bottom */
+            justify-content: flex-start; /* Left align */
+            padding-bottom: 20vh; /* Space from bottom edge */
         }
-        .nav-link { font-size: 14vw; } /* Bigger text for thumbs */
+        .nav-link { font-size: 14vw; } 
     }
 
     #title, #hello-container, #bio-text {
@@ -108,7 +108,7 @@
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
     let currentSection = 0;
-    const isMobileCheck = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth < 768);
+    const isMobileCheck = () => window.innerWidth < 768; // Strict width check
     let isMobile = isMobileCheck();
 
     window.handleNav = (dir) => {
@@ -132,7 +132,6 @@
     const linkPlay = document.getElementById('link-play');
     const linkFacil = document.getElementById('link-facil');
 
-    // Add touchstart for mobile "hover" effect
     const addHover = (el, setVar) => {
       el.addEventListener('mouseenter', () => setVar(1));
       el.addEventListener('mouseleave', () => setVar(0));
@@ -198,15 +197,14 @@
           float orbitX = cos(angle) * (5.0 + aRand * 5.0);
           float orbitY = sin(angle) * (5.0 + aRand * 5.0);
 
-          // RESPONSIVE LAYOUT LOGIC
-          // Desktop: X = 3.5 (Right side), Y = 0 (Center)
-          // Mobile:  X = 0 (Center), Y = 5.0 (Top half)
+          // RESPONSIVE COORDINATES
+          // Desktop: Right side (X=3.5), Center Y (0.0)
+          // Mobile: Center X (0.0), Top Y (+2.5)
           float deskNavX = 3.5 + aRand * 6.0;
-          float mobNavX = (aRand - 0.5) * 8.0; 
+          float mobNavX = (aRand - 0.5) * 5.0; // Tighter spread for phone width
           float targetNavX = mix(deskNavX, mobNavX, uIsMobile);
-          float targetNavYOffset = mix(0.0, 5.0, uIsMobile);
+          float targetNavYOffset = mix(0.0, 2.5, uIsMobile); // Reduced from 5.0 to 2.5
 
-          // Interactions
           float curvyOffset = sin(uTime * 3.0 + pos.y * 0.5) * 1.5;
           float flowOffset = mod(uTime * 4.0 + aRand * 10.0, 20.0) - 10.0;
 
@@ -217,14 +215,11 @@
 
           vec3 baseNavPos = finalPos;
           baseNavPos.x = mix(baseNavPos.x, targetNavX, navBlend);
-          baseNavPos.y += mix(0.0, targetNavYOffset, navBlend); // Lift up on mobile
+          baseNavPos.y += mix(0.0, targetNavYOffset, navBlend);
 
-          // Apply Interactions
-          // Work: Snap to grid
-          baseNavPos = mix(baseNavPos, vec3(targetNavX, pos.y + (uIsMobile * 5.0), pos.z), uWork * navBlend);
-          // Play: Curvy
+          // Interactions
+          baseNavPos = mix(baseNavPos, vec3(targetNavX, pos.y + (uIsMobile * 2.5), pos.z), uWork * navBlend);
           baseNavPos.x += curvyOffset * uPlay * navBlend;
-          // Facil: Flow
           baseNavPos.y -= flowOffset * uFacil * navBlend;
 
           finalPos = baseNavPos;
@@ -363,13 +358,10 @@
     }
     animate(0);
     
-    // Resize & Orientation Change Logic
     const handleResize = () => {
         camera.aspect = window.innerWidth / window.innerHeight; 
         camera.updateProjectionMatrix(); 
         renderer.setSize(window.innerWidth, window.innerHeight);
-        
-        // Update Mobile Check on Resize
         isMobile = isMobileCheck();
         material.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
     };

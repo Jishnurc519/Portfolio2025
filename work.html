@@ -12,10 +12,11 @@
       background: transparent; 
       color: #fff; 
       font-family: 'Clash Display', sans-serif;
-      overflow-x: hidden;
+      overflow-x: hidden; /* Default for desktop */
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none; /* Disable system callouts on hold */
       transition: color 0.1s linear;
-      -webkit-tap-highlight-color: transparent; /* Remove blue tap box on mobile */
     }
 
     #stage-container {
@@ -28,37 +29,31 @@
     canvas { display: block; }
     #stage-container.inverted-bg { background: #ffffff; }
 
-    /* INVERTED THEME CLASSES */
-    body.inverted-theme { color: #000; }
-    
-    body.inverted-theme .project-item {
-      border-top: 1px solid rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.0);
+    /* --- CHEVRON NAVIGATION UI --- */
+    .mobile-nav-zone {
+      position: fixed; left: 0; width: 100%; height: 80px;
+      display: none; align-items: center; justify-content: center;
+      z-index: 100; pointer-events: auto; mix-blend-mode: difference;
+      cursor: pointer;
     }
-    
+    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
+    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent); }
+    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
+    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
+    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
+
+    /* --- THEME CLASSES --- */
+    body.inverted-theme { color: #000; }
+    body.inverted-theme .project-item { border-top: 1px solid rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.0); }
     body.inverted-theme .project-tags { color: #b300b3; }
     body.inverted-theme .back-btn { color: #000; }
-
-    /* Normal Hover (Desktop) / Active (Mobile) */
-    .project-item:active, .project-item:hover {
-      background: #ffffff;
-      color: #000;
-      border-top: 1px solid #ffffff;
-    }
+    
+    /* Hover States */
+    .project-item:active, .project-item:hover { background: #ffffff; color: #000; border-top: 1px solid #ffffff; }
     .project-item:active .project-tags, .project-item:hover .project-tags { color: #ff00ff; }
-
-    /* Inverted Hover (Desktop) / Active (Mobile) */
-    body.inverted-theme .project-item:active, body.inverted-theme .project-item:hover {
-      background: #000000;
-      color: #fff;
-      border-top: 1px solid #000000;
-    }
+    body.inverted-theme .project-item:active, body.inverted-theme .project-item:hover { background: #000000; color: #fff; border-top: 1px solid #000000; }
     body.inverted-theme .project-item:active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #00ffff; }
-
-    /* Inner Text Colors on Interaction */
-    .project-item:hover .project-year, .project-item:active .project-year,
-    .project-item:hover .project-title, .project-item:active .project-title,
-    .project-item:hover .project-desc, .project-item:active .project-desc { color: inherit; }
+    .project-item:hover .project-year, .project-item:active .project-year, .project-item:hover .project-title, .project-item:active .project-title, .project-item:hover .project-desc, .project-item:active .project-desc { color: inherit; }
 
     #main-wrapper {
       position: relative;
@@ -69,84 +64,71 @@
       pointer-events: none; 
     }
 
-    h1 {
-      font-size: clamp(40px, 8vw, 100px);
-      font-weight: 700;
-      margin-bottom: 5px;
-      line-height: 0.9;
-    }
-    
-    .subtitle {
-      font-size: clamp(16px, 2vw, 24px);
-      font-weight: 400;
-      opacity: 0.8;
-      margin-bottom: 80px;
-      display: block;
-    }
+    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin-bottom: 5px; line-height: 0.9; }
+    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-bottom: 80px; display: block; }
 
     .project-list {
-      display: flex;
-      flex-direction: column;
-      gap: 60px;
-      pointer-events: auto; 
-      padding-bottom: 100px; /* Space for scrolling */
+      display: flex; flex-direction: column; gap: 60px;
+      pointer-events: auto; padding-bottom: 150px; 
     }
 
     .project-item {
       border-top: 1px solid rgba(255, 255, 255, 0.4);
-      padding: 20px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 20px;
-      background: rgba(0,0,0,0.0); 
-      border-radius: 8px;
+      padding: 20px; transition: all 0.3s ease;
+      cursor: pointer; display: grid; grid-template-columns: 1fr 2fr; gap: 20px;
+      background: rgba(0,0,0,0.0); border-radius: 8px;
     }
 
     .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; transition: color 0.15s ease; }
     .project-details { display: flex; flex-direction: column; gap: 10px; }
     .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; transition: color 0.15s ease; }
-    
-    .project-tags { 
-      font-size: clamp(12px, 1.2vw, 16px); 
-      font-weight: 400; 
-      opacity: 0.8; 
-      text-transform: uppercase; 
-      letter-spacing: 0.05em; 
-      color: #00ffff; 
-      transition: color 0.1s linear;
-    }
-    
+    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff; transition: color 0.1s linear; }
     .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; transition: color 0.15s ease; }
 
     .back-btn {
       position: fixed; bottom: 40px; left: 5vw;
-      font-size: 18px; text-decoration: none; 
-      color: white; font-weight: 600; 
-      z-index: 100; pointer-events: auto;
-      transition: color 0.1s linear;
+      font-size: 18px; text-decoration: none; color: white; font-weight: 600; 
+      z-index: 100; pointer-events: auto; transition: color 0.1s linear;
     }
 
+    /* MOBILE SPECIFIC OVERRIDES */
     @media (max-width: 768px) {
-      .project-item { grid-template-columns: 1fr; gap: 5px; }
+      /* Lock scroll on body */
+      html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; }
+      /* Enable Nav Zones */
+      .mobile-nav-zone { display: flex; }
+      /* Adjust Layout */
+      .project-item { grid-template-columns: 1fr; gap: 5px; margin-bottom: 20px; }
       .project-year { margin-bottom: 5px; }
-      .project-list { gap: 40px; }
+      .project-list { gap: 80vh; /* Push projects far apart so they act like "slides" */ padding-bottom: 50vh; }
+      
+      /* Make wrapper scrollable via JS only */
+      #main-wrapper { 
+        height: 100%; 
+        overflow-y: hidden; /* We will scroll this container specifically */
+        padding-top: 15vh;
+      }
     }
   </style>
   <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
 
+  <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up"></div></div>
+  <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down"></div></div>
+
   <div id="stage-container"></div>
-  <a href="index.html" class="back-btn">← Back</a>
+  
+  <a href="index.html" class="back-btn" onclick="return checkInteraction(event)">← Back</a>
 
   <div id="main-wrapper">
-    <h1>selected<br>works</h1>
-    <span class="subtitle">Interactive Installations & Creative Technology</span>
+    <div id="header-section">
+      <h1>selected<br>works</h1>
+      <span class="subtitle">Interactive Installations & Creative Technology</span>
+    </div>
 
     <div class="project-list">
-      <div class="project-item">
+      <div class="project-item" onclick="handleProjectClick(event, 'Frequencies Listening Room')">
         <span class="project-year">2026</span>
         <div class="project-details">
           <h2 class="project-title">Frequencies Listening Room</h2>
@@ -154,7 +136,7 @@
           <p class="project-desc">A comprehensive audio-visual installation featuring immersive projection mapping and DMX lighting synchronization.</p>
         </div>
       </div>
-      <div class="project-item">
+      <div class="project-item" onclick="handleProjectClick(event, 'Particle Lenia System')">
         <span class="project-year">2026</span>
         <div class="project-details">
           <h2 class="project-title">Particle Lenia System</h2>
@@ -162,7 +144,7 @@
           <p class="project-desc">Simulates thousands of particles exhibiting organic, life-like behaviors such as "Orbs" and "Swimmers".</p>
         </div>
       </div>
-      <div class="project-item">
+      <div class="project-item" onclick="handleProjectClick(event, 'The Compass Point')">
         <span class="project-year">2025</span>
         <div class="project-details">
           <h2 class="project-title">The Compass Point</h2>
@@ -170,7 +152,7 @@
           <p class="project-desc">Concept design for an interactive information desk acting as a hub for orientation.</p>
         </div>
       </div>
-      <div class="project-item">
+      <div class="project-item" onclick="handleProjectClick(event, 'Tuya Smart Home Integration')">
         <span class="project-year">2025</span>
         <div class="project-details">
           <h2 class="project-title">Tuya Smart Home Integration</h2>
@@ -185,6 +167,56 @@
     import * as THREE from 'three';
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
+    // --- SCROLL NAVIGATION LOGIC ---
+    let currentIndex = 0;
+    const projectItems = document.querySelectorAll('.project-item');
+    // Total targets: Header (0) + Projects (1..N)
+    const totalTargets = 1 + projectItems.length; 
+    const wrapper = document.getElementById('main-wrapper');
+    const isMobile = window.innerWidth < 768;
+
+    window.handleNav = (dir) => {
+        if (!isMobile) return; // Only for mobile
+        currentIndex = Math.max(0, Math.min(totalTargets - 1, currentIndex + dir));
+        
+        let targetY = 0;
+        if (currentIndex === 0) {
+            targetY = 0;
+        } else {
+            // Get offset of specific project item relative to wrapper
+            const targetEl = projectItems[currentIndex - 1];
+            // Center logic: Element Top - some padding
+            targetY = targetEl.offsetTop - (window.innerHeight * 0.15); 
+        }
+        
+        // Manual Scroll of the Wrapper
+        // We use window.scrollTo because wrapper allows overflow on desktop, 
+        // but on mobile body is fixed so we might need to scroll the element or window logic.
+        // Given CSS `html, body { overflow: hidden }` on mobile, we must translate the wrapper or scroll a container.
+        // Let's use transform for smoothest performance on mobile "locked" scroll.
+        
+        wrapper.style.transform = `translateY(${-targetY}px)`;
+        wrapper.style.transition = "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
+    };
+
+    // --- INTERACTION GUARD LOGIC ---
+    // Prevent accidental clicks if user was holding down to charge
+    window.checkInteraction = (e) => {
+        if (chargeTime > 200) { // Threshold: 200ms implies intention to charge
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        return true;
+    }
+
+    window.handleProjectClick = (e, title) => {
+        if (!checkInteraction(e)) return;
+        // Proceed with navigation (if these were real links)
+        console.log("Navigating to: " + title);
+    }
+
+    // --- THREE.JS SETUP ---
     const stage = document.getElementById('stage-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -208,15 +240,10 @@
         uColorB: { value: new THREE.Color(0xff00ff) }  
       },
       vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vToLight;
-        attribute vec3 aInstancePos;
-        attribute float aRand;
-        uniform float uTime;
-        uniform vec3 uMouse;
-        uniform float uClickStrength;
-        uniform float uCharge;
-        uniform float uGrowth;
+        varying vec3 vNormal; varying vec3 vToLight;
+        attribute vec3 aInstancePos; attribute float aRand;
+        uniform float uTime; uniform vec3 uMouse;
+        uniform float uClickStrength; uniform float uCharge; uniform float uGrowth;
 
         mat4 rotationMatrix(vec3 axis, float angle) {
             axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
@@ -228,7 +255,6 @@
 
         void main() {
           vec3 pos = aInstancePos;
-          
           float driftSpeed = 1.0 - (uCharge * 0.8);
           float driftX = sin(uTime * 0.3 + aRand * 10.0) * 0.5 * driftSpeed;
           float driftY = cos(uTime * 0.2 + aRand * 8.0) * 0.5 * driftSpeed;
@@ -239,10 +265,7 @@
 
           float dist = distance(pos.xy, uMouse.xy);
           float baseRadius = 5.0; float baseInfluence = smoothstep(baseRadius, 0.0, dist) * 1.5;
-          
-          // Huge Radius for full-screen pull (especially mobile)
-          float clickRadius = 60.0; 
-          float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
+          float clickRadius = 60.0; float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
 
           float totalForce = mix(baseInfluence, clickInfluence, uClickStrength);
           totalForce += uCharge * 2.0; 
@@ -290,13 +313,7 @@
     const aInstancePos = new Float32Array(count * 3);
     const aRand = new Float32Array(count);
 
-    // --- RESPONSIVE SPAWNING LOGIC ---
-    // Detect mobile by width (768px is standard tablet/mobile breakpoint)
-    const isMobile = window.innerWidth < 768;
-
-    // Define Spread Dimensions
-    // Desktop: Wide Horizontal Spread (70)
-    // Mobile: Narrow Horizontal (20), Tall Vertical (70)
+    // Responsive Spread
     const spreadX = isMobile ? 20 : 70;
     const spreadY = isMobile ? 70 : 50;
 
@@ -320,8 +337,13 @@
     const startHold = () => { isHolding = true; };
     const stopHold = () => { isHolding = false; };
 
+    // Prevent default scroll on mobile to allow "hold to charge" without page moving
+    window.addEventListener('touchmove', (e) => { 
+        if(isMobile) e.preventDefault(); 
+    }, {passive: false});
+
     window.addEventListener('mousedown', startHold);
-    window.addEventListener('touchstart', startHold, {passive: true}); // Passive allows scrolling
+    window.addEventListener('touchstart', startHold, {passive: true});
     window.addEventListener('mouseup', stopHold);
     window.addEventListener('touchend', stopHold);
     window.addEventListener('mouseleave', stopHold);

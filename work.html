@@ -14,6 +14,8 @@
       font-family: 'Clash Display', sans-serif;
       overflow-x: hidden;
       user-select: none;
+      transition: color 0.1s linear;
+      -webkit-tap-highlight-color: transparent; /* Remove blue tap box on mobile */
     }
 
     #stage-container {
@@ -26,13 +28,44 @@
     canvas { display: block; }
     #stage-container.inverted-bg { background: #ffffff; }
 
+    /* INVERTED THEME CLASSES */
+    body.inverted-theme { color: #000; }
+    
+    body.inverted-theme .project-item {
+      border-top: 1px solid rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.0);
+    }
+    
+    body.inverted-theme .project-tags { color: #b300b3; }
+    body.inverted-theme .back-btn { color: #000; }
+
+    /* Normal Hover (Desktop) / Active (Mobile) */
+    .project-item:active, .project-item:hover {
+      background: #ffffff;
+      color: #000;
+      border-top: 1px solid #ffffff;
+    }
+    .project-item:active .project-tags, .project-item:hover .project-tags { color: #ff00ff; }
+
+    /* Inverted Hover (Desktop) / Active (Mobile) */
+    body.inverted-theme .project-item:active, body.inverted-theme .project-item:hover {
+      background: #000000;
+      color: #fff;
+      border-top: 1px solid #000000;
+    }
+    body.inverted-theme .project-item:active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #00ffff; }
+
+    /* Inner Text Colors on Interaction */
+    .project-item:hover .project-year, .project-item:active .project-year,
+    .project-item:hover .project-title, .project-item:active .project-title,
+    .project-item:hover .project-desc, .project-item:active .project-desc { color: inherit; }
+
     #main-wrapper {
       position: relative;
       padding: 10vw 5vw;
       max-width: 1200px;
       margin: 0 auto;
       z-index: 10;
-      mix-blend-mode: difference; 
       pointer-events: none; 
     }
 
@@ -56,41 +89,49 @@
       flex-direction: column;
       gap: 60px;
       pointer-events: auto; 
+      padding-bottom: 100px; /* Space for scrolling */
     }
 
     .project-item {
       border-top: 1px solid rgba(255, 255, 255, 0.4);
-      padding-top: 20px;
+      padding: 20px;
       transition: all 0.3s ease;
       cursor: pointer;
       display: grid;
       grid-template-columns: 1fr 2fr;
       gap: 20px;
       background: rgba(0,0,0,0.0); 
+      border-radius: 8px;
     }
 
-    .project-item:hover {
-      opacity: 1;
-      transform: translateX(10px);
-      background: rgba(255,255,255,0.1); 
-    }
-
-    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
+    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; transition: color 0.15s ease; }
     .project-details { display: flex; flex-direction: column; gap: 10px; }
-    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
-    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff; }
-    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
+    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; transition: color 0.15s ease; }
+    
+    .project-tags { 
+      font-size: clamp(12px, 1.2vw, 16px); 
+      font-weight: 400; 
+      opacity: 0.8; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      color: #00ffff; 
+      transition: color 0.1s linear;
+    }
+    
+    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; transition: color 0.15s ease; }
 
     .back-btn {
       position: fixed; bottom: 40px; left: 5vw;
-      font-size: 18px; text-decoration: none; color: white;
-      font-weight: 600; mix-blend-mode: difference;
+      font-size: 18px; text-decoration: none; 
+      color: white; font-weight: 600; 
       z-index: 100; pointer-events: auto;
+      transition: color 0.1s linear;
     }
 
     @media (max-width: 768px) {
       .project-item { grid-template-columns: 1fr; gap: 5px; }
       .project-year { margin-bottom: 5px; }
+      .project-list { gap: 40px; }
     }
   </style>
   <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
@@ -163,8 +204,8 @@
         uCharge: { value: 0.0 }, 
         uGrowth: { value: 0.0 },
         uInvert: { value: 0.0 },
-        uColorA: { value: new THREE.Color(0x888888) },
-        uColorB: { value: new THREE.Color(0x00ffff) }
+        uColorA: { value: new THREE.Color(0x00ffff) }, 
+        uColorB: { value: new THREE.Color(0xff00ff) }  
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -198,7 +239,10 @@
 
           float dist = distance(pos.xy, uMouse.xy);
           float baseRadius = 5.0; float baseInfluence = smoothstep(baseRadius, 0.0, dist) * 1.5;
-          float clickRadius = 25.0; float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
+          
+          // Huge Radius for full-screen pull (especially mobile)
+          float clickRadius = 60.0; 
+          float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
 
           float totalForce = mix(baseInfluence, clickInfluence, uClickStrength);
           totalForce += uCharge * 2.0; 
@@ -226,10 +270,15 @@
           vec3 normal = normalize(vNormal); vec3 lightDir = normalize(vToLight);
           float diff = max(dot(normal, lightDir), 0.0);
           float fresnel = pow(1.0 - dot(normal, vec3(0,0,1)), 3.0);
-          vec3 baseColor = mix(uColorA, uColorB, diff + fresnel);
-          baseColor = mix(baseColor, vec3(1.0), uCharge * 0.8);
-          vec3 invertedColor = vec3(0.0);
-          gl_FragColor = vec4(mix(baseColor, invertedColor, uInvert), 1.0);
+          
+          vec3 cyanState = vec3(0.05) + uColorA * diff + fresnel * 0.25;
+          cyanState = mix(cyanState, vec3(1.0), uCharge * 0.8);
+
+          vec3 magentaState = vec3(0.0) + uColorB * diff + fresnel * 0.4;
+          magentaState = mix(magentaState, vec3(1.0), uCharge * 0.8);
+
+          vec3 finalColor = mix(cyanState, magentaState, uInvert);
+          gl_FragColor = vec4(finalColor, 1.0);
         }
       `
     });
@@ -240,10 +289,21 @@
 
     const aInstancePos = new Float32Array(count * 3);
     const aRand = new Float32Array(count);
+
+    // --- RESPONSIVE SPAWNING LOGIC ---
+    // Detect mobile by width (768px is standard tablet/mobile breakpoint)
+    const isMobile = window.innerWidth < 768;
+
+    // Define Spread Dimensions
+    // Desktop: Wide Horizontal Spread (70)
+    // Mobile: Narrow Horizontal (20), Tall Vertical (70)
+    const spreadX = isMobile ? 20 : 70;
+    const spreadY = isMobile ? 70 : 50;
+
     for(let i = 0; i < count; i++) {
-        aInstancePos[i * 3] = (Math.random() - 0.5) * 35;
-        aInstancePos[i * 3 + 1] = (Math.random() - 0.5) * 25;
-        aInstancePos[i * 3 + 2] = -6 + (Math.random() - 0.5) * 4; 
+        aInstancePos[i * 3] = (Math.random() - 0.5) * spreadX; 
+        aInstancePos[i * 3 + 1] = (Math.random() - 0.5) * spreadY; 
+        aInstancePos[i * 3 + 2] = -20 + (Math.random() * 25); 
         aRand[i] = Math.random();
     }
     mesh.geometry.setAttribute('aInstancePos', new THREE.InstancedBufferAttribute(aInstancePos, 3));
@@ -254,14 +314,14 @@
     
     let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 4000;
     let isExploding = false; let explosionProgress = 0;
-    let currentClickStrength = 0; // The smoothed value
+    let currentClickStrength = 0; 
     let invertCycle = false;
 
     const startHold = () => { isHolding = true; };
     const stopHold = () => { isHolding = false; };
 
     window.addEventListener('mousedown', startHold);
-    window.addEventListener('touchstart', startHold, {passive: true});
+    window.addEventListener('touchstart', startHold, {passive: true}); // Passive allows scrolling
     window.addEventListener('mouseup', stopHold);
     window.addEventListener('touchend', stopHold);
     window.addEventListener('mouseleave', stopHold);
@@ -285,18 +345,13 @@
       const dt = time - lastTime; lastTime = time;
       material.uniforms.uTime.value = time * 0.001;
 
-      // 1. SMOOTH ATTRACTION LOGIC
-      // Target is 1.0 if holding, 0.0 if not.
-      // We lerp currentClickStrength towards the target.
       const targetStrength = isHolding && !isExploding ? 1.0 : 0.0;
-      const lerpSpeed = 0.05; // 5% per frame = nice smooth ease
-      currentClickStrength += (targetStrength - currentClickStrength) * lerpSpeed;
+      currentClickStrength += (targetStrength - currentClickStrength) * 0.05;
       
-      // 2. CHARGE TIME LOGIC (Separate from physics strength)
       if (isHolding && !isExploding) {
         chargeTime = Math.min(chargeTime + dt, CHARGE_LIMIT);
       } else if (!isExploding) {
-        chargeTime = Math.max(0, chargeTime - dt * 3.0); // Fast decay
+        chargeTime = Math.max(0, chargeTime - dt * 3.0);
       }
 
       if (chargeTime >= CHARGE_LIMIT && !isExploding) {
@@ -306,18 +361,23 @@
       material.uniforms.uCharge.value = chargeTime / CHARGE_LIMIT;
       material.uniforms.uClickStrength.value = currentClickStrength;
 
-      // 3. EXPLOSION LOGIC
       if (isExploding) {
-        explosionProgress += dt * 0.002; 
+        explosionProgress += dt * 0.004; 
         material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
 
-        if (explosionProgress > 0.1 && !invertCycle) {
+        if (explosionProgress > 0.4 && !invertCycle) {
           invertCycle = true;
           const bg = document.getElementById('stage-container');
+          const body = document.body;
+
           if (bg.classList.contains('inverted-bg')) {
-             bg.classList.remove('inverted-bg'); material.uniforms.uInvert.value = 0.0;
+             bg.classList.remove('inverted-bg'); 
+             body.classList.remove('inverted-theme'); 
+             material.uniforms.uInvert.value = 0.0;
           } else {
-             bg.classList.add('inverted-bg'); material.uniforms.uInvert.value = 1.0;
+             bg.classList.add('inverted-bg'); 
+             body.classList.add('inverted-theme'); 
+             material.uniforms.uInvert.value = 1.0;
           }
         }
 

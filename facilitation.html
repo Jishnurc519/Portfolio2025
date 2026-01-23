@@ -7,18 +7,19 @@
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
   <style>
-    /* GLOBAL MOBILE LOCKS */
+    /* GLOBAL LOCKS */
     * {
-        -webkit-tap-highlight-color: transparent; /* Removes blue tap box on Android/iOS */
-        -webkit-touch-callout: none; /* Prevents long-press context menu */
-        -webkit-user-select: none; /* Safari text selection disable */
-        user-select: none; /* Standard text selection disable */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none; /* Disables browser handling of gestures */
     }
 
     html, body { 
       margin: 0; padding: 0; background: transparent; color: #fff; 
       font-family: 'Clash Display', sans-serif;
-      overflow-x: hidden; 
+      overflow: hidden; /* Locks native scrollbars on both Desktop & Mobile */
       transition: color 0.1s linear; height: 100dvh; width: 100vw; position: fixed;
     }
     #stage-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; background: #000; transition: background 0.05s linear; }
@@ -73,14 +74,11 @@
     /* VISIBILITY LOGIC FOR BRIGHT / DARK ITEMS */
     /* ========================================= */
     
-    /* Default State (Black BG): Show DARK items, Hide BRIGHT items */
     .project-item.bright-only { display: none; }
     .project-item.dark-only { display: grid; }
 
-    /* Inverted State (White BG): Show BRIGHT items, Hide DARK items */
     body.inverted-theme .project-item.bright-only { display: grid; }
     body.inverted-theme .project-item.dark-only { display: none; }
-
 
     @media (max-width: 768px) { .mobile-nav-zone { display: flex; } .project-item { grid-template-columns: 1fr; gap: 5px; } }
   </style>
@@ -170,7 +168,6 @@
     const wrapper = document.getElementById('main-wrapper');
     const isMobile = window.innerWidth < 768;
     
-    // Updates targets based on visibility (since items appear/disappear)
     function updateTargets() {
         const visibleItems = Array.from(document.querySelectorAll('.project-item')).filter(el => window.getComputedStyle(el).display !== 'none');
         targets = [document.getElementById('header-section'), ...visibleItems];
@@ -187,9 +184,10 @@
             down.style.opacity = currentIndex >= targets.length-1 ? '0.2' : '1'; 
         }
     }
+    
     window.handleNav = (dir) => {
-        if (!isMobile) return;
-        updateTargets(); // Refresh in case state changed
+        // Works on both desktop (via wheel) and mobile (via chevrons)
+        updateTargets(); 
         const next = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
         if (next === currentIndex && dir !== 0) return;
         currentIndex = next; updateChevronVisibility();
@@ -203,6 +201,31 @@
             if (currentIndex > 0) targets[currentIndex].classList.add('active');
         }
     };
+
+    // --- DESKTOP WHEEL SCROLL ---
+    let lastWheel = 0;
+    window.addEventListener('wheel', (e) => {
+        const now = performance.now();
+        if (now - lastWheel < 500) return; // Debounce to prevent rapid skipping
+        if (Math.abs(e.deltaY) < 10) return;
+        const dir = e.deltaY > 0 ? 1 : -1;
+        handleNav(dir);
+        lastWheel = now;
+    }, {passive: true});
+
+    window.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowDown') handleNav(1);
+        if(e.key === 'ArrowUp') handleNav(-1);
+    });
+
+    // --- MOBILE SCROLL LOCK ---
+    // This explicitly prevents touchmove (scrolling/bouncing) on the document, 
+    // effectively locking the page position on mobile.
+    document.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+
     window.checkInteraction = (e) => { if (chargeTime > 200) { e.preventDefault(); e.stopPropagation(); return false; } return true; }
     window.handleProjectClick = (e) => { if (checkInteraction(e)) console.log("Project clicked"); }
 
@@ -283,6 +306,9 @@
         raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), 0), mousePos);
     };
     window.addEventListener('mousemove', e=>updateMouse(e.clientX, e.clientY));
+    
+    // Note: We need this touchmove listener for particles, even though we prevent default on document.
+    // The preventDefault on document stops the SCROLL, but the event still propagates to JS for this function.
     window.addEventListener('touchmove', e=>updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
 
     function animate(time) {

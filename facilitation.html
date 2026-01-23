@@ -7,10 +7,18 @@
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
   <style>
+    /* GLOBAL MOBILE LOCKS */
+    * {
+        -webkit-tap-highlight-color: transparent; /* Removes blue tap box on Android/iOS */
+        -webkit-touch-callout: none; /* Prevents long-press context menu */
+        -webkit-user-select: none; /* Safari text selection disable */
+        user-select: none; /* Standard text selection disable */
+    }
+
     html, body { 
       margin: 0; padding: 0; background: transparent; color: #fff; 
       font-family: 'Clash Display', sans-serif;
-      overflow-x: hidden; user-select: none; -webkit-touch-callout: none;
+      overflow-x: hidden; 
       transition: color 0.1s linear; height: 100dvh; width: 100vw; position: fixed;
     }
     #stage-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; background: #000; transition: background 0.05s linear; }

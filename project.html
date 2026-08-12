@@ -9,7 +9,7 @@
   <style>
     html, body {
       margin: 0; padding: 0;
-      background: #000; color: #fff;
+      background: #0a0a0a; color: #f4f1ec;
       font-family: 'Clash Display', sans-serif;
       min-height: 100vh;
     }
@@ -28,21 +28,23 @@
     #header-section { margin-bottom: 8vh; }
     .category-tag {
       font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8;
-      text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff;
+      text-transform: uppercase; letter-spacing: 0.05em; color: #6fd9c8;
     }
     h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line-height: 0.95; }
 
+    /* Masonry via CSS columns: each image/video keeps its natural aspect
+       ratio, so portrait photos never get force-cropped into a landscape box. */
     .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
+      columns: 3 320px;
+      column-gap: 16px;
     }
     .gallery img, .gallery video {
-      width: 100%; height: 100%;
-      display: block; object-fit: cover;
+      width: 100%;
+      display: block;
       border-radius: 6px;
       background: rgba(255,255,255,0.05);
-      aspect-ratio: 4 / 3;
+      margin-bottom: 16px;
+      break-inside: avoid;
     }
 
     .empty-state {
@@ -51,7 +53,8 @@
 
     @media (max-width: 768px) {
       #main-wrapper { padding: 16vh 6vw 10vh; }
-      .gallery { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .gallery { columns: 2 160px; column-gap: 10px; }
+      .gallery img, .gallery video { margin-bottom: 10px; }
     }
   </style>
 </head>

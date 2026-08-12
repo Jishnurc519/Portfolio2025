@@ -79,7 +79,17 @@
 
     h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
     .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
-    .hint { font-size: clamp(11px, 1vw, 13px); font-weight: 400; opacity: 0.4; margin-top: 14px; display: block; letter-spacing: 0.03em; }
+    .hint {
+      font-size: clamp(11px, 1vw, 13px); font-weight: 400; margin-top: 14px;
+      display: block; letter-spacing: 0.03em;
+      opacity: 0; animation: hint-flash 4.5s ease-in-out forwards;
+    }
+    @keyframes hint-flash {
+      0% { opacity: 0; }
+      12% { opacity: 0.4; }
+      70% { opacity: 0.4; }
+      100% { opacity: 0; }
+    }
 
     .project-list { display: flex; flex-direction: column; gap: 20vh; pointer-events: auto; }
 

@@ -7,166 +7,120 @@
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
   <style>
-    html, body { 
-      margin: 0; padding: 0; background: #000; color: #fff; 
-      overflow: hidden; /* Standard lock */
-      height: 100dvh; width: 100vw;
+    html, body {
+      margin: 0; padding: 0; background: #0a0a0a; color: #f4f1ec;
+      min-height: 100dvh; width: 100vw;
+      font-family: 'Clash Display', sans-serif;
+      transition: background 0.05s linear, color 0.1s linear;
     }
-    
-    /* Only fix position on mobile to prevent bounce */
-    @media (max-width: 768px) {
-        body { position: fixed; }
-    }
-    
+    body.inverted-theme { background: #f4f1ec; color: #141210; }
+
     #stage-container {
       position: fixed; top: 0; left: 0;
       width: 100vw; height: 100dvh; z-index: 1;
     }
-    .inverted-ui { filter: invert(1); }
     canvas { display: block; }
-    
-    .content-overlay { 
-      position: relative; z-index: 10; pointer-events: none; 
-      width: 100%;
-      transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1.0);
-    }
-    
-    .section {
-      height: 100dvh; 
-      width: 100vw;
-      display: flex; 
-      flex-direction: column;
-      align-items: center; 
-      justify-content: center; 
-      mix-blend-mode: difference; 
-      padding: 20px; 
-      box-sizing: border-box;
+
+    .content-overlay {
+      position: relative; z-index: 10;
+      min-height: 100dvh; width: 100%; box-sizing: border-box;
+      display: flex; flex-direction: column;
+      padding: 30px 5vw;
+      padding-top: max(30px, env(safe-area-inset-top));
+      padding-bottom: max(30px, env(safe-area-inset-bottom));
     }
 
-    #sec-0 { text-align: center; }
-    #sec-3 { align-items: flex-start; padding-left: 10vw; }
+    .site-nav {
+      display: flex; justify-content: center; gap: clamp(20px, 4vw, 48px);
+      list-style: none; margin: 0; padding: 0;
+      pointer-events: auto;
+    }
 
-    .links-container { display: flex; flex-direction: column; gap: 15px; }
-    
     .nav-link {
         font-family: 'Clash Display', sans-serif;
-        font-size: clamp(50px, 10vw, 120px);
-        color: white; text-decoration: none; pointer-events: auto;
-        line-height: 0.9; transition: transform 0.3s ease, opacity 0.3s ease;
+        font-size: clamp(15px, 1.6vw, 18px);
+        font-weight: 500; text-transform: lowercase;
+        color: inherit; text-decoration: none; pointer-events: auto;
+        transition: transform 0.3s ease, opacity 0.3s ease;
         cursor: pointer;
     }
-    .nav-link:hover { transform: translateX(30px); opacity: 0.8; }
+    .nav-link:hover { transform: translateY(-4px); opacity: 0.7; }
+
+    #hero {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      gap: clamp(20px, 3vw, 36px);
+      max-width: 720px; margin: 0 auto; padding: 40px 0;
+      pointer-events: auto;
+    }
+
+    #title, #bio-text {
+      font-family: 'Clash Display', sans-serif;
+      line-height: 1.15; color: inherit; user-select: none;
+      text-shadow: 0 0 15px rgba(0,0,0,0.5);
+      transition: text-shadow 0.1s linear;
+    }
+    body.inverted-theme #title, body.inverted-theme #bio-text { text-shadow: 0 0 15px rgba(255,255,255,0.5); }
+    #title { font-size: clamp(32px, 6.5vw, 76px); line-height: 1.05; }
+    #bio-text { font-size: clamp(16px, 2vw, 22px); max-width: 620px; line-height: 1.5; opacity: 0.85; font-weight: 300; }
+
+    .bold { font-weight: 700; }
+
+    .social-links {
+      position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 300; display: flex; gap: 16px; pointer-events: auto;
+    }
+    .social-links a { display: block; transition: opacity 0.2s ease, transform 0.2s ease; }
+    .social-links a:hover { opacity: 0.7; transform: translateY(-3px); }
+    .social-links img { display: block; width: 22px; height: 22px; }
 
     @media (max-width: 768px) {
-        #sec-3 { justify-content: center; padding-left: 10%; }
-        .nav-link { font-size: 14vw; } 
+      .content-overlay { padding-left: 6vw; padding-right: 6vw; }
+      #hero { padding: 24px 0; gap: 18px; }
+      .social-links { gap: 14px; }
+      .social-links img { width: 20px; height: 20px; }
     }
-
-    #title, #hello-container, #bio-text {
-      text-align: center; font-family: 'Clash Display', sans-serif;
-      line-height: 1.1; color: white; user-select: none;
-      text-shadow: 0 0 15px rgba(0,0,0,1);
-    }
-    #title { font-size: clamp(28px, 6vw, 72px); }
-    #hello-container { display: flex; gap: 0.1em; font-size: clamp(40px, 12vw, 160px); }
-    #bio-text { font-size: clamp(16px, 3.5vw, 32px); max-width: 900px; line-height: 1.4; }
-
-    .mobile-nav-zone {
-      position: fixed; left: 0; width: 100%; height: 100px;
-      display: none; align-items: center; justify-content: center;
-      z-index: 100; pointer-events: auto; mix-blend-mode: difference;
-      cursor: pointer;
-    }
-    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
-    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent); }
-    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
-    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
-    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
-    
-    @media (max-width: 768px) { .mobile-nav-zone { display: flex; } }
-    
-    .letter { display: inline-block; min-width: 0.6em; text-align: center; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), font-weight 0.4s linear; will-change: font-weight, transform; }
-    .bold { font-weight: 700; }
   </style>
   <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
 
-  <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
-  <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
+  <div id="stage-container"></div>
+  <div class="content-overlay" id="content-overlay">
+    <nav class="site-nav">
+      <a href="work.html" class="nav-link" data-link="work">work</a>
+      <a href="play.html" class="nav-link" data-link="play">play</a>
+      <a href="facilitation.html" class="nav-link" data-link="facil">facilitation</a>
+    </nav>
 
-  <div id="main-wrapper">
-    <div id="stage-container"></div>
-    <div class="content-overlay" id="content-slider">
-      <section class="section" id="sec-0"><div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div></section>
-      <section class="section" id="sec-1"><div id="hello-container"><span class="letter">h</span><span class="letter">e</span><span class="letter">l</span><span class="letter">l</span><span class="letter">o</span></div></section>
-      <section class="section" id="sec-2"><div id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</div></section>
-      <section class="section" id="sec-3">
-        <div class="links-container" id="nav-links-box">
-          <a href="work.html" class="nav-link" id="link-work">work</a>
-          <a href="play.html" class="nav-link" id="link-play">play</a>
-          <a href="facilitation.html" class="nav-link" id="link-facil">facilitation</a>
-        </div>
-      </section>
+    <div id="hero">
+      <div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div>
+      <p id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</p>
     </div>
+  </div>
+
+  <div class="social-links">
+    <a href="https://github.com/Jishnurc519" target="_blank" rel="noopener" aria-label="GitHub">
+      <img src="https://cdn.simpleicons.org/github/f4f1ec" alt="GitHub" loading="lazy" data-icon="github">
+    </a>
+    <a href="https://www.behance.net/jishnuroycha" target="_blank" rel="noopener" aria-label="Behance">
+      <img src="https://cdn.simpleicons.org/behance/f4f1ec" alt="Behance" loading="lazy" data-icon="behance">
+    </a>
   </div>
 
   <script type="module">
     import * as THREE from 'three';
     import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-    let currentSection = 0;
-    const slider = document.getElementById('content-slider');
-    
-    // NAVIGATION LOGIC
-    window.handleNav = (dir) => {
-      currentSection = Math.max(0, Math.min(3, currentSection + dir));
-      slider.style.transform = `translateY(-${currentSection * 100}dvh)`;
-      document.getElementById('nav-up').style.opacity = currentSection === 0 ? "0.1" : "1";
-      document.getElementById('nav-down').style.opacity = currentSection === 3 ? "0.1" : "1";
-    };
-
-    // --- DESKTOP SCROLL SUPPORT ---
-    let lastWheel = 0;
-    
-    // Mouse Wheel
-    window.addEventListener('wheel', (e) => {
-        const now = performance.now();
-        // 1000ms cooldown to prevent rapid scrolling
-        if (now - lastWheel < 1000) return; 
-        
-        // Threshold to ignore tiny trackpad movements
-        if (Math.abs(e.deltaY) < 10) return;
-
-        const dir = e.deltaY > 0 ? 1 : -1;
-        handleNav(dir);
-        lastWheel = now;
-    }, {passive: true});
-
-    // Keyboard Arrow Keys
-    window.addEventListener('keydown', (e) => {
-        if(e.key === 'ArrowDown') handleNav(1);
-        if(e.key === 'ArrowUp') handleNav(-1);
-    });
-
     const isMobileCheck = () => window.innerWidth < 768;
     let isMobile = isMobileCheck();
 
-    const titleEl = document.getElementById('title');
-    const helloEl = document.getElementById('sec-1');
-    const bioEl = document.getElementById('bio-text');
-    const linksEl = document.getElementById('nav-links-box'); 
     const stage = document.getElementById('stage-container');
-    const helloLetters = document.querySelectorAll('.letter');
-    
+
     // --- HOVER LOGIC ---
     let targetWork = 0, currentWork = 0;
     let targetPlay = 0, currentPlay = 0;
     let targetFacil = 0, currentFacil = 0;
-
-    const linkWork = document.getElementById('link-work');
-    const linkPlay = document.getElementById('link-play');
-    const linkFacil = document.getElementById('link-facil');
 
     const addHover = (el, setVar) => {
       el.addEventListener('mouseenter', () => setVar(1));
@@ -174,12 +128,10 @@
       el.addEventListener('touchstart', () => setVar(1), {passive: true});
       el.addEventListener('touchend', () => setVar(0), {passive: true});
     };
+    document.querySelectorAll('[data-link="work"]').forEach(el => addHover(el, (v) => targetWork = v));
+    document.querySelectorAll('[data-link="play"]').forEach(el => addHover(el, (v) => targetPlay = v));
+    document.querySelectorAll('[data-link="facil"]').forEach(el => addHover(el, (v) => targetFacil = v));
 
-    addHover(linkWork, (v) => targetWork = v);
-    addHover(linkPlay, (v) => targetPlay = v);
-    addHover(linkFacil, (v) => targetFacil = v);
-
-    let helloInView = false, helloStartTime = 0;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 15);
@@ -187,27 +139,26 @@
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(0x0a0a0a, 1);
     stage.appendChild(renderer.domElement);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment()).texture;
 
     const material = new THREE.ShaderMaterial({
-      uniforms: { 
-        uTime: { value: 0 }, uGrowth: { value: 0 }, uTargetScale: { value: 95.0 }, 
+      uniforms: {
+        uTime: { value: 0 }, uGrowth: { value: 0 }, uTargetScale: { value: 95.0 },
         uInvert: { value: 0.0 }, uMouse: { value: new THREE.Vector3(0, 0, 5) },
-        uColorA: { value: new THREE.Color(0xffffff) },
-        uColorB: { value: new THREE.Color(0x00ffff) },
-        uScrollRatio: { value: 0.0 }, uScrollY: { value: 0.0 },
+        uColorA: { value: new THREE.Color(0xf4f1ec) },
+        uColorB: { value: new THREE.Color(0x6fd9c8) },
         uWork: { value: 0.0 }, uPlay: { value: 0.0 }, uFacil: { value: 0.0 },
         uIsMobile: { value: isMobile ? 1.0 : 0.0 }
       },
       vertexShader: `
-        varying vec3 vNormal; varying vec3 vToLight; varying float vScroll;
+        varying vec3 vNormal; varying vec3 vToLight;
         attribute vec3 aInstancePos; attribute float aRand;
         uniform float uTime; uniform float uGrowth; uniform float uTargetScale;
-        uniform float uScrollRatio; uniform float uScrollY; uniform vec3 uMouse;
+        uniform vec3 uMouse;
         uniform float uWork; uniform float uPlay; uniform float uFacil;
         uniform float uIsMobile;
 
@@ -219,41 +170,23 @@
                         0.0, 0.0, 0.0, 1.0);
         }
         void main() {
-          vScroll = uScrollRatio;
           vec3 pos = aInstancePos;
-          pos.y += uScrollY;
-
-          float orbitBlend = smoothstep(0.4, 0.55, uScrollRatio) * (1.0 - smoothstep(0.65, 0.75, uScrollRatio));
-          float navBlend = smoothstep(0.75, 0.9, uScrollRatio);
 
           float driftX = sin(uTime * 0.6 + aRand * 20.0) * 0.25;
           float driftY = cos(uTime * 0.4 + aRand * 15.0) * 0.25;
 
-          float angle = uTime * 0.5 + aRand * 6.28;
-          float orbitX = cos(angle) * (5.0 + aRand * 5.0);
-          float orbitY = sin(angle) * (5.0 + aRand * 5.0);
-
           float deskNavX = 3.5 + aRand * 6.0;
-          float mobNavX = (aRand - 0.5) * 5.0; 
+          float mobNavX = (aRand - 0.5) * 5.0;
           float targetNavX = mix(deskNavX, mobNavX, uIsMobile);
-          float targetNavYOffset = mix(0.0, 2.5, uIsMobile);
 
           float curvyOffset = sin(uTime * 3.0 + pos.y * 0.5) * 1.5;
           float flowOffset = mod(uTime * 4.0 + aRand * 10.0, 20.0) - 10.0;
 
           vec3 finalPos = pos + vec3(driftX, driftY, 0.0);
-          finalPos.x = mix(finalPos.x, orbitX, orbitBlend);
-          finalPos.y = mix(finalPos.y, orbitY, orbitBlend);
 
-          vec3 baseNavPos = finalPos;
-          baseNavPos.x = mix(baseNavPos.x, targetNavX, navBlend);
-          baseNavPos.y += mix(0.0, targetNavYOffset, navBlend);
-
-          baseNavPos = mix(baseNavPos, vec3(targetNavX, pos.y + (uIsMobile * 2.5), pos.z), uWork * navBlend);
-          baseNavPos.x += curvyOffset * uPlay * navBlend;
-          baseNavPos.y -= flowOffset * uFacil * navBlend;
-
-          finalPos = baseNavPos;
+          finalPos = mix(finalPos, vec3(targetNavX, pos.y + (uIsMobile * 2.5), pos.z), uWork * 0.6);
+          finalPos.x += curvyOffset * uPlay * 0.6;
+          finalPos.y -= flowOffset * uFacil * 0.3;
 
           float scale = mix(1.0, uTargetScale, smoothstep(0.0, 1.0, uGrowth));
           mat4 rot = rotationMatrix(normalize(vec3(sin(aRand * 10.0), cos(aRand * 12.0), sin(aRand * 15.0))), uTime * 0.8 + aRand * 6.28);
@@ -264,13 +197,13 @@
         }
       `,
       fragmentShader: `
-        varying vec3 vNormal; varying vec3 vToLight; varying float vScroll;
+        varying vec3 vNormal; varying vec3 vToLight;
         uniform float uInvert; uniform vec3 uColorA; uniform vec3 uColorB;
         void main() {
           vec3 normal = normalize(vNormal); vec3 lightDir = normalize(vToLight);
           float diff = max(dot(normal, lightDir), 0.0);
           float fresnel = pow(1.0 - dot(normal, vec3(0,0,1)), 3.0);
-          vec3 targetColor = mix(uColorA, uColorB, min(vScroll * 1.5, 1.0));
+          vec3 targetColor = mix(uColorA, uColorB, 0.5);
           vec3 color = vec3(0.05) + targetColor * diff + fresnel * 0.15;
           gl_FragColor = vec4(mix(color, 1.0 - color, uInvert), 1.0);
         }
@@ -288,6 +221,7 @@
     const pointer = new THREE.Vector2();
     let count = 0, triggered = false, triggerTime = 0, isDrawing = false, invertCycle = false;
 
+    // Nothing spawns on load — particles only appear once the user draws.
     const updateInteraction = (x, y) => {
       const mx = (x / window.innerWidth) * 2 - 1;
       const my = -(y / window.innerHeight) * 2 + 1;
@@ -297,17 +231,16 @@
       raycaster.setFromCamera(pointer, camera);
       const intersect = new THREE.Vector3();
       raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
-      const currentScrollY = currentSection * 18.5; 
       for(let i = 0; i < 3; i++) {
         if(count >= 8000) break;
         aInstancePos[count * 3] = intersect.x + (Math.random() - 0.5) * 0.4;
-        aInstancePos[count * 3 + 1] = intersect.y - currentScrollY + (Math.random() - 0.5) * 0.4;
+        aInstancePos[count * 3 + 1] = intersect.y + (Math.random() - 0.5) * 0.4;
         aInstancePos[count * 3 + 2] = intersect.z;
         aRand[count] = Math.random(); count++;
       }
       mesh.count = count;
       mesh.geometry.attributes.aInstancePos.needsUpdate = true;
-      mesh.geometry.attributes.aRand.needsUpdate = true; 
+      mesh.geometry.attributes.aRand.needsUpdate = true;
       if (count >= 500) { triggered = true; triggerTime = performance.now(); isDrawing = false; }
     };
 
@@ -323,12 +256,6 @@
 
     function animate(now) {
       requestAnimationFrame(animate);
-      
-      const targetScrollRatio = currentSection / 3.0;
-      material.uniforms.uScrollRatio.value += (targetScrollRatio - material.uniforms.uScrollRatio.value) * 0.05;
-      const targetWorldScrollY = material.uniforms.uScrollRatio.value * 18.5 * 3; 
-      material.uniforms.uScrollY.value = targetWorldScrollY;
-
       material.uniforms.uTime.value = now * 0.001;
 
       currentWork += (targetWork - currentWork) * 0.1;
@@ -338,40 +265,17 @@
       material.uniforms.uPlay.value = currentPlay;
       material.uniforms.uFacil.value = currentFacil;
 
-      if(currentSection === 1 && !helloInView) { helloInView = true; helloStartTime = performance.now(); }
-      if(currentSection !== 1) { helloInView = false; }
-
-      if (helloInView) {
-        const elapsed = (now - helloStartTime) * 0.001;
-        const normalizedWave = (Math.sin(elapsed * 0.5) + 1) / 2;
-        helloLetters.forEach((letter, i) => {
-          let shouldCap = false, weight = 400, yOff = 0;
-          const wave = Math.sin(elapsed * 0.3 - i * 0.8);
-          if (elapsed > 8) { if (wave > 0.55) shouldCap = true; weight = 200 + (normalizedWave * 700); yOff = wave * 10; }
-          if (elapsed > 3) { 
-            const noise = (Math.sin(Math.floor(now / 450) + i * 133.7) + 1) / 2;
-            if (noise < 0.03 + (Math.min(elapsed, 30) * 0.001)) { shouldCap = !shouldCap; weight = noise > 0.5 ? 900 : 100; yOff += (noise - 0.5) * 5; }
-          }
-          letter.style.textTransform = shouldCap ? 'uppercase' : 'lowercase';
-          letter.style.fontWeight = Math.round(weight);
-          letter.style.transform = `translateY(${yOff}px)`;
-        });
-      } else {
-         helloLetters.forEach(l => { l.style.textTransform = 'lowercase'; l.style.fontWeight = '400'; l.style.transform = 'translateY(0)'; });
-      }
-
       if (triggered) {
         const elapsed = (now - triggerTime) / 950;
         material.uniforms.uGrowth.value = Math.min(elapsed, 1.0);
         if (elapsed >= 0.4) {
           invertCycle = !invertCycle;
           material.uniforms.uInvert.value = invertCycle ? 1.0 : 0.0;
-          renderer.setClearColor(invertCycle ? 0xffffff : 0x000000, 1);
-          titleEl.classList.toggle('inverted-ui');
-          helloEl.classList.toggle('inverted-ui');
-          bioEl.classList.toggle('inverted-ui');
-          linksEl.classList.toggle('inverted-ui'); 
-          document.querySelectorAll('.mobile-nav-zone').forEach(z => z.classList.toggle('inverted-ui'));
+          renderer.setClearColor(invertCycle ? 0xf4f1ec : 0x0a0a0a, 1);
+          document.body.classList.toggle('inverted-theme');
+          document.querySelectorAll('.social-links img[data-icon]').forEach((img) => {
+            img.src = `https://cdn.simpleicons.org/${img.dataset.icon}/${invertCycle ? '141210' : 'f4f1ec'}`;
+          });
           triggered = false; count = 0; mesh.count = 0;
           material.uniforms.uGrowth.value = 0;
         }
@@ -379,14 +283,13 @@
       renderer.render(scene, camera);
     }
     animate(0);
-    
+
     const handleResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight; 
-        camera.updateProjectionMatrix(); 
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
         isMobile = isMobileCheck();
         material.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
-        window.handleNav(0);
     };
     window.addEventListener('resize', handleResize);
   </script>

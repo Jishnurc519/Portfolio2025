@@ -22,12 +22,12 @@
     #stage-container {
       position: fixed; top: 0; left: 0;
       width: 100vw; height: 100vh;
-      z-index: -1; 
-      background: #000; 
-      transition: background 0.05s linear; 
+      z-index: -1;
+      background: #0a0a0a;
+      transition: background 0.05s linear;
     }
     canvas { display: block; }
-    #stage-container.inverted-bg { background: #ffffff; }
+    #stage-container.inverted-bg { background: #f4f1ec; }
 
     /* --- MOBILE NAV ZONES --- */
     .mobile-nav-zone {
@@ -47,23 +47,23 @@
     /* --- THEME & ACTIVE STATES --- */
     body.inverted-theme { color: #000; }
     
-    .project-item.active { 
-        background: #ffffff !important; 
-        color: #000 !important; 
-        border-top: 1px solid #ffffff !important; 
+    .project-item.active {
+        background: #f4f1ec !important;
+        color: #141210 !important;
+        border-top: 1px solid #f4f1ec !important;
         transform: scale(1.02);
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
-    .project-item.active .project-tags { color: #ff00ff !important; }
-    .project-item.active * { color: #000 !important; }
+    .project-item.active .project-tags { color: #b87a3d !important; }
+    .project-item.active * { color: #141210 !important; }
 
-    body.inverted-theme .project-item.active { 
-        background: #000000 !important; 
-        color: #fff !important; 
-        border-top: 1px solid #000000 !important; 
+    body.inverted-theme .project-item.active {
+        background: #0a0a0a !important;
+        color: #f4f1ec !important;
+        border-top: 1px solid #0a0a0a !important;
     }
-    body.inverted-theme .project-item.active .project-tags { color: #00ffff !important; }
-    body.inverted-theme .project-item.active * { color: #fff !important; }
+    body.inverted-theme .project-item.active .project-tags { color: #f2b880 !important; }
+    body.inverted-theme .project-item.active * { color: #f4f1ec !important; }
 
     #main-wrapper {
       position: relative;
@@ -85,24 +85,53 @@
 
     h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
     .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
+    .hint { font-size: clamp(11px, 1vw, 13px); font-weight: 400; opacity: 0.4; margin-top: 14px; display: block; letter-spacing: 0.03em; }
 
     .project-list {
-      display: flex; flex-direction: column; gap: 80vh; 
-      pointer-events: auto; 
+      display: flex; flex-direction: column; gap: 20vh;
+      pointer-events: auto;
     }
 
     .project-item {
       border-top: 1px solid rgba(255, 255, 255, 0.4);
       padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-      cursor: pointer; display: grid; grid-template-columns: 1fr 2fr; gap: 20px;
+      cursor: pointer; display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 20px;
       background: rgba(0,0,0,0.0); border-radius: 8px;
     }
 
     .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
     .project-details { display: flex; flex-direction: column; gap: 10px; }
+    .thumb-stack { position: relative; width: 100%; max-width: 320px; height: 200px; }
+    .project-thumb {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: left center;
+      border-radius: 6px; display: block; background: rgba(255,255,255,0.06);
+      transition: transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease;
+    }
+    .thumb-stack .thumb-main { z-index: 3; }
+    .thumb-stack .thumb-bg-1 { z-index: 2; opacity: 0; transform: translate(6px, 6px) scale(0.97); }
+    .thumb-stack .thumb-bg-2 { z-index: 1; opacity: 0; transform: translate(12px, 12px) scale(0.94); }
+    .thumb-stack:hover .thumb-main { transform: translate(-10px, -10px) scale(1.05); }
+    .thumb-stack:hover .thumb-bg-1 { opacity: 0.85; transform: translate(10px, 10px) scale(1.0); }
+    .thumb-stack:hover .thumb-bg-2 { opacity: 0.65; transform: translate(20px, 20px) scale(0.96); }
     .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
-    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff; transition: color 0.1s linear; }
+    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #6fd9c8; transition: color 0.1s linear; }
+    body.inverted-theme .project-tags { color: #2f9c8c; }
     .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
+
+    .past-work {
+      margin-top: 20vh; padding-top: 20px;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      gap: 10px; pointer-events: auto;
+    }
+    .behance-frame { width: 100%; max-width: 404px; aspect-ratio: 404 / 316; margin-top: 10px; }
+    .behance-frame iframe { width: 100%; height: 100%; border: 0; border-radius: 8px; display: block; }
+    .behance-link {
+      margin-top: 8px; font-size: clamp(13px, 1.2vw, 16px); font-weight: 500;
+      color: #6fd9c8; text-decoration: none; transition: color 0.1s linear, opacity 0.2s ease;
+    }
+    .behance-link:hover { opacity: 0.75; }
+    body.inverted-theme .behance-link { color: #2f9c8c; }
 
     /* UPDATED BACK BUTTON */
     .back-btn {
@@ -138,43 +167,75 @@
     <div id="header-section" class="scroll-target">
       <h1>selected<br>works</h1>
       <span class="subtitle">Interactive Installations & Creative Technology</span>
+      <span class="hint">hold anywhere to shift between light and dark</span>
     </div>
 
     <div class="project-list">
-      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
-        <span class="project-year">2026</span>
+      <div class="project-item scroll-target" data-project="onebyzero/echoesofearth" onclick="handleProjectClick(event)">
+        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/echoesofearth/img-01.jpg" alt="" loading="lazy"></div>
         <div class="project-details">
-          <h2 class="project-title">Frequencies Listening Room</h2>
+          <span class="project-year">2026</span>
+          <h2 class="project-title">Echoes of Earth</h2>
           <span class="project-tags">Projection Mapping • Lighting Control</span>
           <p class="project-desc">A comprehensive audio-visual installation featuring immersive projection mapping and DMX lighting synchronization.</p>
         </div>
       </div>
-      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
-        <span class="project-year">2026</span>
+      <div class="project-item scroll-target" data-project="onebyzero/middleroom" onclick="handleProjectClick(event)">
+        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/middleroom/img-01.jpg" alt="" loading="lazy"></div>
         <div class="project-details">
-          <h2 class="project-title">Particle Lenia System</h2>
+          <span class="project-year">2026</span>
+          <h2 class="project-title">MiddleRoom</h2>
           <span class="project-tags">GLSL • Generative Art</span>
           <p class="project-desc">Simulates thousands of particles exhibiting organic, life-like behaviors such as "Orbs" and "Swimmers".</p>
         </div>
       </div>
-      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
-        <span class="project-year">2025</span>
+      <div class="project-item scroll-target" data-project="onebyzero/nodeshed" onclick="handleProjectClick(event)">
+        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/nodeshed/vid-01-poster.jpg" alt="" loading="lazy"></div>
         <div class="project-details">
-          <h2 class="project-title">The Compass Point</h2>
+          <span class="project-year">2025</span>
+          <h2 class="project-title">NodeShed</h2>
           <span class="project-tags">Spatial Design • Interactive Furniture</span>
           <p class="project-desc">Concept design for an interactive information desk acting as a hub for orientation.</p>
         </div>
       </div>
-      <div class="project-item scroll-target" onclick="handleProjectClick(event)">
-        <span class="project-year">2025</span>
+      <div class="project-item scroll-target" data-project="onebyzero/sixthsense" onclick="handleProjectClick(event)">
+        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/sixthsense/img-01.jpg" alt="" loading="lazy"></div>
         <div class="project-details">
-          <h2 class="project-title">Tuya Smart Home Integration</h2>
+          <span class="project-year">2025</span>
+          <h2 class="project-title">SixthSense</h2>
           <span class="project-tags">IoT • Python • TouchDesigner</span>
           <p class="project-desc">Custom integration bridging consumer smart home hardware with professional performance software.</p>
         </div>
       </div>
     </div>
+
+    <div class="past-work scroll-target">
+      <h2 class="project-title">past work</h2>
+      <p class="project-desc">More of my work, archived on Behance.</p>
+      <div class="behance-frame">
+        <iframe src="https://www.behance.net/embed/project/189285821?ilo0=1" allowfullscreen loading="lazy" allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+      <a href="https://www.behance.net/jishnuroycha" target="_blank" rel="noopener" class="behance-link">view full profile →</a>
+    </div>
   </div>
+
+  <script src="assets/manifest.js"></script>
+  <script>
+    document.querySelectorAll('.thumb-stack').forEach((stack) => {
+      const key = stack.closest('.project-item')?.dataset.project;
+      const data = (typeof SITE_MANIFEST !== 'undefined' && key) ? SITE_MANIFEST[key] : null;
+      if (!data) return;
+      const mainImg = stack.querySelector('.thumb-main');
+      const pool = [...(data.images || []), ...(data.videos || []).map(v => v.poster)]
+        .filter((src) => src !== mainImg.getAttribute('src'));
+      pool.slice(0, 2).forEach((src, i) => {
+        const img = document.createElement('img');
+        img.src = src; img.alt = ''; img.loading = 'lazy';
+        img.className = `project-thumb thumb-bg-${i + 1}`;
+        stack.insertBefore(img, mainImg);
+      });
+    });
+  </script>
 
   <script type="module">
     import * as THREE from 'three';
@@ -182,9 +243,24 @@
 
     // --- NAVIGATION ENGINE ---
     let currentIndex = 0;
-    let targets = []; 
+    let targets = [];
     const wrapper = document.getElementById('main-wrapper');
     const isMobile = window.innerWidth < 768;
+
+    // As the page scrolls (native scroll on desktop, the transform-driven
+    // slide on mobile), cards pass underneath a stationary cursor and the
+    // browser re-evaluates :hover on whatever lands there — making the
+    // thumbnail hover-reveal look like it's swapping at random. Suspend
+    // pointer-events on the list while scroll is actually happening.
+    const projectListEl = document.querySelector('.project-list');
+    let hoverLockTimeout;
+    function suspendHover(duration) {
+        if (!projectListEl) return;
+        projectListEl.style.pointerEvents = 'none';
+        clearTimeout(hoverLockTimeout);
+        hoverLockTimeout = setTimeout(() => { projectListEl.style.pointerEvents = 'auto'; }, duration);
+    }
+    window.addEventListener('scroll', () => suspendHover(200), { passive: true });
 
     function initTargets() {
         const header = document.getElementById('header-section');
@@ -220,7 +296,8 @@
         const shiftAmount = elementCenter - viewportCenter;
         
         wrapper.style.transform = `translateY(${-shiftAmount}px)`;
-        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)"; 
+        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)";
+        suspendHover(750);
 
         // Remove active class from ALL items
         targets.forEach(t => {
@@ -243,7 +320,8 @@
 
     window.handleProjectClick = (e) => {
         if (!checkInteraction(e)) return;
-        console.log("Project clicked");
+        const key = e.currentTarget.dataset.project;
+        if (key) window.location.href = `project.html?p=${key}&from=work.html`;
     }
 
     // --- THREE.JS ENGINE ---
@@ -263,7 +341,7 @@
         uTime: { value: 0 },
         uMouse: { value: new THREE.Vector3(0, 0, -100) },
         uClickStrength: { value: 0.0 }, uCharge: { value: 0.0 }, uGrowth: { value: 0.0 }, uInvert: { value: 0.0 },
-        uColorA: { value: new THREE.Color(0x00ffff) }, uColorB: { value: new THREE.Color(0xff00ff) }  
+        uColorA: { value: new THREE.Color(0x6fd9c8) }, uColorB: { value: new THREE.Color(0xf2b880) }
       },
       vertexShader: `
         varying vec3 vNormal; varying vec3 vToLight;
@@ -336,7 +414,7 @@
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 4000;
+    let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 1500;
     let isExploding = false; let explosionProgress = 0;
     let currentClickStrength = 0; let invertCycle = false;
 
@@ -379,8 +457,8 @@
       material.uniforms.uCharge.value = chargeTime / CHARGE_LIMIT;
       material.uniforms.uClickStrength.value = currentClickStrength;
       if (isExploding) {
-        explosionProgress += dt * 0.004; material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
-        if (explosionProgress > 0.4 && !invertCycle) {
+        explosionProgress += dt * 0.0015; material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
+        if (explosionProgress > 0.1 && !invertCycle) {
           invertCycle = true;
           const bg = document.getElementById('stage-container'); const body = document.body;
           if (bg.classList.contains('inverted-bg')) {

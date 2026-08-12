@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Jishnu Roy Chaudhury — Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #000; color: #fff;
+      font-family: 'Clash Display', sans-serif;
+      min-height: 100vh;
+    }
+
+    .back-btn {
+      position: fixed; top: 40px; left: 5vw;
+      font-size: 18px; text-decoration: none; color: white; font-weight: 600;
+      z-index: 300; mix-blend-mode: difference;
+    }
+
+    #main-wrapper {
+      max-width: 1200px; margin: 0 auto;
+      padding: 20vh 5vw 10vh;
+    }
+
+    #header-section { margin-bottom: 8vh; }
+    .category-tag {
+      font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8;
+      text-transform: uppercase; letter-spacing: 0.05em; color: #00ffff;
+    }
+    h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line-height: 0.95; }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .gallery img, .gallery video {
+      width: 100%; height: 100%;
+      display: block; object-fit: cover;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      aspect-ratio: 4 / 3;
+    }
+
+    .empty-state {
+      opacity: 0.6; font-size: clamp(16px, 2vw, 22px); font-weight: 300;
+    }
+
+    @media (max-width: 768px) {
+      #main-wrapper { padding: 16vh 6vw 10vh; }
+      .gallery { grid-template-columns: 1fr 1fr; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-btn" id="back-btn">← Back</a>
+
+  <div id="main-wrapper">
+    <div id="header-section">
+      <span class="category-tag" id="project-category">—</span>
+      <h1 id="project-title">Loading…</h1>
+    </div>
+    <div class="gallery" id="project-gallery"></div>
+  </div>
+
+  <script src="assets/manifest.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('p');
+    const referrer = params.get('from');
+
+    const backBtn = document.getElementById('back-btn');
+    if (referrer) backBtn.href = referrer;
+
+    const titleEl = document.getElementById('project-title');
+    const categoryEl = document.getElementById('project-category');
+    const galleryEl = document.getElementById('project-gallery');
+
+    const project = (typeof SITE_MANIFEST !== 'undefined' && key) ? SITE_MANIFEST[key] : null;
+
+    if (!project) {
+      titleEl.textContent = 'Project not found';
+      categoryEl.textContent = '—';
+      galleryEl.innerHTML = '<p class="empty-state">Couldn\'t find that project. Head back and try another one.</p>';
+    } else {
+      document.title = `Jishnu Roy Chaudhury — ${project.name}`;
+      titleEl.textContent = project.name;
+      categoryEl.textContent = project.category;
+
+      const frag = document.createDocumentFragment();
+      (project.images || []).forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.loading = 'lazy';
+        img.alt = project.name;
+        frag.appendChild(img);
+      });
+      (project.videos || []).forEach(v => {
+        const video = document.createElement('video');
+        video.src = v.src;
+        video.poster = v.poster;
+        video.controls = true;
+        video.playsInline = true;
+        video.preload = 'none';
+        frag.appendChild(video);
+      });
+      galleryEl.appendChild(frag);
+
+      if (!(project.images || []).length && !(project.videos || []).length) {
+        galleryEl.innerHTML = '<p class="empty-state">No media yet for this project.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Jishnu Roy Chaudhury — Facilitation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <style>
+    /* GLOBAL LOCKS */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none; /* Disables browser handling of gestures */
+    }
+
+    html, body { 
+      margin: 0; padding: 0; background: transparent; color: #fff; 
+      font-family: 'Clash Display', sans-serif;
+      overflow: hidden; /* Locks native scrollbars on both Desktop & Mobile */
+      transition: color 0.1s linear; height: 100dvh; width: 100vw; position: fixed;
+    }
+    #stage-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; background: #000; transition: background 0.05s linear; }
+    canvas { display: block; }
+    #stage-container.inverted-bg { background: #ffffff; }
+    
+    /* UI ELEMENTS */
+    .mobile-nav-zone { position: fixed; left: 0; width: 100%; height: 100px; display: none; align-items: center; justify-content: center; z-index: 200; pointer-events: auto; mix-blend-mode: difference; cursor: pointer; }
+    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
+    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
+    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
+    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
+
+    body.inverted-theme { color: #000; }
+    
+    .project-item.active, .project-item:hover { 
+        background: #ffffff !important; color: #000 !important; border-top: 1px solid #ffffff !important; 
+        transform: scale(1.02); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    /* Facilitation Accent: Mint Green / Teal */
+    .project-item.active .project-tags, .project-item:hover .project-tags { color: #00ffa3 !important; } 
+    .project-item.active *, .project-item:hover * { color: #000 !important; }
+
+    body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover { 
+        background: #000000 !important; color: #fff !important; border-top: 1px solid #000000 !important; 
+    }
+    body.inverted-theme .project-item.active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #00ffa3 !important; } 
+    body.inverted-theme .project-item.active *, body.inverted-theme .project-item:hover * { color: #fff !important; }
+
+    body.inverted-theme .project-item { border-top: 1px solid rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.0); }
+    body.inverted-theme .project-tags { color: #008855; } body.inverted-theme .back-btn { color: #000; }
+
+    #main-wrapper { position: relative; padding: 0 5vw; max-width: 1200px; margin: 0 auto; z-index: 10; pointer-events: none; will-change: transform; }
+    #header-section { text-align: left; pointer-events: auto; padding-top: 40vh; padding-bottom: 40vh; }
+    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
+    
+    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
+    
+    .project-list { display: flex; flex-direction: column; gap: 0; pointer-events: auto; min-height: 100vh; }
+    .project-item { border-top: 1px solid rgba(255, 255, 255, 0.4); padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer; display: grid; grid-template-columns: 1fr 2fr; gap: 20px; background: rgba(0,0,0,0.0); border-radius: 8px; margin-top: 30vh; margin-bottom: 30vh; }
+    
+    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
+    .project-details { display: flex; flex-direction: column; gap: 10px; }
+    .project-thumb { width: 100%; max-width: 320px; aspect-ratio: 4/3; object-fit: cover; border-radius: 6px; display: block; background: rgba(255,255,255,0.06); }
+    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
+    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #00ffa3; transition: color 0.1s linear; }
+    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
+    
+    .back-btn { position: fixed; top: 40px; left: 5vw; font-size: 18px; text-decoration: none; color: white; font-weight: 600; z-index: 300; pointer-events: auto; transition: color 0.1s linear; mix-blend-mode: difference; }
+
+    /* ========================================= */
+    /* VISIBILITY LOGIC FOR BRIGHT / DARK ITEMS */
+    /* ========================================= */
+    
+    .project-item.bright-only { display: none; }
+    .project-item.dark-only { display: grid; }
+
+    body.inverted-theme .project-item.bright-only { display: grid; }
+    body.inverted-theme .project-item.dark-only { display: none; }
+
+    @media (max-width: 768px) { .mobile-nav-zone { display: flex; } .project-item { grid-template-columns: 1fr; gap: 5px; } }
+  </style>
+  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
+</head>
+<body>
+  <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
+  <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
+  <div id="stage-container"></div>
+  <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
+
+  <div id="main-wrapper">
+    <div id="header-section" class="scroll-target">
+      <h1>facilitation<br>& strategy</h1>
+      <span class="subtitle" id="dynamic-subtitle">fostering independence and breaking things</span>
+    </div>
+    
+    <div class="project-list">
+      
+      <div class="project-item scroll-target dark-only" data-project="jishnu/jklu" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/jishnu/jklu/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">JKLU</h2>
+          <span class="project-tags">Assets • Testing</span>
+          <p class="project-desc">Experimental assets and prototypes created to test and refine instructional methods.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target dark-only" data-project="jishnu/unconference" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/jishnu/unconference/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">Unconference</h2>
+          <span class="project-tags">R&D • Research</span>
+          <p class="project-desc">Deep-dive research into interactive learning environments and spatial computing.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/aliengarden" onclick="handleProjectClick(event)">
+        <span class="project-year">2026</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/aliengarden/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">AlienGarden</h2>
+          <span class="project-tags">JKLU Course • Delivery</span>
+          <p class="project-desc">A specialized course delivered at JKLU exploring the intersection of physical space and digital sensing.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/bloom" onclick="handleProjectClick(event)">
+        <span class="project-year">2026</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/bloom/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">Bloom</h2>
+          <span class="project-tags">Workshop • Engagement</span>
+          <p class="project-desc">Hands-on sessions focused on fostering dialogue and active engagement within teams.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/burrow" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/burrow/vid-01-poster.jpg" alt="" loading="lazy">
+          <h2 class="project-title">Burrow</h2>
+          <span class="project-tags">Mentorship • Portfolio Feedback</span>
+          <p class="project-desc">Direct mentorship including specific portfolio critiques and career guidance for aspiring designers.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/joyorbisonwhp" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/joyorbisonwhp/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">JoyOrbisonWHP</h2>
+          <span class="project-tags">Organizational Growth</span>
+          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/midroom" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/midroom/vid-01-poster.jpg" alt="" loading="lazy">
+          <h2 class="project-title">MidRoom</h2>
+          <span class="project-tags">Organizational Growth</span>
+          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/rawshit" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/rawshit/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">RawShit</h2>
+          <span class="project-tags">Organizational Growth</span>
+          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+        </div>
+      </div>
+
+      <div class="project-item scroll-target bright-only" data-project="gmmbbq/tychostones" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/gmmbbq/tychostones/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">TychosTones</h2>
+          <span class="project-tags">Organizational Growth</span>
+          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+    // --- INTERACTION ---
+    let isHolding = false, chargeTime = 0, isExploding = false, explosionForce = 0, invertCycle = false, explosionProgress = 0;
+    const CHARGE_LIMIT = 1500;
+
+    // --- NAV ---
+    let currentIndex = 0, targets = [];
+    const wrapper = document.getElementById('main-wrapper');
+    const isMobile = window.innerWidth < 768;
+    
+    function updateTargets() {
+        const visibleItems = Array.from(document.querySelectorAll('.project-item')).filter(el => window.getComputedStyle(el).display !== 'none');
+        targets = [document.getElementById('header-section'), ...visibleItems];
+        updateChevronVisibility();
+    }
+    
+    function initTargets() { updateTargets(); if(isMobile) handleNav(0); }
+    setTimeout(initTargets, 100);
+
+    function updateChevronVisibility() { 
+        const up = document.getElementById('nav-up'), down = document.getElementById('nav-down');
+        if(up && down) { 
+            up.style.opacity = currentIndex <= 0 ? '0.2' : '1'; 
+            down.style.opacity = currentIndex >= targets.length-1 ? '0.2' : '1'; 
+        }
+    }
+    
+    window.handleNav = (dir) => {
+        // Works on both desktop (via wheel) and mobile (via chevrons)
+        updateTargets(); 
+        const next = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
+        if (next === currentIndex && dir !== 0) return;
+        currentIndex = next; updateChevronVisibility();
+        
+        const el = targets[currentIndex];
+        if(el) {
+            const offset = (window.innerHeight/2) - (el.offsetTop + el.offsetHeight/2);
+            wrapper.style.transform = `translateY(${offset}px)`; 
+            wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)";
+            targets.forEach(t => t.classList.contains('project-item') && t.classList.remove('active'));
+            if (currentIndex > 0) targets[currentIndex].classList.add('active');
+        }
+    };
+
+    // --- DESKTOP WHEEL SCROLL ---
+    let lastWheel = 0;
+    window.addEventListener('wheel', (e) => {
+        const now = performance.now();
+        if (now - lastWheel < 500) return; // Debounce to prevent rapid skipping
+        if (Math.abs(e.deltaY) < 10) return;
+        const dir = e.deltaY > 0 ? 1 : -1;
+        handleNav(dir);
+        lastWheel = now;
+    }, {passive: true});
+
+    window.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowDown') handleNav(1);
+        if(e.key === 'ArrowUp') handleNav(-1);
+    });
+
+    // --- MOBILE SCROLL LOCK ---
+    // This explicitly prevents touchmove (scrolling/bouncing) on the document, 
+    // effectively locking the page position on mobile.
+    document.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+
+    window.checkInteraction = (e) => { if (chargeTime > 200) { e.preventDefault(); e.stopPropagation(); return false; } return true; }
+    window.handleProjectClick = (e) => {
+        if (!checkInteraction(e)) return;
+        const key = e.currentTarget.dataset.project;
+        if (key) window.location.href = `project.html?p=${key}&from=facilitation.html`;
+    }
+
+    // --- THREE.JS ENGINE ---
+    const stage = document.getElementById('stage-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 30);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setClearColor(0x000000, 0); 
+    stage.appendChild(renderer.domElement);
+
+    const count = 600;
+    const positions = new Float32Array(count * 3);
+    const originals = new Float32Array(count * 3); 
+    const velocities = []; 
+    
+    // SPHERICAL DISTRIBUTION
+    const radius = 18.0;
+    for(let i=0; i<count; i++) {
+        const phi = Math.acos(1 - 2 * (i + 0.5) / count);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi) * 0.5;
+        positions[i*3] = x; positions[i*3+1] = y; positions[i*3+2] = z;
+        originals[i*3] = x; originals[i*3+1] = y; originals[i*3+2] = z;
+        velocities.push(new THREE.Vector3(0,0,0));
+    }
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: { 
+        uColorA: { value: new THREE.Color(0x00ffa3) }, 
+        uColorB: { value: new THREE.Color(0x0055ff) }, 
+        uInvert: { value: 0.0 }, uCharge: { value: 0.0 }, uGrowth: { value: 0.0 }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        uniform float uCharge; uniform float uGrowth;
+        void main() {
+          vNormal = normal;
+          vec3 pos = position;
+          float scale = 1.0 + (uCharge * 0.5) + (uGrowth * 3.0);
+          pos *= scale;
+          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        uniform vec3 uColorA; uniform vec3 uColorB; uniform float uInvert; uniform float uCharge;
+        void main() {
+          float rim = 1.0 - dot(vNormal, vec3(0,0,1));
+          vec3 col = mix(uColorA, uColorB, rim);
+          col = mix(col, vec3(1.0), uCharge);
+          vec3 invCol = uColorB; 
+          gl_FragColor = vec4(mix(col, invCol, uInvert), 1.0);
+        }
+      `,
+      side: THREE.DoubleSide
+    });
+
+    const geometry = new THREE.TorusGeometry(0.3, 0.04, 8, 24); 
+    const mesh = new THREE.InstancedMesh(geometry, material, count);
+    scene.add(mesh);
+    
+    const dummy = new THREE.Object3D();
+    const raycaster = new THREE.Raycaster();
+    const mousePos = new THREE.Vector3(0, 0, 0); 
+    const startHold = (e) => { if(!e.target.closest('.back-btn') && !e.target.closest('.mobile-nav-zone')) isHolding = true; };
+    const stopHold = () => { isHolding = false; };
+    window.addEventListener('touchstart', startHold, {passive:true}); window.addEventListener('touchend', stopHold);
+    window.addEventListener('mousedown', startHold); window.addEventListener('mouseup', stopHold);
+    const updateMouse = (x, y) => {
+        const mx = (x/window.innerWidth)*2-1, my = -(y/window.innerHeight)*2+1;
+        raycaster.setFromCamera(new THREE.Vector2(mx,my), camera);
+        raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), 0), mousePos);
+    };
+    window.addEventListener('mousemove', e=>updateMouse(e.clientX, e.clientY));
+    
+    // Note: We need this touchmove listener for particles, even though we prevent default on document.
+    // The preventDefault on document stops the SCROLL, but the event still propagates to JS for this function.
+    window.addEventListener('touchmove', e=>updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+
+      if (isHolding && !isExploding) { chargeTime = Math.min(chargeTime + 20, CHARGE_LIMIT); } 
+      else if (!isExploding) { chargeTime = Math.max(0, chargeTime - 60); }
+      if (chargeTime >= CHARGE_LIMIT && !isExploding) { isExploding = true; explosionForce = 1.0; invertCycle = false; explosionProgress = 0; }
+      
+      const chargeRatio = chargeTime / CHARGE_LIMIT;
+      material.uniforms.uCharge.value = chargeRatio;
+
+      if (isExploding) {
+          explosionForce -= 0.025; 
+          explosionProgress = 1.0 - explosionForce; 
+          material.uniforms.uGrowth.value = Math.sin(explosionProgress * 3.14); 
+          if (explosionForce < 0.9 && !invertCycle) {
+              invertCycle = true;
+              const bg = document.getElementById('stage-container');
+              const body = document.body;
+              const subtitle = document.getElementById('dynamic-subtitle');
+
+              if (bg.classList.contains('inverted-bg')) { 
+                  // GOING TO BLACK (Show DARK items)
+                  bg.classList.remove('inverted-bg'); 
+                  body.classList.remove('inverted-theme'); 
+                  material.uniforms.uInvert.value = 0.0;
+                  subtitle.innerText = "fostering independence and breaking things";
+              } 
+              else { 
+                  // GOING TO WHITE (Show BRIGHT items)
+                  bg.classList.add('inverted-bg'); 
+                  body.classList.add('inverted-theme'); 
+                  material.uniforms.uInvert.value = 1.0;
+                  subtitle.innerText = "guiding teams and making things";
+              }
+              // Update Nav targets since list changed size/content
+              setTimeout(updateTargets, 50);
+          }
+          if (explosionForce <= 0) isExploding = false;
+      }
+
+      for(let i=0; i<count; i++) {
+          const vel = velocities[i];
+          const posX = positions[i*3], posY = positions[i*3+1], posZ = positions[i*3+2];
+          const homeX = originals[i*3], homeY = originals[i*3+1], homeZ = originals[i*3+2];
+
+          const k = 0.03; 
+          let accX = (homeX - posX) * k; let accY = (homeY - posY) * k; let accZ = (homeZ - posZ) * k;
+
+          const dx = posX - mousePos.x, dy = posY - mousePos.y, dz = posZ - mousePos.z;
+          const distSq = dx*dx + dy*dy + dz*dz; const dist = Math.sqrt(distSq);
+
+          if (isExploding) {
+              if(dist < 20.0) {
+                  const force = explosionForce * 5.0;
+                  accX += (dx/dist) * force; accY += (dy/dist) * force; accZ += (dz/dist) * force;
+              }
+          } else if (chargeRatio > 0.0) {
+              const force = chargeRatio * 0.8;
+              accX -= (dx/dist) * force; accY -= (dy/dist) * force; accZ -= (dz/dist) * force;
+          } else {
+              if (dist < 8.0) {
+                  const force = (8.0 - dist) * 0.05;
+                  accX += (dx/dist) * force; accY += (dy/dist) * force;
+              }
+          }
+
+          vel.x += accX; vel.y += accY; vel.z += accZ;
+          vel.x *= 0.92; vel.y *= 0.92; vel.z *= 0.92;
+
+          positions[i*3] += vel.x; positions[i*3+1] += vel.y; positions[i*3+2] += vel.z;
+
+          dummy.position.set(positions[i*3], positions[i*3+1], positions[i*3+2]);
+          const lookTgt = new THREE.Vector3(mousePos.x, mousePos.y, 10);
+          dummy.lookAt(lookTgt);
+          dummy.updateMatrix();
+          mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      renderer.render(scene, camera);
+    }
+    animate(0);
+
+    window.addEventListener('resize', () => { 
+        camera.aspect = window.innerWidth / window.innerHeight; 
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        if(isMobile) handleNav(0); 
+    });
+  </script>
+</body>
+</html>

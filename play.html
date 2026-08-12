@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Jishnu Roy Chaudhury — Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <style>
+    html, body { 
+      margin: 0; padding: 0; 
+      background: transparent; 
+      color: #fff; 
+      font-family: 'Clash Display', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      transition: color 0.1s linear;
+    }
+
+    #stage-container {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: -1; 
+      background: #000; 
+      transition: background 0.05s linear; 
+    }
+    canvas { display: block; }
+    #stage-container.inverted-bg { background: #ffffff; }
+
+    /* --- MOBILE NAV ZONES --- */
+    .mobile-nav-zone {
+      position: fixed; left: 0; width: 100%; height: 100px;
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; pointer-events: auto; mix-blend-mode: difference;
+      cursor: pointer;
+    }
+    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
+    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
+    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
+    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
+
+    /* --- THEME STATES --- */
+    body.inverted-theme { color: #000; }
+    
+    .project-item.active, .project-item:hover { 
+        background: #ffffff !important; 
+        color: #000 !important; 
+        border-top: 1px solid #ffffff !important; 
+        transform: scale(1.02);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .project-item.active .project-tags, .project-item:hover .project-tags { color: #ff0055 !important; } 
+    .project-item.active *, .project-item:hover * { color: #000 !important; }
+
+    body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover { 
+        background: #000000 !important; 
+        color: #fff !important; 
+        border-top: 1px solid #000000 !important; 
+    }
+    body.inverted-theme .project-item.active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #ffff00 !important; }
+    body.inverted-theme .project-item.active *, body.inverted-theme .project-item:hover * { color: #fff !important; }
+
+    body.inverted-theme .project-item { border-top: 1px solid rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.0); }
+    body.inverted-theme .project-tags { color: #8800cc; }
+    body.inverted-theme .back-btn { color: #000; }
+
+    #main-wrapper {
+      position: relative; padding: 10vw 5vw; max-width: 1200px; margin: 0 auto;
+      z-index: 10; pointer-events: none; will-change: transform;
+      padding-top: 35vh; padding-bottom: 35vh;
+    }
+
+    #header-section { margin-bottom: 80vh; text-align: right; pointer-events: auto; }
+
+    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
+    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
+
+    .project-list { display: flex; flex-direction: column; gap: 80vh; pointer-events: auto; }
+
+    .project-item {
+      border-top: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      cursor: pointer; display: grid; grid-template-columns: 1fr 2fr; gap: 20px;
+      background: rgba(0,0,0,0.0); border-radius: 8px;
+    }
+
+    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
+    .project-details { display: flex; flex-direction: column; gap: 10px; }
+    .project-thumb { width: 100%; max-width: 320px; aspect-ratio: 4/3; object-fit: cover; border-radius: 6px; display: block; background: rgba(255,255,255,0.06); }
+    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
+    .project-tags { 
+        font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; 
+        text-transform: uppercase; letter-spacing: 0.05em; 
+        color: #ffff00; 
+        transition: color 0.1s linear; 
+    }
+    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
+
+    .back-btn {
+      position: fixed; top: 40px; left: 5vw;
+      font-size: 18px; text-decoration: none; color: white; font-weight: 600; 
+      z-index: 300; pointer-events: auto; transition: color 0.1s linear;
+      mix-blend-mode: difference;
+    }
+
+    @media (max-width: 768px) {
+      html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; }
+      .mobile-nav-zone { display: flex; }
+      .project-item { grid-template-columns: 1fr; gap: 5px; }
+      #header-section { text-align: left; }
+    }
+  </style>
+  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
+</head>
+<body>
+
+  <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
+  <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
+
+  <div id="stage-container"></div>
+  <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
+
+  <div id="main-wrapper">
+    <div id="header-section" class="scroll-target">
+      <h1>experimental<br>playground</h1>
+      <span class="subtitle">Sketches, prototypes, and failures.</span>
+    </div>
+
+    <div class="project-list">
+      <div class="project-item scroll-target" data-project="jishnu/fieldlinesim" onclick="handleProjectClick(event)">
+        <span class="project-year">2026</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/jishnu/fieldlinesim/vid-01-poster.jpg" alt="" loading="lazy">
+          <h2 class="project-title">FieldLineSim</h2>
+          <span class="project-tags">TouchDesigner • Python</span>
+          <p class="project-desc">A collection of daily visual experiments exploring noise algorithms, feedback loops, and organic growth patterns.</p>
+        </div>
+      </div>
+      <div class="project-item scroll-target" data-project="jishnu/fucknrobot" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/jishnu/fucknrobot/vid-01-poster.jpg" alt="" loading="lazy">
+          <h2 class="project-title">FucknRobot</h2>
+          <span class="project-tags">AI • GLSL • Research</span>
+          <p class="project-desc">Attempts to recreate biological morphogenesis using neural networks inside TouchDesigner.</p>
+        </div>
+      </div>
+      <div class="project-item scroll-target" data-project="jishnu/handsonexplorations" onclick="handleProjectClick(event)">
+        <span class="project-year">2025</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/jishnu/handsonexplorations/img-01.jpg" alt="" loading="lazy">
+          <h2 class="project-title">HandsOnExplorations</h2>
+          <span class="project-tags">Music Visualization • GLSL</span>
+          <p class="project-desc">Real-time raymarching landscapes that deform and color-shift based on frequency spectrum analysis.</p>
+        </div>
+      </div>
+      <div class="project-item scroll-target" data-project="jishnu/volumetrics" onclick="handleProjectClick(event)">
+        <span class="project-year">2024</span>
+        <div class="project-details">
+          <img class="project-thumb" src="assets/jishnu/volumetrics/vid-01-poster.jpg" alt="" loading="lazy">
+          <h2 class="project-title">Volumetrics</h2>
+          <span class="project-tags">3D Scanning • Point Clouds</span>
+          <p class="project-desc">Raw point cloud data captured from urban environments and processed into glitch-art aesthetic assets.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+    let currentIndex = 0;
+    let targets = []; 
+    const wrapper = document.getElementById('main-wrapper');
+    const isMobile = window.innerWidth < 768;
+
+    function initTargets() {
+        const header = document.getElementById('header-section');
+        const projects = document.querySelectorAll('.project-item');
+        targets = [header, ...projects];
+        updateChevronVisibility();
+    }
+    initTargets();
+
+    function updateChevronVisibility() {
+        const upBtn = document.getElementById('nav-up');
+        const downBtn = document.getElementById('nav-down');
+        if(!upBtn || !downBtn) return;
+        upBtn.style.opacity = currentIndex === 0 ? '0.2' : '1';
+        downBtn.style.opacity = currentIndex === targets.length - 1 ? '0.2' : '1';
+    }
+
+    window.handleNav = (dir) => {
+        if (!isMobile) return;
+        const nextIndex = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
+        if (nextIndex === currentIndex) return; 
+        currentIndex = nextIndex;
+        updateChevronVisibility();
+        const targetEl = targets[currentIndex];
+        const elementCenter = targetEl.offsetTop + (targetEl.offsetHeight / 2);
+        const viewportCenter = window.innerHeight / 2;
+        const shiftAmount = elementCenter - viewportCenter;
+        wrapper.style.transform = `translateY(${-shiftAmount}px)`;
+        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)"; 
+        targets.forEach(t => { if(t.classList.contains('project-item')) t.classList.remove('active'); });
+        if (currentIndex > 0) targetEl.classList.add('active');
+    };
+
+    window.checkInteraction = (e) => {
+        if (chargeTime > 200) { e.preventDefault(); e.stopPropagation(); return false; }
+        return true;
+    }
+    window.handleProjectClick = (e) => {
+        if (!checkInteraction(e)) return;
+        const key = e.currentTarget.dataset.project;
+        if (key) window.location.href = `project.html?p=${key}&from=play.html`;
+    }
+
+    const stage = document.getElementById('stage-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 30);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setClearColor(0x000000, 0); 
+    stage.appendChild(renderer.domElement);
+
+    const boidCount = 500;
+    const positions = new Float32Array(boidCount * 3);
+    const velocities = []; 
+    
+    for(let i=0; i<boidCount; i++) {
+        positions[i*3] = (Math.random() - 0.5) * 60;
+        positions[i*3+1] = (Math.random() - 0.5) * 60;
+        positions[i*3+2] = (Math.random() - 0.5) * 30;
+        const v = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
+        // EVEN SLOWER: 0.10 base speed (was 0.15)
+        v.normalize().multiplyScalar(0.10); 
+        velocities.push(v);
+    }
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: { 
+        uColorA: { value: new THREE.Color(0xffff00) }, 
+        uColorB: { value: new THREE.Color(0xaa00ff) },
+        uInvert: { value: 0.0 },
+        uCharge: { value: 0.0 },
+        uGrowth: { value: 0.0 }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        uniform float uCharge;
+        uniform float uGrowth;
+        void main() {
+          vNormal = normal;
+          vec3 pos = position;
+          
+          float warpFactor = 1.0 + pow(uCharge, 2.0) * 15.0;
+          pos.z *= warpFactor;
+          
+          float thickness = 1.0 + (uCharge * 2.0) + (uGrowth * 5.0);
+          pos.x *= thickness;
+          pos.y *= thickness;
+
+          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        uniform vec3 uColorA; uniform vec3 uColorB;
+        uniform float uInvert; uniform float uCharge;
+        void main() {
+          float gradient = smoothstep(-1.0, 1.0, vNormal.z); 
+          vec3 col = mix(uColorA, uColorB, gradient);
+          col = mix(col, vec3(1.0), uCharge * 0.9);
+          vec3 invCol = uColorA; 
+          gl_FragColor = vec4(mix(col, invCol, uInvert), 1.0);
+        }
+      `
+    });
+
+    const geometry = new THREE.BoxGeometry(0.08, 0.08, 1.2); 
+    const mesh = new THREE.InstancedMesh(geometry, material, boidCount);
+    scene.add(mesh);
+    
+    const dummy = new THREE.Object3D();
+    const alignSum = new THREE.Vector3();
+    const cohSum = new THREE.Vector3();
+    const sepSum = new THREE.Vector3();
+    const diff = new THREE.Vector3();
+    const vecDummy = new THREE.Vector3();
+
+    const raycaster = new THREE.Raycaster();
+    const mousePos = new THREE.Vector3(0, 0, 0); 
+    
+    let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 1500;
+    let isExploding = false; let explosionForce = 0; let invertCycle = false;
+    let explosionProgress = 0; 
+
+    const startHold = (e) => { 
+        if(e.target.closest('.back-btn') || e.target.closest('.mobile-nav-zone')) return;
+        isHolding = true; 
+    };
+    const stopHold = () => { isHolding = false; };
+
+    window.addEventListener('touchmove', (e) => { if(isMobile) e.preventDefault(); }, {passive: false});
+    window.addEventListener('mousedown', startHold);
+    window.addEventListener('touchstart', startHold, {passive: true});
+    window.addEventListener('mouseup', stopHold);
+    window.addEventListener('touchend', stopHold);
+    window.addEventListener('mouseleave', stopHold);
+
+    const updateMouse = (x, y) => {
+        const mx = (x / window.innerWidth) * 2 - 1;
+        const my = -(y / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(new THREE.Vector2(mx, my), camera);
+        const planeZ = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
+        raycaster.ray.intersectPlane(planeZ, mousePos);
+    };
+    window.addEventListener('mousemove', (e) => updateMouse(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
+
+    const neighborDist = 12.0; 
+    const separationDist = 3.5; 
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+
+      if (isHolding && !isExploding) { chargeTime = Math.min(chargeTime + 20, CHARGE_LIMIT); } 
+      else if (!isExploding) { chargeTime = Math.max(0, chargeTime - 60); }
+      
+      if (chargeTime >= CHARGE_LIMIT && !isExploding) { isExploding = true; explosionForce = 1.0; invertCycle = false; explosionProgress = 0; }
+      
+      const chargeRatio = chargeTime / CHARGE_LIMIT;
+      material.uniforms.uCharge.value = chargeRatio;
+
+      if (isExploding) {
+          // FASTER DECAY: 0.025 (was 0.015) for snappier boom
+          explosionForce -= 0.025; 
+          explosionProgress = 1.0 - explosionForce; 
+          material.uniforms.uGrowth.value = Math.sin(explosionProgress * 3.14); 
+
+          // HIGHER THRESHOLD: Invert almost immediately (0.9)
+          if (explosionForce < 0.9 && !invertCycle) {
+              invertCycle = true;
+              const bg = document.getElementById('stage-container'); const body = document.body;
+              if (bg.classList.contains('inverted-bg')) {
+                 bg.classList.remove('inverted-bg'); body.classList.remove('inverted-theme'); material.uniforms.uInvert.value = 0.0;
+              } else {
+                 bg.classList.add('inverted-bg'); body.classList.add('inverted-theme'); material.uniforms.uInvert.value = 1.0;
+              }
+          }
+          if (explosionForce <= 0) { isExploding = false; chargeTime = 0; material.uniforms.uGrowth.value = 0; }
+      }
+
+      for(let i=0; i<boidCount; i++) {
+          const vel = velocities[i];
+          const posX = positions[i*3];
+          const posY = positions[i*3+1];
+          const posZ = positions[i*3+2];
+          
+          alignSum.set(0,0,0); cohSum.set(0,0,0); sepSum.set(0,0,0);
+          let count = 0;
+
+          for(let j=0; j<boidCount; j+=2) { 
+              if (i===j) continue;
+              const nX = positions[j*3]; const nY = positions[j*3+1]; const nZ = positions[j*3+2];
+              const dx = posX - nX; const dy = posY - nY; const dz = posZ - nZ;
+              const dSq = dx*dx + dy*dy + dz*dz;
+              
+              if (dSq > 0.001 && dSq < neighborDist * neighborDist) {
+                  alignSum.add(velocities[j]);
+                  cohSum.x += nX; cohSum.y += nY; cohSum.z += nZ;
+                  if (dSq < separationDist * separationDist) {
+                      const d = Math.sqrt(dSq);
+                      sepSum.x += (dx / d); sepSum.y += (dy / d); sepSum.z += (dz / d);
+                  }
+                  count++;
+              }
+          }
+
+          const acc = new THREE.Vector3(0,0,0);
+          if (count > 0) {
+              if(alignSum.lengthSq() > 0) acc.add(alignSum.divideScalar(count).normalize().multiplyScalar(0.5).sub(vel).clampLength(0, 0.03));
+              cohSum.divideScalar(count).sub(vecDummy.set(posX, posY, posZ));
+              if(cohSum.lengthSq() > 0) acc.add(cohSum.normalize().multiplyScalar(0.5).sub(vel).clampLength(0, 0.03));
+              if(sepSum.lengthSq() > 0) acc.add(sepSum.divideScalar(count).normalize().multiplyScalar(0.5).sub(vel).clampLength(0, 0.08));
+          }
+
+          const currPos = vecDummy.set(posX, posY, posZ);
+          if (isExploding) {
+              diff.subVectors(currPos, mousePos);
+              if (diff.lengthSq() > 0.001) acc.add(diff.normalize().multiplyScalar(explosionForce * 3.0));
+          } else if (chargeRatio > 0.0) {
+              diff.subVectors(mousePos, currPos);
+              if (diff.lengthSq() > 0.001) acc.add(diff.normalize().multiplyScalar(chargeRatio * 1.5));
+          }
+
+          const rangeX = 50; const rangeY = 40; const rangeZ = 20;
+          if (posX > rangeX) positions[i*3] = -rangeX; if (posX < -rangeX) positions[i*3] = rangeX;
+          if (posY > rangeY) positions[i*3+1] = -rangeY; if (posY < -rangeY) positions[i*3+1] = rangeY;
+          if (posZ > rangeZ) positions[i*3+2] = -rangeZ; if (posZ < -rangeZ) positions[i*3+2] = rangeZ;
+
+          const speedLimit = 0.5 + (chargeRatio * 1.0) + (isExploding ? 2.0 : 0);
+          vel.add(acc);
+          
+          // SLOWER CLAMPING: Min 0.02 (super drift)
+          vel.clampLength(0.02, speedLimit); 
+          
+          positions[i*3] += vel.x; positions[i*3+1] += vel.y; positions[i*3+2] += vel.z;
+
+          dummy.position.set(positions[i*3], positions[i*3+1], positions[i*3+2]);
+          const target = dummy.position.clone().add(vel);
+          dummy.lookAt(target);
+          dummy.updateMatrix();
+          mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      renderer.render(scene, camera);
+    }
+    animate(0);
+
+    window.addEventListener('resize', () => { 
+        camera.aspect = window.innerWidth / window.innerHeight; 
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        if(isMobile) handleNav(0); 
+    });
+  </script>
+</body>
+</html>

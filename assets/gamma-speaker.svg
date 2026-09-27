@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1153" fill="none">
+  <!-- The Gamma Barbecue speaker, without the name: three waves over a cone
+       with rounded corners, traced from assets/GAmmalogo.png. currentColor,
+       so it takes the ink of whatever it sits in. The same two paths are
+       drawn by gmmbbq.html's flock, which carries its own copy of them. -->
+  <path d="M76 186 A660 660 0 0 1 824 186 M158 296 A560 560 0 0 1 742 296 M268 414 A300 300 0 0 1 632 414"
+        stroke="currentColor" stroke-width="88" stroke-linecap="round"/>
+  <path d="M30 530 L870 530 L630 862 L630 1126 L270 1126 L270 862 Z"
+        fill="currentColor" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/>
+</svg>

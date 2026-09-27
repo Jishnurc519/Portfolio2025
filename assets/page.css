@@ -1,0 +1,407 @@
+/* Shared shell for the three project index pages (work / play / facilitation).
+   These pages differ only in their copy and in the WebGL scene behind them —
+   everything about the snap-scroll layout and the light/dark inversion lives
+   here so the pages cannot drift apart again. Page-specific CSS belongs in
+   that page's <style> block, and should be limited to genuine differences. */
+
+/* --- GLOBAL LOCKS --- */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* The browser must not claim touch gestures, because this page moves by a
+     transform rather than by scrolling. That used to take pinch-to-zoom with
+     it, which is not a trade anyone agreed to on a page whose smallest type is
+     11px -- so the zoom is implemented on the same transform in
+     assets/scroll-nav.js, and the events have to reach it. */
+  touch-action: none;
+}
+
+:root {
+  /* THE TWO TONES. Neither is a pure black or a pure white -- the page is ink
+     on paper, not a switched-off screen -- and they are *exact complements*:
+     11+244, 14+241, 19+236, each channel summing to 255. That is not a
+     nicety. Every piece of ink on this site that has to read on both grounds
+     (the back button, the counter, the cursor ring, the canvas type on the
+     front page) is painted by `mix-blend-mode: difference` against white, and
+     difference against white is `255 - backdrop`. Because the pair sums to
+     255, that lands *exactly* on the other tone rather than near it, so the
+     blended ink and the CSS-coloured ink are the same colour and the
+     inversion is consistent everywhere. Move one tone and the other has to
+     move with it.
+     17.0:1 against each other, so nothing here is readability-marginal. */
+  --tone-dark:  #0b0e13;
+  --tone-light: #f4f1ec;
+  /* Same values as triplets, for the tints below. */
+  --tone-dark-rgb:  11, 14, 19;
+  --tone-light-rgb: 244, 241, 236;
+  /* The one operand that swaps the two tones: --tone-dark + --tone-light,
+     channel by channel. It is never a colour anyone sees.
+     Every difference-blended mark on the site resolves its ink from this, so a
+     page running on a *different* pair only has to restate it -- which is what
+     facilitation.html does, where the pair is dark + gold and the operand is
+     therefore #f5c65d. Differencing with the wrong operand does not merely
+     look off: white against that page's gold comes out blue. */
+  --tone-swap: #ffffff;
+  --tone-swap-rgb: 255, 255, 255;
+
+  /* One accent, stated twice: the same hue and saturation with its lightness
+     mirrored, so the flip reads as the same colour turned over rather than as
+     two different greens. Both sides clear 4.5:1 against the ground they sit
+     on -- which a single value cannot do, because no one colour is readable on
+     both near-black and near-white. Same arrangement for the amber a selected
+     card uses. */
+  --accent:      #6fd9c8;
+  --accent-alt:  #207a6b;
+  --card-accent: #7f450d;
+  --card-accent-alt: #f2b880;
+}
+
+html, body {
+  margin: 0; padding: 0;
+  background: transparent; color: var(--tone-light);
+  font-family: 'Clash Display', sans-serif;
+  overflow: hidden; /* Locks native scrollbars on both desktop & mobile */
+  height: 100dvh; width: 100vw; position: fixed;
+  transition: color 0.1s linear;
+}
+
+#stage-container {
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100dvh;
+  z-index: -1;
+  background: var(--tone-dark);
+  transition: background 0.05s linear;
+}
+canvas { display: block; }
+#stage-container.inverted-bg { background: var(--tone-light); }
+
+/* --- MOBILE NAV ZONES --- */
+.mobile-nav-zone {
+  position: fixed; left: 0; width: 100%; height: 100px;
+  display: none; align-items: center; justify-content: center;
+  z-index: 200; pointer-events: auto; mix-blend-mode: difference;
+  cursor: pointer;
+}
+/* No scrim behind the chevrons. The zone blends in difference, and difference
+   against black is the backdrop unchanged -- the dark gradient that used to be
+   here painted nothing at all. The chevron does not need one: differenced, it
+   is already whatever it stands on, inverted. */
+.nav-top { top: 0; }
+.nav-bottom { bottom: 0; }
+.chevron {
+  width: 20px; height: 20px; transition: opacity 0.3s ease;
+  /* --tone-swap, not "white": the zone above blends in difference, so this is
+     the operand that turns the ground into the other tone, never a colour. */
+  border-right: 3px solid var(--tone-swap); border-bottom: 3px solid var(--tone-swap);
+}
+.chevron.up { transform: rotate(-135deg); margin-top: 15px; }
+.chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
+
+/* --- LAYOUT --- */
+#main-wrapper {
+  position: relative; padding: 0 5vw; max-width: 1200px; margin: 0 auto;
+  z-index: 10; pointer-events: none; will-change: transform;
+}
+#header-section { text-align: left; pointer-events: auto; padding-top: 40vh; padding-bottom: 40vh; }
+
+h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
+.subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
+.hint {
+  font-size: clamp(11px, 1vw, 13px); font-weight: 400; margin-top: 14px;
+  display: block; letter-spacing: 0.03em;
+  opacity: 0;
+}
+/* Played on load and replayed by assets/hold-hint.js every twenty seconds the
+   invert gesture goes unused — the class comes off and goes back on to restart
+   it, so the animation must hang off the class rather than off .hint. */
+.hint.hint-show { animation: hint-flash 4.5s ease-in-out forwards; }
+/* 0.4 put this under 4:1 against either ground -- unreadable for the one
+   moment it is on screen, which is the only moment it has. */
+@keyframes hint-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.62; }
+  70%  { opacity: 0.62; }
+  100% { opacity: 0; }
+}
+/* The opening showing. Brighter and longer than the repeats because it is the
+   one moment a first visitor is told the gesture is there at all -- the
+   repeats are reminders, this is the introduction. */
+.hint.hint-intro { animation: hint-intro 7.5s ease-in-out forwards; }
+@keyframes hint-intro {
+  0%   { opacity: 0; }
+  7%   { opacity: 0.88; }
+  80%  { opacity: 0.88; }
+  100% { opacity: 0; }
+}
+/* And when two showings have gone unused, it stops being polite about it.
+   Pulsing rather than merely brighter: a step change in opacity is the one
+   thing peripheral vision reliably catches, and by this point the reader is
+   looking at something else on the page. */
+.hint.hint-urge { animation: hint-urge 6.5s ease-in-out forwards; }
+@keyframes hint-urge {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.94; }
+  24%  { opacity: 0.42; }
+  40%  { opacity: 0.94; }
+  56%  { opacity: 0.42; }
+  72%  { opacity: 0.94; }
+  100% { opacity: 0; }
+}
+/* Someone who has asked for less movement gets the brightness and none of the
+   blinking -- the line still arrives, it just holds still. */
+@media (prefers-reduced-motion: reduce) {
+  .hint.hint-urge { animation: hint-intro 6.5s ease-in-out forwards; }
+}
+
+.project-list { display: flex; flex-direction: column; gap: 0; pointer-events: auto; min-height: 100vh; }
+
+.project-item {
+  /* An <a>, so it needs the link defaults taken back off. */
+  text-decoration: none; color: inherit;
+  border-top: 1px solid rgba(var(--tone-light-rgb), 0.4);
+  padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer; display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 20px;
+  background: transparent; border-radius: 8px;
+  margin-top: 10vh; margin-bottom: 10vh;
+}
+
+.project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
+.project-details { display: flex; flex-direction: column; gap: 10px; }
+
+.thumb-stack { position: relative; width: 100%; max-width: 320px; height: 200px; }
+.project-thumb {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: left center;
+  border-radius: 6px; display: block; background: rgba(var(--tone-light-rgb), 0.06);
+  transition: transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease;
+}
+.thumb-stack .thumb-main { z-index: 3; }
+/* Stand-in plate for a project whose media hasn't been shot/added yet. */
+.thumb-empty {
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed rgba(var(--tone-light-rgb), 0.3); background: rgba(var(--tone-light-rgb), 0.03);
+  font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5;
+}
+body.inverted-theme .thumb-empty { border-color: rgba(var(--tone-dark-rgb), 0.25); background: rgba(var(--tone-dark-rgb), 0.03); }
+/* The selected/hovered card flips to the opposite ground, so the plate's
+   border has to flip with it or it disappears into the card. */
+.project-item.active .thumb-empty, .project-item:hover .thumb-empty {
+  border-color: rgba(var(--tone-dark-rgb), 0.3); background: rgba(var(--tone-dark-rgb), 0.04);
+}
+body.inverted-theme .project-item.active .thumb-empty,
+body.inverted-theme .project-item:hover .thumb-empty {
+  border-color: rgba(var(--tone-light-rgb), 0.3); background: rgba(var(--tone-light-rgb), 0.05);
+}
+.thumb-stack .thumb-bg-1 { z-index: 2; opacity: 0; transform: translate(6px, 6px) scale(0.97); }
+.thumb-stack .thumb-bg-2 { z-index: 1; opacity: 0; transform: translate(12px, 12px) scale(0.94); }
+.thumb-stack:hover .thumb-main,
+.project-item.active .thumb-main { transform: translate(-10px, -10px) scale(1.05); }
+.thumb-stack:hover .thumb-bg-1,
+.project-item.active .thumb-bg-1 { opacity: 0.85; transform: translate(10px, 10px) scale(1.0); }
+.thumb-stack:hover .thumb-bg-2,
+.project-item.active .thumb-bg-2 { opacity: 0.65; transform: translate(20px, 20px) scale(0.96); }
+
+/* The fan above only ever showed the same image in front. On the selected card
+   the layers take turns (render-projects.js advances data-top), so the second
+   and third stills get seen -- which on a phone, where there is no hover at
+   all, is the only way they ever were. */
+.project-item[data-top="1"] .thumb-main { z-index: 1; opacity: 0.65; }
+.project-item[data-top="1"] .thumb-bg-1 { z-index: 3; opacity: 1; transform: translate(-10px, -10px) scale(1.05); }
+.project-item[data-top="2"] .thumb-main { z-index: 2; opacity: 0.85; }
+.project-item[data-top="2"] .thumb-bg-1 { z-index: 1; opacity: 0.65; }
+.project-item[data-top="2"] .thumb-bg-2 { z-index: 3; opacity: 1; transform: translate(-10px, -10px) scale(1.05); }
+
+.project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
+/* No opacity here. Dimming coloured text is how the light theme ended up at
+   2.4:1 -- the de-emphasis has to come out of the colour itself, which is what
+   --accent-alt is for. */
+.project-tags {
+  font-size: clamp(12px, 1.2vw, 16px); font-weight: 400;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--accent); transition: color 0.1s linear;
+}
+.project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
+
+.back-btn {
+  position: fixed; top: 28px; left: calc(5vw - 12px);
+  /* 44px of height and a thumb's width of padding: it sits in the corner a
+     thumb reaches least accurately, and the padding costs nothing to look at. */
+  padding: 11px 14px; min-height: 44px; display: inline-flex; align-items: center;
+  font-size: 18px; text-decoration: none; color: var(--tone-swap); font-weight: 600;
+  z-index: 300; pointer-events: auto; transition: color 0.1s linear;
+  mix-blend-mode: difference;
+}
+/* mix-blend-mode: difference on .back-btn already keeps it contrasting
+   against any backdrop — an explicit color swap under .inverted-theme would
+   cancel that out when the theme flips at the same moment, so there is
+   deliberately no `body.inverted-theme .back-btn` rule here. */
+
+/* --- SECTION INTRO (play.html, facilitation.html) --- */
+/* The long-form writing that belongs to a section rather than to any one
+   project -- play's origin story, facilitation's account of why it teaches.
+   It carries .scroll-target, so the wheel stops on it once on the way down to
+   the cards instead of flying past a screen of body copy.
+   The type sits in `currentColor` and so inverts with everything else; only
+   the eyebrow is drawn in --accent, and a page whose accent belongs to a
+   different palette (facilitation's gold ground) overrides it locally, the
+   same way .hint and .project-year already do. */
+.section-intro {
+  pointer-events: auto;
+  padding-top: 18vh; padding-bottom: 18vh;
+  max-width: 62ch;
+}
+.section-intro .eyebrow {
+  display: block; font-size: clamp(11px, 1vw, 13px);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 18px;
+  transition: color 0.1s linear;
+}
+.section-intro h2 {
+  font-size: clamp(23px, 3.2vw, 38px); font-weight: 600;
+  line-height: 1.08; margin: 0 0 22px; letter-spacing: -0.01em;
+}
+.section-intro h3 {
+  font-size: clamp(15px, 1.5vw, 18px); font-weight: 600;
+  letter-spacing: 0.02em; margin: 34px 0 10px;
+}
+.section-intro p {
+  font-size: clamp(15px, 1.45vw, 18px); font-weight: 400;
+  line-height: 1.62; margin: 0 0 14px;
+}
+.section-intro p:last-child { margin-bottom: 0; }
+.section-intro em { font-style: italic; }
+.section-intro strong { font-weight: 600; }
+
+@media (max-width: 768px) {
+  .section-intro { padding-top: 12vh; padding-bottom: 12vh; }
+}
+
+/* --- PAST WORK (work.html) --- */
+.past-work {
+  margin-top: 10vh; margin-bottom: 10vh; padding-top: 20px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 10px; pointer-events: auto;
+}
+.behance-frame { width: 100%; max-width: 404px; aspect-ratio: 404 / 316; margin-top: 10px; }
+.behance-frame iframe { width: 100%; height: 100%; border: 0; border-radius: 8px; display: block; }
+.behance-link {
+  margin-top: 8px; font-size: clamp(13px, 1.2vw, 16px); font-weight: 500;
+  color: var(--accent); text-decoration: none;
+  transition: color 0.1s linear, opacity 0.2s ease, font-weight 0.1s linear;
+}
+.behance-link:hover { opacity: 0.75; }
+
+/* ============================================================= */
+/* THEME INVERSION                                               */
+/* Two axes that must stay consistent on every page:             */
+/*   1. body.inverted-theme  — the whole page flips to light.    */
+/*   2. .active / :hover     — a single card flips *against*     */
+/*      whatever the page theme currently is.                    */
+/* Accents: teal on dark grounds, amber on light grounds.        */
+/* ============================================================= */
+
+/* --- 1. page theme --- */
+body.inverted-theme { color: var(--tone-dark); }
+body.inverted-theme .project-item { border-top: 1px solid rgba(var(--tone-dark-rgb), 0.2); background: transparent; }
+body.inverted-theme .project-tags,
+body.inverted-theme .behance-link { color: var(--accent-alt); }
+
+/* --- 2. selected/hovered card, inverted against the page --- */
+.project-item.active, .project-item:hover, .project-item:focus-visible {
+  background: var(--tone-light) !important; color: var(--tone-dark) !important;
+  border-top: 1px solid var(--tone-light) !important;
+  transform: scale(1.02); box-shadow: 0 10px 40px rgba(var(--tone-dark-rgb), 0.5);
+}
+.project-item.active *, .project-item:hover *, .project-item:focus-visible * { color: var(--tone-dark) !important; }
+.project-item.active .project-tags, .project-item:hover .project-tags,
+.project-item:focus-visible .project-tags { color: var(--card-accent) !important; }
+
+body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover,
+body.inverted-theme .project-item:focus-visible {
+  background: var(--tone-dark) !important; color: var(--tone-light) !important;
+  border-top: 1px solid var(--tone-dark) !important;
+}
+body.inverted-theme .project-item.active *, body.inverted-theme .project-item:hover *,
+body.inverted-theme .project-item:focus-visible * { color: var(--tone-light) !important; }
+body.inverted-theme .project-item.active .project-tags,
+body.inverted-theme .project-item:hover .project-tags,
+body.inverted-theme .project-item:focus-visible .project-tags { color: var(--card-accent-alt) !important; }
+
+/* --- THEME-GATED GROUPS (facilitation.html) --- */
+/* Cards tagged dark-only show on the dark theme, bright-only on the light
+   one. assets/scroll-nav.js recomputes its target list after every flip so
+   the ones that just appeared are reachable. */
+.project-item.bright-only { display: none; }
+.project-item.dark-only { display: grid; }
+body.inverted-theme .project-item.bright-only { display: grid; }
+body.inverted-theme .project-item.dark-only { display: none; }
+
+/* --- FOCUS --- */
+/* Deliberately quiet: a step of weight and a move to the accent, which is the
+   same language the page already uses to say "this one". A ring would be the
+   only hard-edged rectangle on a site made of type and light. The card is the
+   exception and takes the selected treatment above, because on the card that
+   *is* what focus means here. */
+:focus { outline: none; }
+:focus-visible { outline: none; }
+.nav-link:focus-visible,
+.back-btn:focus-visible,
+.behance-link:focus-visible {
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+}
+body.inverted-theme .back-btn:focus-visible,
+body.inverted-theme .behance-link:focus-visible { color: var(--accent-alt); }
+/* The back button paints itself by difference, so an accent would be
+   differenced into something else entirely -- weight is the whole cue there. */
+.back-btn:focus-visible { color: var(--tone-swap); }
+
+/* --- WHERE AM I --- */
+/* The list has no scrollbar, so nothing on screen says how long the page is.
+   Set in the same difference ink as the back button so it reads on both
+   grounds and through the wipe without being told which way round the page is.
+   Built by assets/scroll-nav.js. */
+.nav-counter {
+  position: fixed; right: max(22px, env(safe-area-inset-right)); top: 50%;
+  transform: translateY(-50%);
+  z-index: 300; pointer-events: none; mix-blend-mode: difference;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+  color: var(--tone-swap); font-variant-numeric: tabular-nums;
+}
+.nav-count-rule {
+  display: block; width: 1px; height: 84px;
+  /* --tone-swap held back to 28%: a partial difference operand lands the rule
+     part-way between the ground and its opposite, which is how it reads as a
+     quiet line on both grounds without being given a colour of its own. Taken
+     from the variable rather than written out, so it follows a page that
+     restates the operand. */
+  background: rgba(var(--tone-swap-rgb), 0.28); position: relative;
+}
+.nav-count-rule i {
+  position: absolute; inset: 0; background: var(--tone-swap);
+  transform-origin: top; transform: scaleY(0);
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-count-all { opacity: 0.55; }
+
+/* --- ZOOMED --- */
+/* While the content is pinched open, the hover fan and the card lift would
+   fight the pan for the same fingers. */
+body.is-zoomed .project-item.active { transform: none; box-shadow: none; }
+body.is-zoomed .nav-counter { opacity: 0.25; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-count-rule i { transition: none; }
+  .project-item, .project-thumb { transition: none; }
+}
+
+@media (max-width: 768px) {
+  .mobile-nav-zone { display: flex; }
+  .project-item { grid-template-columns: 1fr; gap: 5px; }
+  /* The chevrons say the same thing with a bigger target. */
+  .nav-counter { display: none; }
+}

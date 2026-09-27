@@ -4,143 +4,141 @@
   <meta charset="utf-8" />
   <title>Jishnu Roy Chaudhury — Play</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Sketches, prototypes and failures — gigs, installations and experiments in sound, light and code that were never meant to ship." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <!-- Absolute URLs, because a scraper reading this page has no base to
+       resolve a relative one against. If the site moves to its own
+       domain, this constant is the only thing that changes. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="jishnu has an artpage">
+  <meta property="og:title" content="Experimental playground — Jishnu Roy Chaudhury">
+  <meta property="og:description" content="Sketches, prototypes and failures — gigs, installations and experiments in sound, light and code that were never meant to ship.">
+  <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/play.html">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/jishnu/fieldlinesim/vid-01-poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <!-- Layout, snap-scroll shell and all theme/inversion rules are shared by
+       work / play / facilitation. Anything page-specific goes below it. -->
+  <link rel="stylesheet" href="assets/page.css">
   <style>
-    html, body { 
-      margin: 0; padding: 0; 
-      background: transparent; 
-      color: #fff; 
-      font-family: 'Clash Display', sans-serif;
-      overflow-x: hidden;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      transition: color 0.1s linear;
+    /* This page's header is the only one that hangs off the right edge. */
+    #header-section { text-align: right; }
+    @media (max-width: 768px) { #header-section { text-align: left; } }
+    /* THE PAIR, restated for this section. Play runs on magenta and the site's
+       near-black rather than on paper and near-black, so the value that
+       difference blending swaps them with is dark + magenta, not the site-wide
+       #ffffff. Every mark that paints itself by difference resolves its ink
+       from --tone-swap -- the cursor ring and its charge meter, the section
+       counter, the chevrons, the back link -- and so does the packing layer
+       below, which reads the variable rather than carrying its own copy.
+       11+238, 14+170, 19+232 -- exact complements, which is what makes the
+       swap land on the other tone to the byte instead of near it. */
+    :root {
+      --tone-light: #eeaae8;
+      --tone-light-rgb: 238, 170, 232;
+      --tone-swap: #f9b8fb;
+      --tone-swap-rgb: 249, 184, 251;
+      /* And the rest of the palette in the same hue -- see the note on
+         work.html. page.css ships a teal accent and an amber card accent,
+         both of which belong to the paper palette and read as a second colour
+         against this one. */
+      --accent: #cf86ca;
+      --accent-alt: #5d1f5e;
+      --card-accent: #5d1f5e;
+      --card-accent-alt: #e3a3de;
     }
 
-    #stage-container {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      z-index: -1;
-      background: #0a0a0a;
-      transition: background 0.05s linear;
+    /* Above the copy, not behind it. The pack is painted a channel at a
+       time and the layer is differenced against everything under it, so a
+       circle crossing the heading inverts the heading along with the ground.
+       It sits below .back-btn, the nav chevrons and the cursor ring (all
+       z-index 200-300, all differenced themselves) so those keep reading
+       against whatever the field has just done to the page. */
+    #pack-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: 100; pointer-events: none; mix-blend-mode: difference;
     }
-    canvas { display: block; }
-    #stage-container.inverted-bg { background: #f4f1ec; }
-
-    /* --- MOBILE NAV ZONES --- */
-    .mobile-nav-zone {
-      position: fixed; left: 0; width: 100%; height: 100px;
-      display: none; align-items: center; justify-content: center;
-      z-index: 200; pointer-events: auto; mix-blend-mode: difference;
-      cursor: pointer;
+    /* The field IS the transition. page.css cross-fades the ground over 50ms
+       and the copy over 100ms, which everywhere else is the softness of the
+       flip -- here it is the old page fading back in on the very frame the
+       pack is dropped, because it had already been showing the new one. */
+    #stage-container, html, body { transition: none !important; }
+    /* --- THE SPEAKER ---
+       Painted in the page's own ink, like the heading, so it turns over with
+       the page and a circle of the pack crossing it flips it cleanly, the way
+       it flips a word. The RGB delay is two ghosts behind it, one warm and
+       one cold, trailing the buzz by a few milliseconds each. */
+    .gmm-door {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 60vh;
     }
-    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
-    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
-    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
-    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
-    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
-
-    /* --- THEME STATES --- */
-    body.inverted-theme { color: #000; }
-    
-    .project-item.active, .project-item:hover {
-        background: #f4f1ec !important;
-        color: #141210 !important;
-        border-top: 1px solid #f4f1ec !important;
-        transform: scale(1.02);
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    .gmm-speaker {
+      position: relative; display: block;
+      width: clamp(96px, 11vw, 150px); aspect-ratio: 900 / 1153;
+      color: var(--tone-light);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      /* page.css turns pointer events off across #main-wrapper and back on
+         only for the heading and the card list; this link needs them too, or
+         it can neither be hovered nor clicked. */
+      pointer-events: auto;
+      transition: scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .project-item.active .project-tags, .project-item:hover .project-tags { color: #b87a3d !important; }
-    .project-item.active *, .project-item:hover * { color: #141210 !important; }
-
-    body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover {
-        background: #0a0a0a !important;
-        color: #f4f1ec !important;
-        border-top: 1px solid #0a0a0a !important;
+    body.inverted-theme .gmm-speaker { color: var(--tone-dark); }
+    .gmm-speaker .ch {
+      position: absolute; inset: 0;
+      animation: gmm-buzz 0.16s steps(2, jump-none) infinite, gmm-thump 1.9s ease-in-out infinite;
     }
-    body.inverted-theme .project-item.active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #f2b880 !important; }
-    body.inverted-theme .project-item.active *, body.inverted-theme .project-item:hover * { color: #f4f1ec !important; }
-
-    body.inverted-theme .project-item { border-top: 1px solid rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.0); }
-    body.inverted-theme .project-tags { color: #2f9c8c; }
-    /* mix-blend-mode: difference on .back-btn already keeps it contrasting
-       against any backdrop — an explicit color swap here would cancel that
-       out when the theme flips at the same moment, so leave color as-is. */
-
-    #main-wrapper {
-      position: relative; padding: 10vw 5vw; max-width: 1200px; margin: 0 auto;
-      z-index: 10; pointer-events: none; will-change: transform;
-      padding-top: 35vh; padding-bottom: 35vh;
+    .gmm-speaker svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    /* Offset with `transform`, which the buzz leaves alone -- it animates the
+       separate `translate` and `scale` properties. */
+    .gmm-speaker .ch-r { color: #ff2e88; opacity: 0.85; animation-delay: -0.05s, 0.05s; transform: translate(-1.5px, 0.5px); }
+    .gmm-speaker .ch-b { color: #2fd6ff; opacity: 0.85; animation-delay: -0.1s, 0.1s; transform: translate(1.5px, -0.5px); }
+    .gmm-speaker .ch-g { z-index: 1; }
+    /* A tremble rather than a shake: a pixel or so either way. */
+    @keyframes gmm-buzz {
+      0%   { translate: 0 0; }
+      25%  { translate: 1px -1px; }
+      50%  { translate: -1px 0.5px; }
+      75%  { translate: 0.5px 1px; }
+      100% { translate: -0.5px -0.5px; }
     }
-
-    #header-section { margin-bottom: 80vh; text-align: right; pointer-events: auto; }
-
-    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
-    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
-    .hint {
-      font-size: clamp(11px, 1vw, 13px); font-weight: 400; margin-top: 14px;
-      display: block; letter-spacing: 0.03em;
-      opacity: 0; animation: hint-flash 4.5s ease-in-out forwards;
+    /* And once every couple of seconds, a beat. The ghosts take it late, so
+       the fringe opens on the beat and closes after it. */
+    @keyframes gmm-thump {
+      0%, 70%, 100% { scale: 1; }
+      76% { scale: 1.07; }
+      84% { scale: 0.99; }
     }
-    @keyframes hint-flash {
-      0% { opacity: 0; }
-      12% { opacity: 0.4; }
-      70% { opacity: 0.4; }
-      100% { opacity: 0; }
+    /* Under the pointer: a size up, and the tremble gets a little livelier --
+       a pixel either way and a fraction of a degree, no more. */
+    @keyframes gmm-jitter {
+      0%   { translate: 0 0; rotate: 0deg; }
+      25%  { translate: 1px -0.5px; rotate: 0.6deg; }
+      50%  { translate: -1px 0.5px; rotate: -0.6deg; }
+      75%  { translate: 0.5px 1px; rotate: 0.3deg; }
+      100% { translate: 0 0; rotate: 0deg; }
     }
+    .gmm-speaker:hover, .gmm-speaker:focus-visible { scale: 1.15; }
+    .gmm-speaker:hover .ch, .gmm-speaker:focus-visible .ch { animation: gmm-jitter 0.22s linear infinite; }
+    .gmm-speaker:hover .ch-r { animation-delay: -0.04s; }
+    .gmm-speaker:hover .ch-b { animation-delay: -0.08s; }
 
-    .project-list { display: flex; flex-direction: column; gap: 20vh; pointer-events: auto; }
-
-    .project-item {
-      border-top: 1px solid rgba(255, 255, 255, 0.4);
-      padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-      cursor: pointer; display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 20px;
-      background: rgba(0,0,0,0.0); border-radius: 8px;
-    }
-
-    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
-    .project-details { display: flex; flex-direction: column; gap: 10px; }
-    .thumb-stack { position: relative; width: 100%; max-width: 320px; height: 200px; }
-    .project-thumb {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: left center;
-      border-radius: 6px; display: block; background: rgba(255,255,255,0.06);
-      transition: transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease;
-    }
-    .thumb-stack .thumb-main { z-index: 3; }
-    .thumb-stack .thumb-bg-1 { z-index: 2; opacity: 0; transform: translate(6px, 6px) scale(0.97); }
-    .thumb-stack .thumb-bg-2 { z-index: 1; opacity: 0; transform: translate(12px, 12px) scale(0.94); }
-    .thumb-stack:hover .thumb-main { transform: translate(-10px, -10px) scale(1.05); }
-    .thumb-stack:hover .thumb-bg-1 { opacity: 0.85; transform: translate(10px, 10px) scale(1.0); }
-    .thumb-stack:hover .thumb-bg-2 { opacity: 0.65; transform: translate(20px, 20px) scale(0.96); }
-    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
-    .project-tags {
-        font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8;
-        text-transform: uppercase; letter-spacing: 0.05em;
-        color: #6fd9c8;
-        transition: color 0.1s linear;
-    }
-    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
-
-    .back-btn {
-      position: fixed; top: 40px; left: 5vw;
-      font-size: 18px; text-decoration: none; color: white; font-weight: 600;
-      z-index: 300; pointer-events: auto; transition: color 0.1s linear;
-      mix-blend-mode: difference;
-    }
-
-    @media (max-width: 768px) {
-      html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; }
-      .mobile-nav-zone { display: flex; }
-      .project-item { grid-template-columns: 1fr; gap: 5px; }
-      #header-section { text-align: left; }
+    @media (prefers-reduced-motion: reduce) {
+      .gmm-speaker .ch, .gmm-speaker:hover .ch { animation: none; }
     }
   </style>
-  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="gamma-speaker" viewBox="0 0 900 1153">
+      <!-- assets/gamma-speaker.svg -->
+      <path d="M76 186 A660 660 0 0 1 824 186 M158 296 A560 560 0 0 1 742 296 M268 414 A300 300 0 0 1 632 414"
+            fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round"/>
+      <path d="M30 530 L870 530 L630 862 L630 1126 L270 1126 L270 862 Z"
+            fill="currentColor" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/>
+    </symbol>
+  </svg>
 
   <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
   <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
@@ -152,346 +150,610 @@
     <div id="header-section" class="scroll-target">
       <h1>experimental<br>playground</h1>
       <span class="subtitle">Sketches, prototypes, and failures.</span>
-      <span class="hint">hold anywhere to shift between light and dark</span>
+      <span class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</span>
     </div>
 
-    <div class="project-list">
-      <div class="project-item scroll-target" data-project="jishnu/fieldlinesim" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/jishnu/fieldlinesim/vid-01-poster.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2026</span>
-          <h2 class="project-title">FieldLineSim</h2>
-          <span class="project-tags">TouchDesigner • Python</span>
-          <p class="project-desc">A collection of daily visual experiments exploring noise algorithms, feedback loops, and organic growth patterns.</p>
-        </div>
-      </div>
-      <div class="project-item scroll-target" data-project="jishnu/fucknrobot" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/jishnu/fucknrobot/vid-01-poster.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">FucknRobot</h2>
-          <span class="project-tags">AI • GLSL • Research</span>
-          <p class="project-desc">Attempts to recreate biological morphogenesis using neural networks inside TouchDesigner.</p>
-        </div>
-      </div>
-      <div class="project-item scroll-target" data-project="jishnu/handsonexplorations" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/jishnu/handsonexplorations/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">HandsOnExplorations</h2>
-          <span class="project-tags">Music Visualization • GLSL</span>
-          <p class="project-desc">Real-time raymarching landscapes that deform and color-shift based on frequency spectrum analysis.</p>
-        </div>
-      </div>
-      <div class="project-item scroll-target" data-project="jishnu/volumetrics" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/jishnu/volumetrics/vid-01-poster.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2024</span>
-          <h2 class="project-title">Volumetrics</h2>
-          <span class="project-tags">3D Scanning • Point Clouds</span>
-          <p class="project-desc">Raw point cloud data captured from urban environments and processed into glitch-art aesthetic assets.</p>
-        </div>
-      </div>
-    </div>
+    <!-- The section's own writing, straight out of the notebook: what play is
+         for, and how the whole thing started. A .scroll-target so it gets one
+         stop of its own between the heading and the cards. -->
+    <section class="section-intro scroll-target">
+      <span class="eyebrow">Play</span>
+      <h2>Letting go, and allowing cool things to emerge.</h2>
+      <p>This section is dedicated to all the fun that is to be had in the pretense of work — not that the other sections were deprived of laughter and smiles. Playful experimentation, and just screwing around in general.</p>
+      <p>Play is literally for play: making strange sounds and sights, with or without tech, and jumping around like baboons in some new fangled jungle space.</p>
+    </section>
+
+    <div class="project-list" id="project-list"></div>
+
+    <!-- The way through to GMMBBQ: the speaker off the Gamma Barbecue mark,
+         and nothing else -- no label, no arrow. It buzzes on its own, grows
+         and shakes under the pointer, and a click or a tap goes. A second one
+         drifts over the whole page (#gmm-float, from assets/gmm-float.js). -->
+    <section class="gmm-door scroll-target">
+      <a href="gmmbbq.html" class="gmm-speaker" id="gmm-speaker" aria-label="GMMBBQ: live visuals and the gigs">
+        <span class="ch ch-r"><svg viewBox="0 0 900 1153" aria-hidden="true" focusable="false"><use href="#gamma-speaker"/></svg></span>
+        <span class="ch ch-g"><svg viewBox="0 0 900 1153" aria-hidden="true" focusable="false"><use href="#gamma-speaker"/></svg></span>
+        <span class="ch ch-b"><svg viewBox="0 0 900 1153" aria-hidden="true" focusable="false"><use href="#gamma-speaker"/></svg></span>
+      </a>
+    </section>
   </div>
 
+  <script src="assets/keys.js"></script>
+  <script src="assets/cursor.js"></script>
   <script src="assets/manifest.js"></script>
+  <script src="assets/curated-media.js"></script>
+  <script src="assets/project-details.js"></script>
+  <script src="assets/page-config.js"></script>
+  <script src="assets/render-projects.js"></script>
+  <script src="assets/scroll-nav.js"></script>
+  <script src="assets/hold-hint.js"></script>
+  <script src="assets/gmm-float.js"></script>
+
   <script>
-    document.querySelectorAll('.thumb-stack').forEach((stack) => {
-      const key = stack.closest('.project-item')?.dataset.project;
-      const data = (typeof SITE_MANIFEST !== 'undefined' && key) ? SITE_MANIFEST[key] : null;
-      if (!data) return;
-      const mainImg = stack.querySelector('.thumb-main');
-      const pool = [...(data.images || []), ...(data.videos || []).map(v => v.poster)]
-        .filter((src) => src !== mainImg.getAttribute('src'));
-      pool.slice(0, 2).forEach((src, i) => {
-        const img = document.createElement('img');
-        img.src = src; img.alt = ''; img.loading = 'lazy';
-        img.className = `project-thumb thumb-bg-${i + 1}`;
-        stack.insertBefore(img, mainImg);
-      });
-    });
-  </script>
+    (function () {
+      // The page packs itself with circles.
+      //
+      // Move the pointer and circles arrive along the path. Each one is
+      // dropped at a point and then takes the largest radius that does not
+      // reach any circle already there -- so a circle never overlaps another
+      // one, and the ones that arrive later are the ones that got the smaller
+      // gaps. Stop moving and the pack melts: every radius comes down at the
+      // same number of pixels a second, the small ones go first, and a page
+      // left alone is bare again inside a couple of seconds.
+      //
+      // Press and the melting stops and the packing turns serious. Circles
+      // stop arriving at the pointer and start arriving inside a disc that
+      // opens out of it, wider every frame, until it is bigger than the
+      // screen; the ceiling on a radius comes down as the charge goes up, so
+      // the first arrivals are big and lazy and the last ones are grit
+      // filling what the big ones left. The rate goes up with the square of
+      // the charge, because a pack that is nearly full rejects nearly every
+      // point it is offered and the only way to keep finding gaps is to look
+      // harder.
+      //
+      // Then the pack is full, and it keeps packing. Three touching circles
+      // always leave a curved gap between them however small they get, so a
+      // pack of circles never closes on its own. Every circle swells a little
+      // into its neighbours, and the holes that are left fill with more
+      // circles, the big holes first and then smaller and smaller ones, until
+      // the last of them are grit sitting over the seams. The page is covered
+      // the way it was being covered all along, one circle at a time.
+      //
+      // Nothing here is painted a colour. The layer sits above the page in
+      // `mix-blend-mode: difference` and every circle is drawn a channel at a
+      // time in that channel's 255, and difference against 255 is
+      // `255 - backdrop`. The two page tones are exact complements (11+238,
+      // 14+170, 19+232), so a circle crossing the ground lands on the other
+      // tone to the byte -- and a circle crossing a line of type flips the
+      // type with it, which is the whole reason it is up here.
+      //
+      // The only colour on the page is lag. Each channel draws the whole pack
+      // through a follower of its own chasing the pointer, and what it draws
+      // is offset by how far behind that follower is. Standing still the
+      // three land on top of each other and the pack is the flat swap tone;
+      // moving, they pull apart by a pixel or three and the split shows as a
+      // fringe. An RGB delay, not a palette.
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+      const canvas = document.createElement('canvas');
+      canvas.id = 'pack-canvas';
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      // No 2d context is the one case where this page cannot own the gesture.
+      // Leaving HOLD_STATE.owned false hands it to the standby in
+      // assets/scroll-nav.js, which is the same hold with no picture behind it.
+      if (!ctx) return;
 
-    let currentIndex = 0;
-    let targets = [];
-    const wrapper = document.getElementById('main-wrapper');
-    const isMobile = window.innerWidth < 768;
+      window.HOLD_STATE = window.HOLD_STATE || { charge: 0, limit: 1500 };
+      window.HOLD_STATE.owned = true;
 
-    // As the page scrolls, cards pass underneath a stationary cursor and the
-    // browser re-evaluates :hover on whatever lands there, making the
-    // thumbnail hover-reveal look like it's swapping at random. Suspend
-    // pointer-events on the list while scroll is actually happening.
-    const projectListEl = document.querySelector('.project-list');
-    let hoverLockTimeout;
-    function suspendHover(duration) {
-        if (!projectListEl) return;
-        projectListEl.style.pointerEvents = 'none';
-        clearTimeout(hoverLockTimeout);
-        hoverLockTimeout = setTimeout(() => { projectListEl.style.pointerEvents = 'auto'; }, duration);
-    }
-    window.addEventListener('scroll', () => suspendHover(200), { passive: true });
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function initTargets() {
-        const header = document.getElementById('header-section');
-        const projects = document.querySelectorAll('.project-item');
-        targets = [header, ...projects];
-        updateChevronVisibility();
-    }
-    initTargets();
+      // --tone-swap, taken a channel at a time, and read from the stylesheet
+      // rather than written here twice: the pair is a per-page decision, and a
+      // hardcoded 255 would light the pack up green over the magenta.
+      //
+      // Everything on this layer goes down in `lighten`, per channel max,
+      // which is idempotent. Circles do not overlap by construction but the
+      // circles of the turn very much do, and a pixel is either inverted or it
+      // is not: nothing on this layer can take back what another part of it
+      // has done.
+      const SWAP_RGB = getComputedStyle(document.documentElement)
+        .getPropertyValue('--tone-swap-rgb').trim().split(',')
+        .map(function (v) { return parseInt(v, 10) || 0; });
+      const CH = [
+        'rgb(' + SWAP_RGB[0] + ',0,0)',
+        'rgb(0,' + SWAP_RGB[1] + ',0)',
+        'rgb(0,0,' + SWAP_RGB[2] + ')'
+      ];
+      // How hard each channel's follower pulls toward the pointer, per second.
+      // Blue is nearly now, red is a long way behind, and the gap between them
+      // is the fringe.
+      const CHANNELS = [{ follow: 6.5 }, { follow: 11 }, { follow: 30 }];
+      // And the ceiling on how far apart that is allowed to push them. The
+      // fringe is meant to be an edge on a circle, not three circles.
+      const SPLIT = reduceMotion ? 0 : 0.06, SPLIT_CAP = 3.5;
 
-    function updateChevronVisibility() {
-        const upBtn = document.getElementById('nav-up');
-        const downBtn = document.getElementById('nav-down');
-        if(!upBtn || !downBtn) return;
-        upBtn.style.opacity = currentIndex === 0 ? '0.2' : '1';
-        downBtn.style.opacity = currentIndex === targets.length - 1 ? '0.2' : '1';
-    }
+      // --- the pack ---
+      // A radius small enough that the biggest circle is an incident rather
+      // than the page, and one small enough that the last of them are grit.
+      // MIN_R is in device-independent pixels and does not scale: below about
+      // two pixels a circle is an antialiased smudge, and ten thousand
+      // smudges is a grey wash that costs more than the wash at the end.
+      const MAX_R_FRAC = 0.085;
+      const MIN_R = 2.4;
+      // The ceiling comes down as the charge goes up, which is what makes the
+      // pack look like it is being filled in rather than piled up.
+      const R_SHUT = 0.88;
+      // How fast a circle grows into the radius it was given. Fast enough
+      // that a circle is its own size before the one after it is placed,
+      // slow enough that arriving is visible.
+      const GROW = 16;
+      // Melt, in pixels of radius a second, while nothing is being held. The
+      // same number for every circle, so the small ones go first and the pack
+      // opens up from the grit rather than fading evenly.
+      const MELT_FRAC = 0.55;
+      // The most circles the page will hold. Past this the frame cost is in
+      // the placement tests, not the painting -- the painting is one fill per
+      // channel whatever the count is.
+      const MAX_CIRCLES = reduceMotion ? 300 : 1500;
 
-    window.handleNav = (dir) => {
-        if (!isMobile) return;
-        const nextIndex = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
-        if (nextIndex === currentIndex) return; 
-        currentIndex = nextIndex;
-        updateChevronVisibility();
-        const targetEl = targets[currentIndex];
-        const elementCenter = targetEl.offsetTop + (targetEl.offsetHeight / 2);
-        const viewportCenter = window.innerHeight / 2;
-        const shiftAmount = elementCenter - viewportCenter;
-        wrapper.style.transform = `translateY(${-shiftAmount}px)`;
-        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)";
-        suspendHover(750);
-        targets.forEach(t => { if(t.classList.contains('project-item')) t.classList.remove('active'); });
-        if (currentIndex > 0) targetEl.classList.add('active');
-    };
+      // How many placements a second the page attempts. Idle, this is per
+      // pointer move rather than per second; held, it runs from the first
+      // number to the second over the charge, on a curve, because a pack that
+      // is nearly full rejects nearly every point it is offered.
+      const TRY_MOVE = 3;
+      const TRY_MIN = 150, TRY_MAX = reduceMotion ? 2000 : 12000;
+      // The disc the held pack arrives inside, as a share of the short side at
+      // the start and of the diagonal at the end. It opens past the corners
+      // well before the charge is up, which is when the pack stops growing
+      // outward and starts only getting denser.
+      const DISC_MIN = 0.18, DISC_MAX = 1.15;
 
-    window.checkInteraction = (e) => {
-        if (chargeTime > 200) { e.preventDefault(); e.stopPropagation(); return false; }
+      // --- the turn ---
+      const TURN_SECS = reduceMotion ? 0.5 : 1.1;
+      // How far past its own radius every circle of the pack swells, and over
+      // how much of the turn. Enough to close the small gaps between
+      // neighbours; the big ones are left for the fill.
+      const SWELL = 1.14, SWELL_SPAN = 0.5;
+      // The fill, found once at the moment of firing: holes are looked for on
+      // grids this many cells across the short side, coarse to fine, and a
+      // hole that a whole cell fits in gets a circle of that size. The last
+      // grid is not asked whether a cell is empty, only whether any of it is,
+      // and its circles are drawn round their cells, so nothing is missed.
+      const FILL_LEVELS = [7, 14, 28, 56];
+      // When each level arrives, and how spread out its circles are, as
+      // shares of the turn -- big ones first, so it reads as the same packing
+      // carrying on at a finer grain.
+      const FILL_START = 0.06, FILL_STEP = 0.13, FILL_STAGGER = 0.14, FILL_SPAN = 0.26;
+
+      // --- the close ---
+      // However completely the circles cover the page, they are still a few
+      // thousand antialiased edges, and one seam still showing the old tone on
+      // the frame the theme changes is the whole turn undone in one flash. So
+      // the last of it is a wash -- the swap tone laid over the entire frame,
+      // its weight coming up from nothing, in `lighten` so that everywhere the
+      // pack has already reached is at the ceiling and cannot move. Only the
+      // seams have anywhere left to go, and they go quietly.
+      //
+      // Full a little before the end, so the frame the theme actually turns
+      // over on has been covered for several frames already.
+      const CLOSE_OPEN = 0.86, CLOSE_FULL = 0.97;
+
+      let dpr = 1;
+      let W = window.innerWidth, H = window.innerHeight;
+      const unit = () => Math.min(W, H);
+      let maxR = 80;
+
+      // --- the cards, which none of this reaches ---
+      // Punched straight out of the inversion layer: this canvas is what does
+      // the inverting, so a hole in it is a piece of page the circles cannot
+      // touch. The whole card comes out, not just the picture in it — plate,
+      // photo, year, title, tags, description are one object, and a circle
+      // flipping a corner of one reads as damage rather than as an effect. A
+      // card turns over with the page, once, when the theme does.
+      let media = [];
+      function findMedia() {
+        media = [].slice.call(document.querySelectorAll(
+          '#main-wrapper .project-item, #main-wrapper .behance-frame'));
+      }
+
+      // --- where everything is ---
+      // x, y, the radius it is showing (r) and the radius it was given (rt).
+      // Packing reads rt, painting reads r, and the two meet a few frames
+      // after a circle lands.
+      const circles = [];
+      // And the circles the turn packs into what the pack could not reach.
+      const gaps = [];
+
+      // A uniform grid over the page, cell the size of the biggest circle
+      // there can be, holding indices into `circles`. Two circles can only
+      // touch if their centres are within two of the biggest radius, so a
+      // placement test never has to look further than the five by five block
+      // of cells around the candidate -- which is the whole reason a pack of
+      // fifteen hundred can be filled in in under a second.
+      //
+      // Rebuilt from scratch once a frame rather than maintained. Circles are
+      // added in hundreds and removed in hundreds, and a grid that has to
+      // handle removal is a grid of linked lists; a grid that is thrown away
+      // is a flat array of arrays, and O(n) once a frame at n = 1500 is not a
+      // cost worth being clever about.
+      let cols = 1, rows = 1, cell = 80;
+      let grid = [];
+
+      function rebuildGrid() {
+        cell = Math.max(8, maxR);
+        cols = Math.ceil(W / cell) + 4;
+        rows = Math.ceil(H / cell) + 4;
+        grid = new Array(cols * rows);
+        for (let i = 0; i < circles.length; i++) gridAdd(i);
+      }
+      // +2 cells of margin on each side, because a circle is allowed to hang
+      // off the edge of the page -- that is what lets the pack reach the
+      // borders instead of stopping a radius short of them.
+      const cellX = (x) => Math.min(cols - 1, Math.max(0, ((x / cell) | 0) + 2));
+      const cellY = (y) => Math.min(rows - 1, Math.max(0, ((y / cell) | 0) + 2));
+
+      function gridAdd(i) {
+        const k = cellY(circles[i].y) * cols + cellX(circles[i].x);
+        (grid[k] || (grid[k] = [])).push(i);
+      }
+
+      // The largest radius a circle at (x, y) can take without reaching any
+      // circle already placed, capped at `cap`. Negative or tiny means the
+      // point is inside or on top of something and nothing goes there.
+      function roomAt(x, y, cap) {
+        let r = cap;
+        const cx = cellX(x), cy = cellY(y);
+        for (let gy = cy - 2; gy <= cy + 2; gy++) {
+          if (gy < 0 || gy >= rows) continue;
+          const row = gy * cols;
+          for (let gx = cx - 2; gx <= cx + 2; gx++) {
+            if (gx < 0 || gx >= cols) continue;
+            const bucket = grid[row + gx];
+            if (!bucket) continue;
+            for (let n = 0; n < bucket.length; n++) {
+              const o = circles[bucket[n]];
+              const dx = x - o.x, dy = y - o.y;
+              const d = Math.sqrt(dx * dx + dy * dy) - o.rt;
+              if (d < r) { r = d; if (r <= MIN_R) return r; }
+            }
+          }
+        }
+        return r;
+      }
+
+      function place(x, y, cap) {
+        if (circles.length >= MAX_CIRCLES) return false;
+        const r = roomAt(x, y, cap);
+        if (r < MIN_R) return false;
+        circles.push({
+          x: x, y: y, r: 0, rt: r
+        });
+        gridAdd(circles.length - 1);
         return true;
-    }
-    window.handleProjectClick = (e) => {
-        if (!checkInteraction(e)) return;
-        const key = e.currentTarget.dataset.project;
-        if (key) window.location.href = `project.html?p=${key}&from=play.html`;
-    }
-
-    const stage = document.getElementById('stage-container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 30);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor(0x000000, 0); 
-    stage.appendChild(renderer.domElement);
-
-    const boidCount = 500;
-    const positions = new Float32Array(boidCount * 3);
-    const velocities = []; 
-    
-    for(let i=0; i<boidCount; i++) {
-        positions[i*3] = (Math.random() - 0.5) * 60;
-        positions[i*3+1] = (Math.random() - 0.5) * 60;
-        positions[i*3+2] = (Math.random() - 0.5) * 30;
-        const v = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
-        // EVEN SLOWER: 0.10 base speed (was 0.15)
-        v.normalize().multiplyScalar(0.10); 
-        velocities.push(v);
-    }
-
-    const material = new THREE.ShaderMaterial({
-      uniforms: { 
-        uColorA: { value: new THREE.Color(0x6fd9c8) },
-        uColorB: { value: new THREE.Color(0xf2b880) },
-        uInvert: { value: 0.0 },
-        uCharge: { value: 0.0 },
-        uGrowth: { value: 0.0 }
-      },
-      vertexShader: `
-        varying vec3 vNormal;
-        uniform float uCharge;
-        uniform float uGrowth;
-        void main() {
-          vNormal = normal;
-          vec3 pos = position;
-          
-          float warpFactor = 1.0 + pow(uCharge, 2.0) * 15.0;
-          pos.z *= warpFactor;
-          
-          float thickness = 1.0 + (uCharge * 2.0) + (uGrowth * 5.0);
-          pos.x *= thickness;
-          pos.y *= thickness;
-
-          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        uniform vec3 uColorA; uniform vec3 uColorB;
-        uniform float uInvert; uniform float uCharge;
-        void main() {
-          float gradient = smoothstep(-1.0, 1.0, vNormal.z); 
-          vec3 col = mix(uColorA, uColorB, gradient);
-          col = mix(col, vec3(1.0), uCharge * 0.9);
-          vec3 invCol = uColorA; 
-          gl_FragColor = vec4(mix(col, invCol, uInvert), 1.0);
-        }
-      `
-    });
-
-    const geometry = new THREE.BoxGeometry(0.08, 0.08, 1.2); 
-    const mesh = new THREE.InstancedMesh(geometry, material, boidCount);
-    scene.add(mesh);
-    
-    const dummy = new THREE.Object3D();
-    const alignSum = new THREE.Vector3();
-    const cohSum = new THREE.Vector3();
-    const sepSum = new THREE.Vector3();
-    const diff = new THREE.Vector3();
-    const vecDummy = new THREE.Vector3();
-
-    const raycaster = new THREE.Raycaster();
-    const mousePos = new THREE.Vector3(0, 0, 0); 
-    
-    let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 1500;
-    let isExploding = false; let explosionForce = 0; let invertCycle = false;
-    let explosionProgress = 0; 
-
-    const startHold = (e) => { 
-        if(e.target.closest('.back-btn') || e.target.closest('.mobile-nav-zone')) return;
-        isHolding = true; 
-    };
-    const stopHold = () => { isHolding = false; };
-
-    window.addEventListener('touchmove', (e) => { if(isMobile) e.preventDefault(); }, {passive: false});
-    window.addEventListener('mousedown', startHold);
-    window.addEventListener('touchstart', startHold, {passive: true});
-    window.addEventListener('mouseup', stopHold);
-    window.addEventListener('touchend', stopHold);
-    window.addEventListener('mouseleave', stopHold);
-
-    const updateMouse = (x, y) => {
-        const mx = (x / window.innerWidth) * 2 - 1;
-        const my = -(y / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(new THREE.Vector2(mx, my), camera);
-        const planeZ = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
-        raycaster.ray.intersectPlane(planeZ, mousePos);
-    };
-    window.addEventListener('mousemove', (e) => updateMouse(e.clientX, e.clientY));
-    window.addEventListener('touchmove', (e) => updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
-
-    const neighborDist = 12.0; 
-    const separationDist = 3.5; 
-
-    function animate(time) {
-      requestAnimationFrame(animate);
-
-      if (isHolding && !isExploding) { chargeTime = Math.min(chargeTime + 20, CHARGE_LIMIT); } 
-      else if (!isExploding) { chargeTime = Math.max(0, chargeTime - 60); }
-      
-      if (chargeTime >= CHARGE_LIMIT && !isExploding) { isExploding = true; explosionForce = 1.0; invertCycle = false; explosionProgress = 0; }
-      
-      const chargeRatio = chargeTime / CHARGE_LIMIT;
-      material.uniforms.uCharge.value = chargeRatio;
-
-      if (isExploding) {
-          // FASTER DECAY: 0.025 (was 0.015) for snappier boom
-          explosionForce -= 0.025; 
-          explosionProgress = 1.0 - explosionForce; 
-          material.uniforms.uGrowth.value = Math.sin(explosionProgress * 3.14); 
-
-          // HIGHER THRESHOLD: Invert almost immediately (0.9)
-          if (explosionForce < 0.9 && !invertCycle) {
-              invertCycle = true;
-              const bg = document.getElementById('stage-container'); const body = document.body;
-              if (bg.classList.contains('inverted-bg')) {
-                 bg.classList.remove('inverted-bg'); body.classList.remove('inverted-theme'); material.uniforms.uInvert.value = 0.0;
-              } else {
-                 bg.classList.add('inverted-bg'); body.classList.add('inverted-theme'); material.uniforms.uInvert.value = 1.0;
-              }
-          }
-          if (explosionForce <= 0) { isExploding = false; chargeTime = 0; material.uniforms.uGrowth.value = 0; }
       }
 
-      for(let i=0; i<boidCount; i++) {
-          const vel = velocities[i];
-          const posX = positions[i*3];
-          const posY = positions[i*3+1];
-          const posZ = positions[i*3+2];
-          
-          alignSum.set(0,0,0); cohSum.set(0,0,0); sepSum.set(0,0,0);
-          let count = 0;
-
-          for(let j=0; j<boidCount; j+=2) { 
-              if (i===j) continue;
-              const nX = positions[j*3]; const nY = positions[j*3+1]; const nZ = positions[j*3+2];
-              const dx = posX - nX; const dy = posY - nY; const dz = posZ - nZ;
-              const dSq = dx*dx + dy*dy + dz*dz;
-              
-              if (dSq > 0.001 && dSq < neighborDist * neighborDist) {
-                  alignSum.add(velocities[j]);
-                  cohSum.x += nX; cohSum.y += nY; cohSum.z += nZ;
-                  if (dSq < separationDist * separationDist) {
-                      const d = Math.sqrt(dSq);
-                      sepSum.x += (dx / d); sepSum.y += (dy / d); sepSum.z += (dz / d);
-                  }
-                  count++;
-              }
-          }
-
-          const acc = new THREE.Vector3(0,0,0);
-          if (count > 0) {
-              if(alignSum.lengthSq() > 0) acc.add(alignSum.divideScalar(count).normalize().multiplyScalar(0.5).sub(vel).clampLength(0, 0.015));
-              cohSum.divideScalar(count).sub(vecDummy.set(posX, posY, posZ));
-              if(cohSum.lengthSq() > 0) acc.add(cohSum.normalize().multiplyScalar(0.5).sub(vel).clampLength(0, 0.015));
-              if(sepSum.lengthSq() > 0) acc.add(sepSum.divideScalar(count).normalize().multiplyScalar(0.5).sub(vel).clampLength(0, 0.04));
-          }
-
-          const currPos = vecDummy.set(posX, posY, posZ);
-          if (isExploding) {
-              diff.subVectors(currPos, mousePos);
-              if (diff.lengthSq() > 0.001) acc.add(diff.normalize().multiplyScalar(explosionForce * 3.0));
-          } else if (chargeRatio > 0.0) {
-              diff.subVectors(mousePos, currPos);
-              if (diff.lengthSq() > 0.001) acc.add(diff.normalize().multiplyScalar(chargeRatio * 1.5));
-          }
-
-          const rangeX = 50; const rangeY = 40; const rangeZ = 20;
-          if (posX > rangeX) positions[i*3] = -rangeX; if (posX < -rangeX) positions[i*3] = rangeX;
-          if (posY > rangeY) positions[i*3+1] = -rangeY; if (posY < -rangeY) positions[i*3+1] = rangeY;
-          if (posZ > rangeZ) positions[i*3+2] = -rangeZ; if (posZ < -rangeZ) positions[i*3+2] = rangeZ;
-
-          const speedLimit = 0.5 + (chargeRatio * 1.0) + (isExploding ? 2.0 : 0);
-          vel.add(acc);
-          vel.multiplyScalar(0.92); // damping smooths out frame-to-frame direction snaps
-
-          // SLOWER CLAMPING: Min 0.02 (super drift)
-          vel.clampLength(0.02, speedLimit);
-          
-          positions[i*3] += vel.x; positions[i*3+1] += vel.y; positions[i*3+2] += vel.z;
-
-          dummy.position.set(positions[i*3], positions[i*3+1], positions[i*3+2]);
-          const target = dummy.position.clone().add(vel);
-          dummy.lookAt(target);
-          dummy.updateMatrix();
-          mesh.setMatrixAt(i, dummy.matrix);
+      function resize() {
+        dpr = Math.min(window.devicePixelRatio, 2);
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        maxR = Math.max(26, Math.min(110, unit() * MAX_R_FRAC));
+        rebuildGrid();
+        findMedia();
       }
-      mesh.instanceMatrix.needsUpdate = true;
-      renderer.render(scene, camera);
-    }
-    animate(0);
+      resize();
 
-    window.addEventListener('resize', () => { 
-        camera.aspect = window.innerWidth / window.innerHeight; 
-        camera.updateProjectionMatrix(); 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        if(isMobile) handleNav(0); 
-    });
+      // --- input ---
+      // The same numbers as every other page: 1400 up, 3600 down, 1500 to
+      // fire, all per second so the hold is the same length on a 120Hz screen.
+      const CHARGE_LIMIT = 1500;
+      const CHARGE_RATE = 1400;
+      const RELEASE_RATE = 3600;
+
+      let pointerX = W / 2, pointerY = H / 2;
+      let isHolding = false, charge = 0;
+      let turning = 0;
+      let last = performance.now();
+      let dropX = pointerX, dropY = pointerY;
+
+      const clamp01 = (t) => Math.min(1, Math.max(0, t));
+      const easeIn = (t) => Math.pow(clamp01(t), 2.2);
+      const easeOut = (t) => 1 - Math.pow(1 - clamp01(t), 2.4);
+
+      for (const ch of CHANNELS) { ch.x = pointerX; ch.y = pointerY; }
+
+      window.addEventListener('pointermove', (e) => {
+        pointerX = e.clientX; pointerY = e.clientY;
+        // Nothing arrives at the pointer during the turn: the fill was worked
+        // out against the pack as it stood when it fired, and a circle dropped
+        // in now would be one it was never told about.
+        if (turning > 0) return;
+        // By distance rather than by time, so a slow pointer lays the same
+        // spacing as a fast one and a still pointer lays nothing.
+        const gap = maxR * 0.5;
+        const ax = pointerX - dropX, ay = pointerY - dropY;
+        if (ax * ax + ay * ay < gap * gap) return;
+        dropX = pointerX; dropY = pointerY;
+        // A handful of attempts thrown around the pointer rather than one at
+        // it. Most of them land on something and are refused, which is the
+        // point: what gets through is whatever fits, and the trail thickens
+        // where the pointer has been twice.
+        for (let i = 0; i < TRY_MOVE; i++) {
+          const a = Math.random() * 6.2832;
+          const d = Math.sqrt(Math.random()) * maxR * 1.9;
+          place(pointerX + Math.cos(a) * d, pointerY + Math.sin(a) * d, maxR);
+        }
+      }, { passive: true });
+
+      const down = (e) => {
+        // The back link and the mobile chevrons are targets, not ground. Cards
+        // are held over freely: scroll-nav.js cancels their click once the
+        // charge has passed ~200, which is what makes a hold over a card a
+        // hold and not a mis-tap.
+        const el = e.target && e.target.closest ? e.target : null;
+        if (el && (el.closest('.back-btn') || el.closest('.mobile-nav-zone') || el.closest('#gmm-float, .gmm-speaker'))) return;
+        pointerX = e.clientX; pointerY = e.clientY;
+        isHolding = true;
+      };
+      window.addEventListener('pointerdown', down);
+      ['pointerup', 'pointercancel', 'blur'].forEach(
+        (evt) => window.addEventListener(evt, () => { isHolding = false; }));
+
+      // --- packing under the hold ---
+      // Points offered to the pack inside a disc that opens out of the
+      // pointer, on a square root so they spread evenly over it rather than
+      // piling round its rim. `cap` comes down as the charge goes up so the
+      // later arrivals are small enough to get into what the early ones left.
+      function packHard(dt, c, diag) {
+        const tries = Math.round(dt * (TRY_MIN + (TRY_MAX - TRY_MIN) * easeIn(c)));
+        if (tries <= 0) return;
+        const disc = unit() * DISC_MIN + diag * DISC_MAX * easeOut(c);
+        const cap = Math.max(MIN_R * 1.6, maxR * (1 - R_SHUT * c));
+        for (let i = 0; i < tries; i++) {
+          if (circles.length >= MAX_CIRCLES) return;
+          const a = Math.random() * 6.2832;
+          const d = Math.sqrt(Math.random()) * disc;
+          const x = pointerX + Math.cos(a) * d, y = pointerY + Math.sin(a) * d;
+          // Off the page is not worth a grid lookup. The margin is a whole
+          // cap, so a circle is still allowed to hang over an edge.
+          if (x < -cap || x > W + cap || y < -cap || y > H + cap) continue;
+          place(x, y, cap);
+        }
+      }
+
+      // Every circle grows toward what it was given; unheld, what it was given
+      // comes down toward nothing. One melt rate for all of them, so the grit
+      // goes first.
+      function stepPack(dt, holding) {
+        const grow = 1 - Math.exp(-dt * GROW);
+        const melt = holding ? 0 : dt * maxR * MELT_FRAC;
+        let write = 0;
+        for (let i = 0; i < circles.length; i++) {
+          const m = circles[i];
+          if (melt > 0) m.rt -= melt;
+          if (m.rt < MIN_R * 0.75) continue;      // dropped
+          m.r += (m.rt - m.r) * grow;
+          circles[write++] = m;
+        }
+        circles.length = write;
+      }
+
+      // --- the turn ---
+      // Everything the pack could not reach, found once. The swollen pack is
+      // drawn at a quarter scale into a canvas of its own and read back to see
+      // which cells of a grid it has not covered; each level's new circles are
+      // drawn in before the next, finer level looks. Drawn a hair small, so a
+      // cell only counts as covered when it certainly is.
+      const fillCv = document.createElement('canvas');
+      const fillCtx = fillCv.getContext('2d', { willReadFrequently: true });
+      const FS = 0.25;
+
+      function findGaps() {
+        gaps.length = 0;
+        const fw = Math.max(1, Math.ceil(W * FS)), fh = Math.max(1, Math.ceil(H * FS));
+        fillCv.width = fw; fillCv.height = fh;
+        fillCtx.setTransform(FS, 0, 0, FS, 0, 0);
+        fillCtx.clearRect(0, 0, W, H);
+        fillCtx.fillStyle = '#fff';
+        const stamp = (x, y, r) => {
+          const rr = r - 1.5 / FS;
+          if (rr <= 0) return;
+          fillCtx.moveTo(x + rr, y);
+          fillCtx.arc(x, y, rr, 0, 6.2832);
+        };
+        fillCtx.beginPath();
+        for (let i = 0; i < circles.length; i++) stamp(circles[i].x, circles[i].y, circles[i].rt * SWELL);
+        fillCtx.fill();
+
+        FILL_LEVELS.forEach((across, level) => {
+          const last = level === FILL_LEVELS.length - 1;
+          const c = unit() / across;
+          const cols = Math.ceil(W / c), rows = Math.ceil(H / c);
+          const a = fillCtx.getImageData(0, 0, fw, fh).data;
+          const added = [];
+          for (let gy = 0; gy < rows; gy++) {
+            for (let gx = 0; gx < cols; gx++) {
+              const x0 = Math.floor(gx * c * FS), x1 = Math.min(fw, Math.ceil((gx + 1) * c * FS));
+              const y0 = Math.floor(gy * c * FS), y1 = Math.min(fh, Math.ceil((gy + 1) * c * FS));
+              let open = 0, n = 0;
+              for (let y = y0; y < y1; y++) {
+                for (let x = x0; x < x1; x++) { n++; if (a[(y * fw + x) * 4 + 3] < 128) open++; }
+              }
+              if (!open) continue;
+              // A coarse level only takes holes it fits into whole; the last
+              // one takes anything, with a circle wide enough to cover its
+              // cell corner to corner.
+              if (!last && open < n * 0.92) continue;
+              added.push({
+                x: (gx + 0.5) * c, y: (gy + 0.5) * c,
+                r: last ? c * 0.75 : c * 0.56, level: level,
+                // Seeded off the cell rather than random, so the fill reads
+                // as arriving from everywhere at once instead of sweeping.
+                j: (Math.abs((gx * 73856093) ^ (gy * 19349663) ^ (level * 83492791)) % 1000) / 1000
+              });
+            }
+          }
+          fillCtx.beginPath();
+          added.forEach((g) => { stamp(g.x, g.y, g.r); gaps.push(g); });
+          fillCtx.fill();
+        });
+      }
+
+      function fire() {
+        turning = TURN_SECS;
+        charge = 0;
+        findGaps();
+        if (window.noteInvert) window.noteInvert();
+      }
+
+      function frame(now) {
+        requestAnimationFrame(frame);
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        const diag = Math.sqrt(W * W + H * H);
+
+        // --- charge, and the turn ---
+        let p = 0;
+        if (turning > 0) {
+          turning = Math.max(0, turning - dt);
+          p = 1 - turning / TURN_SECS;
+          // The pack snaps to its full size on the way into the turn: a
+          // circle caught half grown would leave a ring of old tone around it
+          // that the fill was never told about.
+          stepPack(dt * 3, true);
+          if (turning === 0) {
+            // The wash went full a few frames ago, so every pixel of the page
+            // is already being shown inverted by this layer. Adopting it makes
+            // it official and changes nothing on screen -- and the layer
+            // empties on the same frame, because with the ground actually
+            // flipped the pack would otherwise be inverting it straight back.
+            window.toggleInvert();
+            circles.length = 0;
+            gaps.length = 0;
+            rebuildGrid();
+          }
+        } else {
+          // Space is held exactly as the pointer is — assets/keys.js raises
+          // KEY_HOLD while the key is down, so the gesture keeps one owner.
+          const holding = isHolding || (window.KEY_HOLD && window.KEY_HOLD.held);
+          charge = holding
+            ? Math.min(CHARGE_LIMIT, charge + dt * CHARGE_RATE)
+            : Math.max(0, charge - dt * RELEASE_RATE);
+          // Melt first, then rebuild, then pack. The order is not a taste:
+          // stepPack compacts `circles` in place, so every index in the grid
+          // is stale the moment it drops one, and the grid has to be the last
+          // of the three to be touched. pointermove places circles between
+          // frames, against whatever the grid was left as -- so what it is
+          // left as has to be right.
+          stepPack(dt, holding);
+          rebuildGrid();
+          if (holding) packHard(dt, charge / CHARGE_LIMIT, diag);
+          if (charge >= CHARGE_LIMIT) fire();
+        }
+        // The ring drawn on the cursor (assets/cursor.js) is the only reader,
+        // and it wants a number it can normalise without knowing this page
+        // counts circles. Set outside the branch, so the turn reports zero.
+        window.HOLD_STATE.charge = charge;
+
+        // --- paint ---
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+
+        const wash = turning > 0
+          ? easeIn((p - CLOSE_OPEN) / (CLOSE_FULL - CLOSE_OPEN))
+          : 0;
+        const rounded = !!ctx.roundRect;
+
+        for (let ci = 0; ci < CHANNELS.length; ci++) {
+          const ch = CHANNELS[ci];
+          ctx.globalCompositeOperation = 'lighten';
+          ctx.fillStyle = CH[ci];
+
+          // The follower. Its rate is the whole of the delay: the same pointer
+          // move reaches the last channel in a couple of frames and the first
+          // in ten, and the gap between them is the colour.
+          const follow = 1 - Math.exp(-dt * ch.follow);
+          ch.x += (pointerX - ch.x) * follow;
+          ch.y += (pointerY - ch.y) * follow;
+          let ox = (ch.x - pointerX) * SPLIT, oy = (ch.y - pointerY) * SPLIT;
+          const ol = Math.sqrt(ox * ox + oy * oy);
+          if (ol > SPLIT_CAP) { const f = SPLIT_CAP / ol; ox *= f; oy *= f; }
+          ctx.setTransform(dpr, 0, 0, dpr, dpr * ox, dpr * oy);
+
+          // One path for the whole pack and one fill for the lot of it. The
+          // pack does not overlap and the turn does, but the fill is
+          // solid either way and `lighten` makes the overlap a no-op, so there
+          // is nothing a shape-at-a-time loop would buy.
+          ctx.beginPath();
+          for (let i = 0; i < circles.length; i++) {
+            const m = circles[i];
+            if (m.r < 0.4) continue;
+            // Swelling into its neighbours over the first half of the turn.
+            const r = turning > 0 ? m.r * (1 + (SWELL - 1) * easeOut(p / SWELL_SPAN)) : m.r;
+            ctx.moveTo(m.x + r, m.y);
+            ctx.arc(m.x, m.y, r, 0, 6.2832);
+          }
+          for (let i = 0; i < gaps.length; i++) {
+            const q = gaps[i];
+            const t = easeOut((p - FILL_START - q.level * FILL_STEP - q.j * FILL_STAGGER) / FILL_SPAN);
+            if (t <= 0) continue;
+            const r = q.r * t;
+            ctx.moveTo(q.x + r, q.y);
+            ctx.arc(q.x, q.y, r, 0, 6.2832);
+          }
+          ctx.fill();
+
+          // --- the close ---
+          // The same weight in all three channels and read off the true clock
+          // rather than each channel's own: a wash that arrived in red first
+          // would be a colour washing over the page, and this is the one thing
+          // here that is not meant to be seen arriving at all.
+          if (wash > 0) {
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.globalAlpha = wash;
+            // A pixel out on every side. The canvas is a whole number of
+            // device pixels and the page is not, so a rect drawn to exactly
+            // W and H lands part way into the last column and leaves it
+            // antialiased -- a hairline of the old tone down the right edge
+            // on the frame the theme turns over.
+            ctx.fillRect(-1, -1, W + 2, H + 2);
+            ctx.globalAlpha = 1;
+          }
+        }
+
+        // And the thumbnails come back out of the layer. destination-out
+        // rather than clearRect so the corners can be rounded the way they are;
+        // a square hole around a rounded photo leaves four un-inverted notches.
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalCompositeOperation = 'destination-out';
+        for (let i = 0; i < media.length; i++) {
+          const el = media[i];
+          const r = el.getBoundingClientRect();
+          if (r.width < 1 || r.height < 1) continue;
+          if (r.right < 0 || r.left > W || r.bottom < 0 || r.top > H) continue;
+          if (+getComputedStyle(el).opacity < 0.02) continue;
+          // A pixel out and a corner radius under the real one, so the hole
+          // overshoots the card very slightly rather than leaving four notches
+          // of un-punched arc at the corners — which is exactly what a radius
+          // matched to the card's own 8px does.
+          ctx.beginPath();
+          if (rounded) ctx.roundRect(r.left - 1, r.top - 1, r.width + 2, r.height + 2, 5);
+          else ctx.rect(r.left - 1, r.top - 1, r.width + 2, r.height + 2);
+          ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      requestAnimationFrame(frame);
+
+      let resizeTimer = 0;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+    })();
   </script>
+
 </body>
 </html>

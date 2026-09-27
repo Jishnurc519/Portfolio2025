@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 230" fill="none" stroke="#6fd9c8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" font-family="Clash Display, sans-serif" font-weight="400" font-size="13">
+  <!-- From the notebook: the four steps down the right of "How it works". -->
+  <title>Four steps: pick up a token, place it on the table, look at the field lines, switch between voltage and electric field</title>
+
+  <!-- 1. pick up a token -->
+  <g>
+    <path d="M28 120 L150 120 L176 160 L4 160 Z"/>
+    <ellipse cx="62" cy="62" rx="16" ry="10"/>
+    <path d="M56 62 H68 M62 57 V67"/>
+    <ellipse cx="118" cy="80" rx="16" ry="10"/>
+    <path d="M112 80 H124"/>
+    <path d="M62 78 V108 M57 102 L62 110 L67 102" opacity="0.6"/>
+    <text x="4" y="196" stroke="none" fill="#6fd9c8">1  Pick up a + or −</text>
+  </g>
+
+  <!-- 2. place on the table -->
+  <g transform="translate(200 0)">
+    <path d="M28 120 L150 120 L176 160 L4 160 Z"/>
+    <ellipse cx="54" cy="131" rx="11" ry="6"/>
+    <ellipse cx="118" cy="129" rx="11" ry="6"/>
+    <ellipse cx="72" cy="148" rx="11" ry="6"/>
+    <ellipse cx="130" cy="148" rx="11" ry="6"/>
+    <text x="4" y="196" stroke="none" fill="#6fd9c8">2  Place them on the table</text>
+  </g>
+
+  <!-- 3. look at the field lines -->
+  <g transform="translate(400 0)">
+    <path d="M28 120 L150 120 L176 160 L4 160 Z"/>
+    <ellipse cx="62" cy="140" rx="10" ry="6"/>
+    <ellipse cx="118" cy="140" rx="10" ry="6"/>
+    <path d="M72 140 C84 128 96 128 108 140 M72 140 C84 152 96 152 108 140"/>
+    <path d="M68 135 C82 116 98 116 112 135 M68 145 C82 164 98 164 112 145" opacity="0.6"/>
+    <path d="M52 140 H30 M128 140 H152" opacity="0.6"/>
+    <text x="4" y="196" stroke="none" fill="#6fd9c8">3  Look at the field lines</text>
+  </g>
+
+  <!-- 4. switch between voltage / electric field -->
+  <g transform="translate(600 0)">
+    <rect x="18" y="104" width="150" height="62" rx="8"/>
+    <rect x="26" y="112" width="67" height="46" rx="5"/>
+    <g opacity="0.8">
+      <circle cx="59" cy="135" r="6"/><circle cx="59" cy="135" r="13"/><circle cx="59" cy="135" r="20" opacity="0.6"/>
+    </g>
+    <g transform="translate(130 135)">
+      <path d="M-22 0 H22 M16 -5 L22 0 L16 5"/>
+      <path d="M-22 -14 H22 M16 -19 L22 -14 L16 -9" opacity="0.6"/>
+      <path d="M-22 14 H22 M16 9 L22 14 L16 19" opacity="0.6"/>
+    </g>
+    <text x="4" y="196" stroke="none" fill="#6fd9c8">4  Switch: voltage | field</text>
+  </g>
+</svg>

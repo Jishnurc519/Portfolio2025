@@ -4,114 +4,205 @@
   <meta charset="utf-8" />
   <title>Jishnu Roy Chaudhury — Facilitation</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Workshops and teaching: fostering independence, and breaking things on purpose so there is something to fix." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <!-- Absolute URLs, because a scraper reading this page has no base to
+       resolve a relative one against. If the site moves to its own
+       domain, this constant is the only thing that changes. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="jishnu has an artpage">
+  <meta property="og:title" content="Facilitation & learning — Jishnu Roy Chaudhury">
+  <meta property="og:description" content="Workshops and teaching: fostering independence, and breaking things on purpose so there is something to fix.">
+  <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/facilitation.html">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/jishnu/fieldlinesim/vid-01-poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <!-- Layout, snap-scroll shell and all theme/inversion rules are shared by
+       work / play / facilitation. Anything page-specific goes below it. -->
+  <link rel="stylesheet" href="assets/page.css">
   <style>
-    /* GLOBAL LOCKS */
-    * {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-        touch-action: none; /* Disables browser handling of gestures */
-    }
+    /* This page runs on two tones. Text sits in whichever one the ground is
+       not, and the shadow overlay flips it wherever a shadow crosses it.
+       Gold is #eab84a rather than a saturated #ffd11a -- softer to read at
+       length, still unmistakably gold, 10.5:1 against the dark tone either
+       way round.
+       The dark half is the site's --tone-dark from assets/page.css, not a
+       pure black: this page used to need a true black to make its difference
+       overlay round-trip, and no longer does -- see the SWAP constant in the
+       script below, which carries that arithmetic instead. */
+    /* THE OPERAND, restated. This page's two tones are gold and the dark one,
+       not light and dark, so the value that difference blending swaps them
+       with is dark + gold = #f5c65d rather than the site's #ffffff. Everything
+       that paints itself by difference resolves its ink from this variable --
+       the cursor ring and its charge meter (assets/cursor.js), the section
+       counter, the mobile chevrons -- and with the site-wide operand they all
+       came out *blue* over the gold: |eab84a - ffffff| is rgb(21, 71, 181).
+       Same arithmetic as the overlay's own SWAP in the script below, and it
+       has to move with it. */
+    :root { --tone-swap: #f5c65d; --tone-swap-rgb: 245, 198, 93; }
 
-    html, body { 
-      margin: 0; padding: 0; background: transparent; color: #fff; 
-      font-family: 'Clash Display', sans-serif;
-      overflow: hidden; /* Locks native scrollbars on both Desktop & Mobile */
-      transition: color 0.1s linear; height: 100dvh; width: 100vw; position: fixed;
-    }
-    #stage-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; background: #0a0a0a; transition: background 0.05s linear; }
-    canvas { display: block; }
-    #stage-container.inverted-bg { background: #f4f1ec; }
-    
-    /* UI ELEMENTS */
-    .mobile-nav-zone { position: fixed; left: 0; width: 100%; height: 100px; display: none; align-items: center; justify-content: center; z-index: 200; pointer-events: auto; mix-blend-mode: difference; cursor: pointer; }
-    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
-    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
-    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
-    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
-    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
+    body { color: #eab84a; }
+    body.inverted-theme { color: var(--tone-dark); }
+    #stage-container { background: var(--tone-dark); }
+    #stage-container.inverted-bg { background: #eab84a; }
 
-    body.inverted-theme { color: #000; }
-    
-    .project-item.active, .project-item:hover {
-        background: #f4f1ec !important; color: #141210 !important; border-top: 1px solid #f4f1ec !important;
-        transform: scale(1.02); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    }
-    /* Unified accent: soft teal / soft amber */
-    .project-item.active .project-tags, .project-item:hover .project-tags { color: #b87a3d !important; }
-    .project-item.active *, .project-item:hover * { color: #141210 !important; }
-
-    body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover {
-        background: #0a0a0a !important; color: #f4f1ec !important; border-top: 1px solid #0a0a0a !important;
-    }
-    body.inverted-theme .project-item.active .project-tags, body.inverted-theme .project-item:hover .project-tags { color: #f2b880 !important; }
-    body.inverted-theme .project-item.active *, body.inverted-theme .project-item:hover * { color: #f4f1ec !important; }
-
-    body.inverted-theme .project-item { border-top: 1px solid rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.0); }
-    body.inverted-theme .project-tags { color: #2f9c8c; }
-    /* mix-blend-mode: difference on .back-btn already keeps it contrasting
-       against any backdrop — an explicit color swap here would cancel that
-       out when the theme flips at the same moment, so leave color as-is. */
-
-    #main-wrapper { position: relative; padding: 0 5vw; max-width: 1200px; margin: 0 auto; z-index: 10; pointer-events: none; will-change: transform; }
-    #header-section { text-align: left; pointer-events: auto; padding-top: 40vh; padding-bottom: 40vh; }
-    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
-    
-    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
-    .hint {
-      font-size: clamp(11px, 1vw, 13px); font-weight: 400; margin-top: 14px;
-      display: block; letter-spacing: 0.03em;
-      opacity: 0; animation: hint-flash 4.5s ease-in-out forwards;
-    }
-    @keyframes hint-flash {
-      0% { opacity: 0; }
-      12% { opacity: 0.4; }
-      70% { opacity: 0.4; }
+    /* .hint and .project-year lean on low opacity elsewhere on the site,
+       which is fine against a neutral background but murky against a fully
+       saturated one -- 40% opacity gold-on-black lands around 2.5:1
+       contrast, well under readable. Muted golds/browns at full or near-full
+       opacity keep them visibly de-emphasised without going illegible. */
+    /* The shared hint-flash keyframes only reach 0.4 opacity, which blended
+       with either gold or black lands under 2:1 contrast even with the
+       muted colours above -- illegible for the one moment it's on screen.
+       This page needs it to actually reach a readable peak. */
+    .hint { color: #b8923f; }
+    .hint.hint-show { animation-name: hint-flash-readable; }
+    body.inverted-theme .hint { color: #5a4419; }
+    @keyframes hint-flash-readable {
+      0%   { opacity: 0; }
+      12%  { opacity: 0.9; }
+      70%  { opacity: 0.9; }
       100% { opacity: 0; }
     }
-    
-    .project-list { display: flex; flex-direction: column; gap: 0; pointer-events: auto; min-height: 100vh; }
-    .project-item { border-top: 1px solid rgba(255, 255, 255, 0.4); padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer; display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 20px; background: rgba(0,0,0,0.0); border-radius: 8px; margin-top: 10vh; margin-bottom: 10vh; }
-    
-    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
-    .project-details { display: flex; flex-direction: column; gap: 10px; }
-    .thumb-stack { position: relative; width: 100%; max-width: 320px; height: 200px; }
-    .project-thumb {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: left center;
-      border-radius: 6px; display: block; background: rgba(255,255,255,0.06);
-      transition: transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease;
+    /* The place names on the rail and the captions, for the same reason:
+       --accent in page.css is the paper palette's teal, which on this ground
+       is a second hue rather than a quiet version of the first. */
+    .flow .place, .flow figcaption { color: #b8923f; }
+    body.inverted-theme .flow .place, body.inverted-theme .flow figcaption { color: #5a4419; }
+
+    /* --- THE FLOW ---
+       One continuous read, JKLU to Somaiya to Strate and out to Nodeshed,
+       rather than a stack of cards. A single rail runs down the left of it
+       and each place is a stop on that rail, so the page reads as one line
+       travelled rather than as sections. Scrolling is free, not snapped: see
+       data-scroll on <body> and the FREE branch in assets/scroll-nav.js. */
+    .flow {
+      pointer-events: auto; position: relative;
+      margin: 0 0 0 6px; padding: 4vh 0 22vh 34px;
+      border-left: 1px solid rgba(234, 184, 74, 0.35);
     }
-    .thumb-stack .thumb-main { z-index: 3; }
-    .thumb-stack .thumb-bg-1 { z-index: 2; opacity: 0; transform: translate(6px, 6px) scale(0.97); }
-    .thumb-stack .thumb-bg-2 { z-index: 1; opacity: 0; transform: translate(12px, 12px) scale(0.94); }
-    .thumb-stack:hover .thumb-main { transform: translate(-10px, -10px) scale(1.05); }
-    .thumb-stack:hover .thumb-bg-1 { opacity: 0.85; transform: translate(10px, 10px) scale(1.0); }
-    .thumb-stack:hover .thumb-bg-2 { opacity: 0.65; transform: translate(20px, 20px) scale(0.96); }
-    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
-    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #6fd9c8; transition: color 0.1s linear; }
-    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
-    
-    .back-btn { position: fixed; top: 40px; left: 5vw; font-size: 18px; text-decoration: none; color: white; font-weight: 600; z-index: 300; pointer-events: auto; transition: color 0.1s linear; mix-blend-mode: difference; }
+    body.inverted-theme .flow { border-left-color: rgba(11, 14, 19, 0.35); }
+    .flow p {
+      font-size: clamp(15px, 1.45vw, 18px); font-weight: 400;
+      line-height: 1.62; margin: 0 0 14px; max-width: 62ch;
+    }
+    .flow strong { font-weight: 600; }
+    .flow h2 {
+      font-size: clamp(23px, 3.2vw, 38px); font-weight: 600;
+      line-height: 1.08; margin: 0 0 22px; letter-spacing: -0.01em; max-width: 24ch;
+    }
+    .flow h3 {
+      font-size: clamp(15px, 1.5vw, 18px); font-weight: 600;
+      letter-spacing: 0.02em; margin: 34px 0 10px;
+    }
+    .flow .stop { padding-top: 18vh; }
+    .flow .stop:first-child { padding-top: 0; }
+    .flow .place {
+      position: relative; display: block; margin-bottom: 18px;
+      font-size: clamp(11px, 1vw, 13px); letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    /* The stop itself: a dot sitting on the rail. */
+    .flow .place::before {
+      content: ''; position: absolute; top: 50%; left: -39px;
+      width: 9px; height: 9px; margin-top: -5px; border-radius: 50%;
+      background: #eab84a;
+    }
+    body.inverted-theme .flow .place::before { background: var(--tone-dark); }
 
-    /* ========================================= */
-    /* VISIBILITY LOGIC FOR BRIGHT / DARK ITEMS */
-    /* ========================================= */
-    
-    .project-item.bright-only { display: none; }
-    .project-item.dark-only { display: grid; }
+    /* Mixed portrait and landscape footage, so columns rather than rows:
+       every piece keeps its own shape and nothing is cropped. */
+    .frames { columns: 3 220px; column-gap: 14px; margin: 5vh 0 2vh; max-width: 900px; }
+    .frames.pair { columns: 2 220px; max-width: 640px; }
+    .frames figure { break-inside: avoid; margin: 0 0 14px; }
+    .frames video, .frames img {
+      display: block; width: 100%; height: auto; border-radius: 6px;
+      background: rgba(234, 184, 74, 0.08);
+    }
+    /* Names stay out of the way until a piece is pointed at: laid over the
+       foot of the footage on a scrim, and only while hovered. */
+    .frames figure, .bleed { position: relative; }
 
-    body.inverted-theme .project-item.bright-only { display: grid; }
-    body.inverted-theme .project-item.dark-only { display: none; }
+    /* Now and then a single photograph takes the whole width. The grid's
+       narrow columns set up one rhythm and this breaks it, so the change of
+       shape is felt. Kept to a couple of moments; more and it is just a
+       second layout. */
+    .bleed { margin: 7vh 0; }
+    .bleed img, .bleed video { display: block; width: 100%; height: auto; border-radius: 6px; }
+    .frames figcaption, .bleed figcaption {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 28px 12px 10px; border-radius: 0 0 6px 6px;
+      background: linear-gradient(to top, rgba(11, 14, 19, 0.85), transparent);
+      color: #eab84a !important;
+      font-size: clamp(11px, 1vw, 13px); letter-spacing: 0.03em;
+      opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
+    }
+    .frames figure:hover figcaption, .bleed:hover figcaption { opacity: 1; }
 
-    @media (max-width: 768px) { .mobile-nav-zone { display: flex; } .project-item { grid-template-columns: 1fr; gap: 5px; } }
+    /* Sound, offered only on hover. Everything plays muted -- a browser will
+       not autoplay anything that is not -- and one tap here unmutes that piece
+       and mutes whichever was playing aloud before it. */
+    .sound {
+      position: absolute; top: 10px; right: 10px; z-index: 2;
+      width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%;
+      display: grid; place-items: center; cursor: pointer;
+      background: rgba(11, 14, 19, 0.7); color: #eab84a;
+      opacity: 0; transition: opacity 0.25s ease;
+    }
+    .sound svg { width: 18px; height: 18px; }
+    .sound .on, .sound.unmuted .off { display: none; }
+    .sound.unmuted .on { display: block; }
+    figure:hover .sound, .sound:focus-visible, .sound.unmuted { opacity: 1; }
+    @media (hover: none) { .sound { opacity: 0.85; } }
+
+    /* Instagram's own player, framed. It swallows the wheel, so it only takes
+       the pointer once it has been clicked, and gives it back when the pointer
+       leaves -- otherwise scrolling past a post would stop dead on it. */
+    .posts {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: 14px; max-width: 760px; margin: 4vh 0 2vh; align-items: start;
+    }
+    .post { cursor: pointer; }
+    .post iframe {
+      display: block; width: 100%; height: 620px; border: 0; border-radius: 8px;
+      background: rgba(234, 184, 74, 0.08); pointer-events: none;
+    }
+    .post.live iframe { pointer-events: auto; }
+
+    .flow a { color: inherit; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    .onward {
+      display: grid; grid-template-columns: minmax(140px, 260px) 1fr; gap: 20px;
+      align-items: center; margin-top: 4vh; max-width: 640px; text-decoration: none;
+    }
+    .onward img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; display: block; }
+    .onward span { font-size: clamp(15px, 1.45vw, 18px); font-weight: 500; }
+    .onward:hover span { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      .flow { padding-left: 22px; }
+      .flow .place::before { left: -27px; }
+      .flow .stop { padding-top: 12vh; }
+      .onward { grid-template-columns: 1fr; }
+    }
+
+    /* The canvas turns over in one frame, so the copy has to as well. The
+       shared 0.1s colour fade left every piece of text stranded between the two
+       tones for a moment after the background had already switched. */
+    body, .back-btn { transition: none; }
+
+    /* The back button normally keeps itself contrasting with its own
+       difference blend. The overlay above it now does that for the whole page,
+       and two differences stacked would cancel each other out. */
+    /* The canvas draws these glyphs itself. They stay in the document so the
+       layout, the links and a screen reader are all unchanged — only their
+       ink is handed over. */
+    #main-wrapper .ch, #header-section .ch { color: transparent !important; }
+    .back-btn { mix-blend-mode: normal; color: #eab84a; }
+    body.inverted-theme .back-btn { color: var(--tone-dark); }
+
   </style>
-  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
-<body>
+<body data-scroll="free">
   <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
   <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
   <div id="stage-container"></div>
@@ -119,386 +210,795 @@
 
   <div id="main-wrapper">
     <div id="header-section" class="scroll-target">
-      <h1>facilitation<br>& strategy</h1>
+      <h1>facilitation<br>& learning</h1>
       <span class="subtitle" id="dynamic-subtitle">fostering independence and breaking things</span>
-      <span class="hint">hold anywhere to shift between light and dark</span>
+      <span class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</span>
     </div>
-    
-    <div class="project-list">
-      
-      <div class="project-item scroll-target dark-only" data-project="jishnu/jklu" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/jishnu/jklu/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">JKLU</h2>
-          <span class="project-tags">Assets • Testing</span>
-          <p class="project-desc">Experimental assets and prototypes created to test and refine instructional methods.</p>
-        </div>
-      </div>
 
-      <div class="project-item scroll-target dark-only" data-project="jishnu/unconference" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/jishnu/unconference/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">Unconference</h2>
-          <span class="project-tags">R&D • Research</span>
-          <p class="project-desc">Deep-dive research into interactive learning environments and spatial computing.</p>
-        </div>
-      </div>
+    <!-- One continuous flow, in the order it happened: JKLU, then Somaiya,
+         then Strate, and out to the workshop at Nodeshed. Each .stop is a
+         .scroll-target only so the counter can say which place you are in;
+         the page itself scrolls freely through them. -->
+    <article class="flow">
+      <section class="stop scroll-target">
+        <h2>Being a good designer does not automatically make a good teacher. And vice versa.</h2>
+        <p>The teaching covers the same ground as the work and play sections, but it is a practice of its own, with its own aims: the point is what students leave able to do, not the work that comes out of it.</p>
+        <p>The approach is shaped as much by poor teaching as by good. Classrooms that served the teacher rather than the student on one side; on the other, the ones that asked what each learner needed and treated every student as bringing a perspective of their own.</p>
 
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/aliengarden" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/aliengarden/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2026</span>
-          <h2 class="project-title">AlienGarden</h2>
-          <span class="project-tags">JKLU Course • Delivery</span>
-          <p class="project-desc">A specialized course delivered at JKLU exploring the intersection of physical space and digital sensing.</p>
-        </div>
-      </div>
+        <h3>Making sense of our senses</h3>
+        <p>Five senses are all anyone can reliably depend on to perceive the world: sight, sound, touch, taste and smell.</p>
+        <p>New media asks for a medium to be approached in a wholly new way before it can be seen in a new way. The sessions start from there.</p>
+      </section>
 
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/bloom" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/bloom/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2026</span>
-          <h2 class="project-title">Bloom</h2>
-          <span class="project-tags">Workshop • Engagement</span>
-          <p class="project-desc">Hands-on sessions focused on fostering dialogue and active engagement within teams.</p>
-        </div>
-      </div>
+      <section class="stop scroll-target">
+        <span class="place">JKLU</span>
+        <p>At JKLU, the course opens with a single exercise: design an <strong>interactive poster</strong>. A poster is a rectangular, portrait, one-to-many communication format; interaction implies a dialogue between the poster and its viewer.</p>
+        <p>There are two rules. The poster has to remain a poster. And if the interaction can be taken away and the poster still tells its story, the poster fails.</p>
 
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/burrow" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/burrow/vid-01-poster.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">Burrow</h2>
-          <span class="project-tags">Mentorship • Portfolio Feedback</span>
-          <p class="project-desc">Direct mentorship including specific portfolio critiques and career guidance for aspiring designers.</p>
+        <h3>Student work from the exercise</h3>
+        <div class="frames">
+          <figure>
+            <video data-src="assets/jishnu/jklu/c-tarotlumen.mp4" poster="assets/jishnu/jklu/c-tarotlumen-poster.jpg" width="608" height="1080" muted loop playsinline preload="none"></video>
+            <figcaption>Tarot Lumen — Barkha</figcaption>
+          </figure>
+          <figure>
+            <video data-src="assets/jishnu/jklu/c-unrealcurrents.mp4" poster="assets/jishnu/jklu/c-unrealcurrents-poster.jpg" width="1080" height="608" muted loop playsinline preload="none"></video>
+            <figcaption>Unreal Currents — Megha</figcaption>
+          </figure>
+          <figure>
+            <video data-src="assets/jishnu/jklu/c-cymora-1.mp4" poster="assets/jishnu/jklu/c-cymora-1-poster.jpg" width="608" height="1080" muted loop playsinline preload="none"></video>
+            <figcaption>Cymora — Maulika</figcaption>
+          </figure>
+          <figure>
+            <video data-src="assets/jishnu/jklu/c-whenyouarrive-1.mp4" poster="assets/jishnu/jklu/c-whenyouarrive-1-poster.jpg" width="636" height="848" muted loop playsinline preload="none"></video>
+            <figcaption>When You Arrive — Priyani</figcaption>
+          </figure>
+          <figure>
+            <video data-src="assets/jishnu/jklu/c-matchpoint.mp4" poster="assets/jishnu/jklu/c-matchpoint-poster.jpg" width="608" height="1080" muted loop playsinline preload="none"></video>
+            <figcaption>Matchpoint</figcaption>
+          </figure>
         </div>
-      </div>
-
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/joyorbisonwhp" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/joyorbisonwhp/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">JoyOrbisonWHP</h2>
-          <span class="project-tags">Organizational Growth</span>
-          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+        <figure class="bleed">
+          <video data-src="assets/jishnu/jklu/c-lingert.mp4" poster="assets/jishnu/jklu/c-lingert-poster.jpg" width="1920" height="1080" muted loop playsinline preload="none"></video>
+          <figcaption>Lingert</figcaption>
+        </figure>
+        <div class="frames">
+          <figure>
+            <img src="assets/jishnu/jklu/img-02.jpg" width="1200" height="1600" loading="lazy" alt="A face projected onto a standing column">
+          </figure>
+          <figure>
+            <video data-src="assets/jishnu/jklu/c-whenyouarrive-2.mp4" poster="assets/jishnu/jklu/c-whenyouarrive-2-poster.jpg" width="848" height="636" muted loop playsinline preload="none"></video>
+            <figcaption>When You Arrive — Priyani</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/jishnu/jklu/c-tarotlumen-still.jpg" width="900" height="1600" loading="lazy" alt="Tarot Lumen, the poster">
+            <figcaption>Tarot Lumen — Barkha</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/jishnu/jklu/c-matchpoint-still.jpg" width="1600" height="1200" loading="lazy" alt="Matchpoint in use: a visitor facing the interactive poster">
+            <figcaption>Matchpoint</figcaption>
+          </figure>
         </div>
-      </div>
+        <figure class="bleed">
+          <video data-src="assets/jishnu/jklu/c-cymora-2.mp4" poster="assets/jishnu/jklu/c-cymora-2-poster.jpg" width="848" height="478" muted loop playsinline preload="none"></video>
+          <figcaption>Cymora — Maulika</figcaption>
+        </figure>
 
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/midroom" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/midroom/vid-01-poster.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">MidRoom</h2>
-          <span class="project-tags">Organizational Growth</span>
-          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+        <div class="posts">
+          <div class="post" data-ig="https://www.instagram.com/p/DWJySG2j5og/"></div>
+          <div class="post" data-ig="https://www.instagram.com/p/DXY-Xu1kgR4/"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/rawshit" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/rawshit/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">RawShit</h2>
-          <span class="project-tags">Organizational Growth</span>
-          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+      <!-- TODO: Somaiya has no write-up yet -- only the post below. -->
+      <section class="stop scroll-target">
+        <span class="place">Somaiya</span>
+        <p>From JKLU, the teaching continued at Somaiya.</p>
+        <div class="posts">
+          <div class="post" data-ig="https://www.instagram.com/p/Dc3NY6ZuzMg/"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="project-item scroll-target bright-only" data-project="gmmbbq/tychostones" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/gmmbbq/tychostones/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">TychosTones</h2>
-          <span class="project-tags">Organizational Growth</span>
-          <p class="project-desc">Broad-spectrum capability sessions designed to upskill teams and align institutional goals.</p>
+      <section class="stop scroll-target">
+        <span class="place">Strate</span>
+        <p>Then Strate, as visiting faculty in <strong>new media design</strong>.</p>
+        <div class="frames pair">
+          <figure>
+            <video data-src="assets/jishnu/strate/c-navarasa.mp4" poster="assets/jishnu/strate/c-navarasa-poster.jpg" width="608" height="1080" muted loop playsinline preload="none"></video>
+            <figcaption>Navarasa</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/jishnu/strate/c-navarasa-still.jpg" width="1200" height="1600" loading="lazy" alt="Navarasa, the poster">
+          </figure>
         </div>
-      </div>
+      </section>
 
-    </div>
+      <section class="stop scroll-target">
+        <span class="place">Nodeshed</span>
+        <p>Beyond the classroom, an open workshop at Nodeshed introduced participants to the fundamentals of TouchDesigner.</p>
+        <a class="onward" href="projects/nodeshed.html#workshops">
+          <img src="assets/onebyzero/nodeshed/thumb-01.jpg" width="1600" height="1200" loading="lazy" alt="">
+          <span>More on the workshop in the Nodeshed write-up →</span>
+        </a>
+      </section>
+    </article>
   </div>
 
-  <script src="assets/manifest.js"></script>
+  <script src="assets/keys.js"></script>
+  <script src="assets/cursor.js"></script>
+  <script src="assets/scroll-nav.js"></script>
+  <script src="assets/hold-hint.js"></script>
+  <script src="assets/gmm-float.js"></script>
+
   <script>
-    document.querySelectorAll('.thumb-stack').forEach((stack) => {
-      const key = stack.closest('.project-item')?.dataset.project;
-      const data = (typeof SITE_MANIFEST !== 'undefined' && key) ? SITE_MANIFEST[key] : null;
-      if (!data) return;
-      const mainImg = stack.querySelector('.thumb-main');
-      const pool = [...(data.images || []), ...(data.videos || []).map(v => v.poster)]
-        .filter((src) => src !== mainImg.getAttribute('src'));
-      pool.slice(0, 2).forEach((src, i) => {
-        const img = document.createElement('img');
-        img.src = src; img.alt = ''; img.loading = 'lazy';
-        img.className = `project-thumb thumb-bg-${i + 1}`;
-        stack.insertBefore(img, mainImg);
+    // Footage loads the first time it comes near the screen and plays only
+    // while it is on it, so a page of looping student work costs one or two
+    // decoders at a time rather than all of them at once.
+    (function () {
+      const vids = document.querySelectorAll('.frames video[data-src], .bleed video[data-src]');
+
+      const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/>';
+      vids.forEach((v) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sound';
+        b.setAttribute('aria-label', 'Sound on');
+        b.innerHTML = ICON + '<path class="off" d="m16 9 5 6m0-6-5 6"/>'
+          + '<path class="on" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+        b.addEventListener('mousedown', (e) => e.stopPropagation());
+        b.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+        b.addEventListener('click', () => {
+          const on = v.muted;
+          vids.forEach((o) => {
+            o.muted = true;
+            const ob = o.parentNode.querySelector('.sound');
+            ob.classList.remove('unmuted'); ob.setAttribute('aria-label', 'Sound on');
+          });
+          v.muted = !on;
+          b.classList.toggle('unmuted', on);
+          b.setAttribute('aria-label', on ? 'Sound off' : 'Sound on');
+          if (on) v.play().catch(() => {});
+        });
+        v.parentNode.appendChild(b);
       });
-    });
+      if (!('IntersectionObserver' in window)) {
+        vids.forEach((v) => { v.src = v.dataset.src; v.play().catch(() => {}); });
+        return;
+      }
+      const inView = new Set();
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(({ target: v, isIntersecting }) => {
+          if (isIntersecting) inView.add(v); else inView.delete(v);
+          if (isIntersecting) {
+            if (!v.src) v.src = v.dataset.src;
+            v.play().catch(() => {});
+          } else if (!v.paused) {
+            v.pause();
+          }
+        });
+      }, { rootMargin: '25% 0px' });
+      vids.forEach((v) => io.observe(v));
+      // The browser pauses footage in a tab that is out of sight, and nothing
+      // above fires again when it comes back -- so pick up what is on screen.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') inView.forEach((v) => v.play().catch(() => {}));
+      });
+    })();
+
+    // Instagram posts, in Instagram's own player (the same embed the project
+    // pages use in assets/render-project.js), sized by the one message the
+    // player sends about its height.
+    (function () {
+      document.querySelectorAll('.post[data-ig]').forEach((post) => {
+        const m = /instagram\.com\/(p|reel|tv)\/([^/?#]+)/.exec(post.dataset.ig);
+        if (!m) return;
+        const frame = document.createElement('iframe');
+        frame.src = `https://www.instagram.com/${m[1]}/${m[2]}/embed/`;
+        frame.title = 'Instagram post';
+        frame.loading = 'lazy';
+        frame.allow = 'encrypted-media; picture-in-picture; fullscreen';
+        frame.setAttribute('scrolling', 'no');
+        post.appendChild(frame);
+        post.addEventListener('click', () => post.classList.add('live'));
+        post.addEventListener('mouseleave', () => post.classList.remove('live'));
+      });
+      document.addEventListener('touchstart', (e) => {
+        document.querySelectorAll('.post.live').forEach((p) => {
+          if (!p.contains(e.target)) p.classList.remove('live');
+        });
+      }, { passive: true });
+      window.addEventListener('message', (e) => {
+        if (e.origin !== 'https://www.instagram.com') return;
+        let data = e.data;
+        try { if (typeof data === 'string') data = JSON.parse(data); } catch (err) { return; }
+        if (!data || data.type !== 'MEASURE' || !data.details) return;
+        document.querySelectorAll('.post iframe').forEach((f) => {
+          if (f.contentWindow === e.source) f.style.height = Math.ceil(data.details.height) + 'px';
+        });
+      });
+    })();
   </script>
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+  <script>
+    (function () {
+      // Same light as the front page: one source at the cursor, the headline
+      // blocking it, and hard-edged shadows thrown across the page. No footage
+      // behind it here, so the shadows are solid — and yellow rather than white.
+      //
+      // Shadows come from a 1D shadow map: the page in polar coordinates around
+      // the light, one texel per angle holding the distance to the first thing
+      // in that direction. A pixel is in shadow when it is further from the
+      // light than its angle's entry.
+      //
+      // The hold gesture is the site-wide one. This module only publishes its
+      // charge to HOLD_STATE and asks scroll-nav for the flip when the wipe has
+      // finished crossing, so the copy turns over at the same moment the
+      // background does.
+      const stage = document.getElementById('stage-container');
 
-    // --- INTERACTION ---
-    let isHolding = false, chargeTime = 0, isExploding = false, explosionForce = 0, invertCycle = false, explosionProgress = 0;
-    const CHARGE_LIMIT = 1500;
+      // The ground is painted underneath the page; the shadows are painted
+      // over the top of it in difference. That split is what lets a shadow
+      // invert the copy and the cards as it crosses them — blending from
+      // inside #main-wrapper could never reach the background, because
+      // scroll-nav transforms that wrapper and a transform seals a stacking
+      // context shut.
+      const groundCv = document.createElement('canvas');
+      groundCv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+      stage.appendChild(groundCv);
+      const gctx = groundCv.getContext('2d');
 
-    // --- NAV ---
-    let currentIndex = 0, targets = [];
-    const wrapper = document.getElementById('main-wrapper');
-    const isMobile = window.innerWidth < 768;
+      const canvas = document.createElement('canvas');
+      canvas.id = 'light-canvas';
+      canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;'
+        + 'z-index:400;pointer-events:none;mix-blend-mode:difference;';
+      document.body.appendChild(canvas);
 
-    // As the list slides, cards pass underneath a stationary cursor and the
-    // browser re-evaluates :hover on whatever lands there, making the
-    // thumbnail hover-reveal look like it's swapping at random. Suspend
-    // pointer-events on the list for the duration of the slide.
-    const projectListEl = document.querySelector('.project-list');
-    let hoverLockTimeout;
-    function suspendHover(duration) {
-        if (!projectListEl) return;
-        projectListEl.style.pointerEvents = 'none';
-        clearTimeout(hoverLockTimeout);
-        hoverLockTimeout = setTimeout(() => { projectListEl.style.pointerEvents = 'auto'; }, duration);
-    }
-
-    function updateTargets() {
-        const visibleItems = Array.from(document.querySelectorAll('.project-item')).filter(el => window.getComputedStyle(el).display !== 'none');
-        targets = [document.getElementById('header-section'), ...visibleItems];
-        updateChevronVisibility();
-    }
-    
-    function initTargets() { updateTargets(); if(isMobile) handleNav(0); }
-    setTimeout(initTargets, 100);
-
-    function updateChevronVisibility() { 
-        const up = document.getElementById('nav-up'), down = document.getElementById('nav-down');
-        if(up && down) { 
-            up.style.opacity = currentIndex <= 0 ? '0.2' : '1'; 
-            down.style.opacity = currentIndex >= targets.length-1 ? '0.2' : '1'; 
-        }
-    }
-    
-    window.handleNav = (dir) => {
-        // Works on both desktop (via wheel) and mobile (via chevrons)
-        updateTargets(); 
-        const next = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
-        if (next === currentIndex && dir !== 0) return;
-        currentIndex = next; updateChevronVisibility();
-        
-        const el = targets[currentIndex];
-        if(el) {
-            const offset = (window.innerHeight/2) - (el.offsetTop + el.offsetHeight/2);
-            wrapper.style.transform = `translateY(${offset}px)`;
-            wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)";
-            suspendHover(750);
-            targets.forEach(t => t.classList.contains('project-item') && t.classList.remove('active'));
-            if (currentIndex > 0) targets[currentIndex].classList.add('active');
-        }
-    };
-
-    // --- DESKTOP WHEEL SCROLL ---
-    let lastWheel = 0;
-    window.addEventListener('wheel', (e) => {
-        const now = performance.now();
-        if (now - lastWheel < 500) return; // Debounce to prevent rapid skipping
-        if (Math.abs(e.deltaY) < 10) return;
-        const dir = e.deltaY > 0 ? 1 : -1;
-        handleNav(dir);
-        lastWheel = now;
-    }, {passive: true});
-
-    window.addEventListener('keydown', (e) => {
-        if(e.key === 'ArrowDown') handleNav(1);
-        if(e.key === 'ArrowUp') handleNav(-1);
-    });
-
-    // --- MOBILE SCROLL LOCK ---
-    // This explicitly prevents touchmove (scrolling/bouncing) on the document, 
-    // effectively locking the page position on mobile.
-    document.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-    }, { passive: false });
+      const gl = canvas.getContext('webgl2', {
+        alpha: true, antialias: false, depth: false, stencil: false
+      });
+      // Without WebGL2 the page keeps its plain background, and the standby in
+      // scroll-nav.js picks the gesture up because this never claims it.
+      if (!gl) { canvas.remove(); return; }
+      // Claims the gesture, so the standby in scroll-nav.js knows it is not
+      // needed. If this line is never reached -- a CDN that will not answer, a
+      // context the machine will not give -- the standby installs the same
+      // hold-to-invert without a scene behind it.
+      window.HOLD_STATE.owned = true;
 
 
-    window.checkInteraction = (e) => { if (chargeTime > 200) { e.preventDefault(); e.stopPropagation(); return false; } return true; }
-    window.handleProjectClick = (e) => {
-        if (!checkInteraction(e)) return;
-        const key = e.currentTarget.dataset.project;
-        if (key) window.location.href = `project.html?p=${key}&from=facilitation.html`;
-    }
-
-    // --- THREE.JS ENGINE ---
-    const stage = document.getElementById('stage-container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 30);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor(0x000000, 0); 
-    stage.appendChild(renderer.domElement);
-
-    const count = 600;
-    const positions = new Float32Array(count * 3);
-    const originals = new Float32Array(count * 3); 
-    const velocities = []; 
-    
-    // SPHERICAL DISTRIBUTION
-    const radius = 18.0;
-    for(let i=0; i<count; i++) {
-        const phi = Math.acos(1 - 2 * (i + 0.5) / count);
-        const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-        const x = radius * Math.sin(phi) * Math.cos(theta);
-        const y = radius * Math.sin(phi) * Math.sin(theta);
-        const z = radius * Math.cos(phi) * 0.5;
-        positions[i*3] = x; positions[i*3+1] = y; positions[i*3+2] = z;
-        originals[i*3] = x; originals[i*3+1] = y; originals[i*3+2] = z;
-        velocities.push(new THREE.Vector3(0,0,0));
-    }
-
-    const material = new THREE.ShaderMaterial({
-      uniforms: { 
-        uColorA: { value: new THREE.Color(0x6fd9c8) },
-        uColorB: { value: new THREE.Color(0xf2b880) },
-        uInvert: { value: 0.0 }, uCharge: { value: 0.0 }, uGrowth: { value: 0.0 }
-      },
-      vertexShader: `
-        varying vec3 vNormal;
-        uniform float uCharge; uniform float uGrowth;
-        void main() {
-          vNormal = normal;
-          vec3 pos = position;
-          float scale = 1.0 + (uCharge * 0.5) + (uGrowth * 3.0);
-          pos *= scale;
-          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        uniform vec3 uColorA; uniform vec3 uColorB; uniform float uInvert; uniform float uCharge;
-        void main() {
-          float rim = 1.0 - dot(vNormal, vec3(0,0,1));
-          vec3 col = mix(uColorA, uColorB, rim);
-          col = mix(col, vec3(1.0), uCharge);
-          vec3 invCol = uColorB; 
-          gl_FragColor = vec4(mix(col, invCol, uInvert), 1.0);
-        }
-      `,
-      side: THREE.DoubleSide
-    });
-
-    const geometry = new THREE.TorusGeometry(0.3, 0.04, 8, 24); 
-    const mesh = new THREE.InstancedMesh(geometry, material, count);
-    scene.add(mesh);
-    
-    const dummy = new THREE.Object3D();
-    const raycaster = new THREE.Raycaster();
-    const mousePos = new THREE.Vector3(0, 0, 0); 
-    const startHold = (e) => { if(!e.target.closest('.back-btn') && !e.target.closest('.mobile-nav-zone')) isHolding = true; };
-    const stopHold = () => { isHolding = false; };
-    window.addEventListener('touchstart', startHold, {passive:true}); window.addEventListener('touchend', stopHold);
-    window.addEventListener('mousedown', startHold); window.addEventListener('mouseup', stopHold);
-    const updateMouse = (x, y) => {
-        const mx = (x/window.innerWidth)*2-1, my = -(y/window.innerHeight)*2+1;
-        raycaster.setFromCamera(new THREE.Vector2(mx,my), camera);
-        raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), 0), mousePos);
-    };
-    window.addEventListener('mousemove', e=>updateMouse(e.clientX, e.clientY));
-    
-    // Note: We need this touchmove listener for particles, even though we prevent default on document.
-    // The preventDefault on document stops the SCROLL, but the event still propagates to JS for this function.
-    window.addEventListener('touchmove', e=>updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
-
-    function animate(time) {
-      requestAnimationFrame(animate);
-
-      if (isHolding && !isExploding) { chargeTime = Math.min(chargeTime + 20, CHARGE_LIMIT); } 
-      else if (!isExploding) { chargeTime = Math.max(0, chargeTime - 60); }
-      if (chargeTime >= CHARGE_LIMIT && !isExploding) { isExploding = true; explosionForce = 1.0; invertCycle = false; explosionProgress = 0; }
-      
-      const chargeRatio = chargeTime / CHARGE_LIMIT;
-      material.uniforms.uCharge.value = chargeRatio;
-
-      if (isExploding) {
-          explosionForce -= 0.025; 
-          explosionProgress = 1.0 - explosionForce; 
-          material.uniforms.uGrowth.value = Math.sin(explosionProgress * 3.14); 
-          if (explosionForce < 0.9 && !invertCycle) {
-              invertCycle = true;
-              const bg = document.getElementById('stage-container');
-              const body = document.body;
-              const subtitle = document.getElementById('dynamic-subtitle');
-
-              if (bg.classList.contains('inverted-bg')) { 
-                  // GOING TO BLACK (Show DARK items)
-                  bg.classList.remove('inverted-bg'); 
-                  body.classList.remove('inverted-theme'); 
-                  material.uniforms.uInvert.value = 0.0;
-                  subtitle.innerText = "fostering independence and breaking things";
-              } 
-              else { 
-                  // GOING TO WHITE (Show BRIGHT items)
-                  bg.classList.add('inverted-bg'); 
-                  body.classList.add('inverted-theme'); 
-                  material.uniforms.uInvert.value = 1.0;
-                  subtitle.innerText = "guiding teams and making things";
+      // --- the headline, split so each letter can be measured ---
+      // Only the header casts. The card titles used to as well, which meant
+      // rebuilding the occluder every time the list came to rest somewhere new
+      // — a lot of raster for a shadow thrown by a line of small type. The
+      // cards still receive: shadows and the ring sweep across them, because
+      // the overlay flips whatever it covers regardless of what cast it. They
+      // just no longer throw anything of their own, and their titles are left
+      // as ordinary text rather than handed to the canvas.
+      const chars = [];
+      const split = new WeakSet();
+      function collectOccluders() {
+        const roots = [document.querySelector('#header-section h1'),
+                       document.querySelector('#header-section .subtitle')]
+                       .filter((el) => el && !split.has(el));
+        if (!roots.length) return false;
+        roots.forEach((el) => split.add(el));
+        const walk = (node) => {
+          if (node.nodeType === 3) {
+            const frag = document.createDocumentFragment();
+            for (const part of node.nodeValue.split(/(\s+)/)) {
+              if (!part) continue;
+              if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); continue; }
+              const word = document.createElement('span');
+              word.style.whiteSpace = 'nowrap';
+              for (const ch of part) {
+                const s = document.createElement('span');
+                s.className = 'ch';
+                s.style.display = 'inline-block';
+                s.textContent = ch;
+                word.appendChild(s);
+                chars.push(s);
               }
-              // Update Nav targets since list changed size/content
-              setTimeout(updateTargets, 50);
+              frag.appendChild(word);
+            }
+            node.parentNode.replaceChild(frag, node);
+          } else if (node.nodeType === 1 && node.tagName !== 'BR') {
+            [...node.childNodes].forEach(walk);
           }
-          if (explosionForce <= 0) isExploding = false;
+        };
+        roots.forEach((r) => [...r.childNodes].forEach(walk));
+        return true;
+      }
+      collectOccluders();
+
+      const occCv = document.createElement('canvas');
+      const octx = occCv.getContext('2d');
+      let occScale = 1, occMargin = 0;
+
+      function drawOccluders(now) {
+        baseY = wrapperY(now === undefined ? performance.now() : now);
+        octx.setTransform(1, 0, 0, 1, 0, 0);
+        octx.clearRect(0, 0, occCv.width, occCv.height);
+        octx.scale(occScale, occScale);
+        // Glyph rects are in screen coordinates; the band starts a margin
+        // above the top of the window.
+        octx.translate(0, occMargin);
+        // Two masks in one raster. Alpha is everything that casts, including
+        // the fattening below; luminance is the letterform exactly as the
+        // browser set it, and that is what gets painted back onto the page.
+        // One rasterisation is the single source of truth for both, so the
+        // shadow and the letter it belongs to cannot drift apart.
+        // These two are mask values -- 0 and 1 read back as .r and .a in the
+        // shader -- and not tones. Nothing on screen is ever painted in them.
+        octx.strokeStyle = '#000';
+        octx.fillStyle = '#fff';
+        octx.lineJoin = 'round';
+        octx.textAlign = 'center';
+        // Sitting the glyph on the baseline the browser gave it, rather than
+        // centring it in its box. A letter's box is a line box, which is not
+        // symmetric about the em, so 'middle' put the silhouette nearly four
+        // pixels above the letter on the headline — enough to read as a ghost
+        // of the word offset from the word itself. The error grows with type
+        // size, which is why it showed on the headline and the card titles and
+        // not on the small copy.
+        octx.textBaseline = 'alphabetic';
+        for (const el of chars) {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.bottom < -occMargin
+              || r.top > window.innerHeight + occMargin) continue;
+          const cs = getComputedStyle(el);
+          octx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          const tm = octx.measureText(el.textContent);
+          const asc = tm.fontBoundingBoxAscent, desc = tm.fontBoundingBoxDescent;
+          const x = r.left + r.width / 2;
+          // Half-leading above the ascent is where CSS puts the baseline in a
+          // line box. Older engines without the font metrics fall back to the
+          // box centre, which is roughly right and never blank.
+          const y = asc === undefined
+            ? r.top + r.height / 2
+            : r.top + (r.height - (asc + desc)) / 2 + asc;
+          // Slightly fattened: rays step along the page in finite increments,
+          // and a stroke thinner than one step gets jumped clean over, which
+          // punches holes in its own shadow.
+          octx.lineWidth = 1.5;
+          octx.strokeText(el.textContent, x, y);
+          octx.fillText(el.textContent, x, y);
+        }
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, occTex);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE_ALPHA, gl.LUMINANCE_ALPHA, gl.UNSIGNED_BYTE, occCv);
       }
 
-      for(let i=0; i<count; i++) {
-          const vel = velocities[i];
-          const posX = positions[i*3], posY = positions[i*3+1], posZ = positions[i*3+2];
-          const homeX = originals[i*3], homeY = originals[i*3+1], homeZ = originals[i*3+2];
+      const VERT = `#version 300 es
+        out vec2 vUv;
+        void main() {
+          vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+          vUv = p;
+          gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+        }
+      `;
 
-          const k = 0.03; 
-          let accX = (homeX - posX) * k; let accY = (homeY - posY) * k; let accZ = (homeZ - posZ) * k;
-
-          const dx = posX - mousePos.x, dy = posY - mousePos.y, dz = posZ - mousePos.z;
-          const distSq = dx*dx + dy*dy + dz*dz; const dist = Math.sqrt(distSq);
-
-          if (isExploding) {
-              if(dist < 20.0) {
-                  const force = explosionForce * 5.0;
-                  accX += (dx/dist) * force; accY += (dy/dist) * force; accZ += (dz/dist) * force;
-              }
-          } else if (chargeRatio > 0.0) {
-              const force = chargeRatio * 0.8;
-              accX -= (dx/dist) * force; accY -= (dy/dist) * force; accZ -= (dz/dist) * force;
-          } else {
-              if (dist < 8.0) {
-                  const force = (8.0 - dist) * 0.05;
-                  accX += (dx/dist) * force; accY += (dy/dist) * force;
-              }
+      const SHADOW_FRAG = `#version 300 es
+        precision highp float;
+        out vec4 fragColor;
+        uniform sampler2D uOcc;
+        uniform vec2 uLight;
+        uniform float uAspect, uAngles, uMaxDist, uOccShiftY, uOccScaleY;
+        // The occluder covers a taller band of the page than the window shows,
+        // and records where that band sat when it was drawn. Reading it back
+        // through the page's current offset costs nothing, where redrawing the
+        // glyphs every frame cost a redraw and a full texture upload — and
+        // still lagged, which is what put the shadow beside the text. The
+        // spare band above and below is what a slide moves into, so text
+        // arriving from off-screen is already in there casting.
+        float occAt(vec2 uv) {
+          float v = uv.y * uOccScaleY + uOccShiftY;
+          if (v < 0.0 || v > 1.0) return 0.0;
+          return textureLod(uOcc, vec2(uv.x, v), 0.0).a;
+        }
+        void main() {
+          float ang = (gl_FragCoord.x / uAngles) * 6.2831853 - 3.14159265;
+          vec2 dir = vec2(cos(ang) / uAspect, sin(ang));
+          const int STEPS = 512;
+          float STEP = uMaxDist / float(STEPS);
+          float lo = 0.0, hi = -1.0;
+          for (int i = 1; i <= STEPS; i++) {
+            float t = float(i) * STEP;
+            vec2 uv = uLight + dir * t;
+            if (uv.x < -0.03 || uv.x > 1.03 || uv.y < -0.03 || uv.y > 1.03) break;
+            if (occAt(uv) > 0.5) { lo = t - STEP; hi = t; break; }
           }
+          // Bisect inside the step that was hit. Without this the distance is
+          // only ever a multiple of one step, and every wedge edge starts on
+          // that grid — which reads as stair-stepping around the letters.
+          if (hi > 0.0) {
+            for (int j = 0; j < 7; j++) {
+              float m = 0.5 * (lo + hi);
+              if (occAt(uLight + dir * m) > 0.5) hi = m; else lo = m;
+            }
+          }
+          float hit = hi > 0.0 ? hi : uMaxDist;
+          float v = clamp(hit / uMaxDist, 0.0, 1.0) * 255.0;
+          fragColor = vec4(floor(v) / 255.0, fract(v), 0.0, 1.0);
+        }
+      `;
 
-          vel.x += accX; vel.y += accY; vel.z += accZ;
-          vel.x *= 0.92; vel.y *= 0.92; vel.z *= 0.92;
+      const COMPOSITE_FRAG = `#version 300 es
+        precision highp float;
+        in vec2 vUv;
+        out vec4 fragColor;
+        uniform sampler2D uShadow, uOcc;
+        uniform vec2 uLight, uDiscPoint;
+        uniform float uAspect, uMaxDist, uReach, uDisc, uOccShiftY, uOccScaleY;
+        uniform vec3 uInk;
 
-          positions[i*3] += vel.x; positions[i*3+1] += vel.y; positions[i*3+2] += vel.z;
+        // .a is the casting silhouette, .r the letterform itself.
+        vec2 inkAt(vec2 uv) {
+          float v = uv.y * uOccScaleY + uOccShiftY;
+          if (v < 0.0 || v > 1.0) return vec2(0.0);
+          vec4 t = textureLod(uOcc, vec2(uv.x, v), 0.0);
+          return vec2(t.r, t.a);
+        }
 
-          dummy.position.set(positions[i*3], positions[i*3+1], positions[i*3+2]);
-          const lookTgt = new THREE.Vector3(mousePos.x, mousePos.y, 10);
-          dummy.lookAt(lookTgt);
-          dummy.updateMatrix();
-          mesh.setMatrixAt(i, dummy.matrix);
+        // What the shadow does at a point, as the bare ground would have it.
+        float shadowedAt(vec2 p, float aa);
+
+        float shadowAt(float u) {
+          vec2 s = textureLod(uShadow, vec2(u, 0.5), 0.0).rg;
+          return (s.r * 255.0 + s.g) / 255.0 * uMaxDist;
+        }
+
+        void main() {
+          vec2 rel = (vUv - uLight) * vec2(uAspect, 1.0);
+          float dist = length(rel);
+          float u = (atan(rel.y, rel.x) + 3.14159265) / 6.2831853;
+
+          // One pixel's worth of distance. Every edge is softened by exactly
+          // this and no more: enough to stop it stair-stepping, not enough to
+          // become a gradient.
+          float aa = fwidth(dist) * 0.8 + 0.0006;
+
+          float shadowed = shadowedAt(vUv, aa);
+
+          // A letter's tone came from an 8-point ring sampled just outside
+          // its strokes ("what is this letter sitting on, not what is it
+          // casting"), voted and re-applied to the shadowed value. It looked
+          // right in isolation, but wherever a shadow edge itself crossed a
+          // letter, the ring's votes split near 50/50 and a handful of
+          // nearby taps could land inside a neighbouring glyph instead of
+          // open ground, both of which made the picked tone flip erratically
+          // from pixel to pixel -- visible as noise smeared across exactly
+          // the letters a shadow boundary passed through. The plain
+          // raymarched value is kept everywhere now, letters included: it is
+          // smooth by construction, and in practice no letter reads as
+          // "disappeared".
+          vec2 inkHere = inkAt(vUv);
+
+          // The ring: a disc that opens as the page is held. It sits in the
+          // overlay rather than under the page so that it covers the cards too,
+          // and it combines with the shadows by exclusive-or — a shadow inside
+          // the ring is already inverted once, so inverting it again would put
+          // it back. That is also what makes the hand-off free: once the ring
+          // has swallowed the page, what is on screen is exactly the flipped
+          // theme, so flipping it for real and dropping the ring changes
+          // nothing.
+          float dd = length((vUv - uDiscPoint) * vec2(uAspect, 1.0));
+          float daa = fwidth(dd) * 0.8 + 0.0006;
+          float inDisc = uDisc <= 0.0 ? 0.0 : 1.0 - smoothstep(uDisc - daa, uDisc + daa, dd);
+
+          // Differenced against the page below, the overlay swaps the two
+          // tones both ways round: gold ground turns dark, dark turns gold,
+          // and any text caught inside does the same. uInk is the operand that
+          // does it -- the sum of the two tones, not either one of them -- so
+          // one rule covers both inversions, and it reaches the cards free.
+          // The letters are painted here rather than left to the page under
+          // this canvas. Flipping a glyph against whatever it stands on makes
+          // it the opposite tone by construction — yellow on the dark ground,
+          // dark inside a shadow — so it is legible in every state without
+          // anything having to line up between two separate renderings of the
+          // same words. It is the same raster the shadows are traced through,
+          // moved by the same offset, so the two cannot come apart.
+          float mask = abs(abs(shadowed - inDisc) - inkHere.x);
+          fragColor = vec4(uInk * mask, mask);
+        }
+
+        float shadowedAt(vec2 p, float aa) {
+          vec2 rel = (p - uLight) * vec2(uAspect, 1.0);
+          float d = length(rel);
+          float u = (atan(rel.y, rel.x) + 3.14159265) / 6.2831853;
+          // The bias keeps an edge from fringing against itself.
+          float visible = smoothstep(-aa, aa, shadowAt(u) - d + 0.0018);
+          float inReach = 1.0 - smoothstep(uReach - aa, uReach + aa, d);
+          return (1.0 - visible) * inReach;
+        }
+      `;
+
+      function compile(type, src) {
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+        return sh;
       }
-      mesh.instanceMatrix.needsUpdate = true;
-      renderer.render(scene, camera);
-    }
-    animate(0);
+      function link(fragSrc) {
+        const p = gl.createProgram();
+        gl.attachShader(p, compile(gl.VERTEX_SHADER, VERT));
+        gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fragSrc));
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p));
+        return p;
+      }
+      const shadowProg = link(SHADOW_FRAG);
+      const compProg = link(COMPOSITE_FRAG);
+      const uni = (prog, names) => {
+        const o = {};
+        for (const n of names) o[n] = gl.getUniformLocation(prog, n);
+        return o;
+      };
+      const SU = uni(shadowProg, ['uOcc', 'uLight', 'uAspect', 'uAngles', 'uMaxDist', 'uOccShiftY', 'uOccScaleY']);
+      const CU = uni(compProg, ['uShadow', 'uOcc', 'uOccShiftY', 'uOccScaleY',
+        'uLight', 'uDiscPoint', 'uAspect', 'uMaxDist', 'uReach', 'uDisc', 'uInk']);
 
-    window.addEventListener('resize', () => { 
-        camera.aspect = window.innerWidth / window.innerHeight; 
-        camera.updateProjectionMatrix(); 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        if(isMobile) handleNav(0); 
-    });
+      const makeTex = () => {
+        const t = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        return t;
+      };
+      const occTex = makeTex();
+
+      // One texel per angle, holding the distance to the first blocker that way.
+      // Nearest sampling on purpose: interpolating between two angles would
+      // smear one wedge into the next.
+      const ANGLES = 2048;
+      const MAX_DIST = 2.6;
+      const shadowTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, shadowTex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ANGLES, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, shadowTex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+      let W = 0, H = 0, aspect = 1, CORNER = 2.1;
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio, 1.5);
+        W = Math.round(window.innerWidth * dpr);
+        H = Math.round(window.innerHeight * dpr);
+        canvas.width = W; canvas.height = H;
+        groundCv.width = W; groundCv.height = H;
+        gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        aspect = window.innerWidth / Math.max(1, window.innerHeight);
+        CORNER = Math.hypot(aspect, 1) + 0.02;
+        // A slide covers most of a screen height, so the band carries that
+        // much again above and below the window.
+        occMargin = Math.round(window.innerHeight * 0.75);
+        const bandH = window.innerHeight + occMargin * 2;
+        // Matched to the overlay's own resolution, so the edge of the mask
+        // lands on the same device pixel as the edge of the letter it was
+        // taken from. Below that the silhouette is resampled up to cast at
+        // full size and stops coinciding with the glyph, which shows as a
+        // fringe along one side of every letter. The band is a single channel,
+        // so carrying it at this resolution is affordable.
+        occScale = Math.min(dpr, 2400 / Math.max(1, window.innerWidth));
+        occCv.width = Math.max(2, Math.round(window.innerWidth * occScale));
+        occCv.height = Math.max(2, Math.round(bandH * occScale));
+        drawOccluders();
+      }
+
+      // Two tones, and only two: gold, and the site's near-black. The overlay
+      // is painted in neither of them. It is painted in their SUM, because
+      // that is the one operand difference blending swaps a pair with:
+      //
+      //     |D − S| = Y  and  |Y − S| = D   ⟺   S = D + Y, channel by channel
+      //
+      // Get that wrong and the two tones do not round-trip. The dark tone used
+      // to be a true black precisely because the overlay was painted in the
+      // gold itself, and D + Y = Y only when D is zero; against #0a0a0a the
+      // difference landed on #f5c710 one way and #000000 the other, so a
+      // shadow was a duller gold than the text it fell on and the inverted
+      // ground was darker than the page around it. Naming the sum separately
+      // is what buys back a dark tone that is ink rather than a hole in the
+      // screen: the identity is now exact for #0b0e13 as well.
+      //
+      // Both values are written out of the same eight-bit numbers as the CSS,
+      // so the canvas and the stylesheet cannot drift apart.
+      // #eab84a rather than the original #ffd11a: still reads unmistakably
+      // gold, but 10.5:1 against the dark tone instead of ~14.4:1 -- less
+      // glare at the sizes and durations text sits on screen here.
+      const YELLOW_CSS = '#eab84a';   // rgb(234, 184,  74)
+      const DARK_CSS = '#0b0e13';     // rgb( 11,  14,  19), = --tone-dark
+      // (234 + 11, 184 + 14, 74 + 19) — every channel inside 255, which is the
+      // only constraint on the pair.
+      const SWAP = [245 / 255, 198 / 255, 93 / 255];
+
+      // play and work add 20 a frame and shed 60, which at 60fps is 1200 and
+      // 3600 a second — a 1.25s hold. Written as rates so it is the same 1.25s
+      // on a 120Hz screen instead of half of it.
+      // 1200 was a 1.25s hold. A shade quicker at 1400 (~1.07s) -- still long
+      // enough to read as deliberate rather than as a mis-click, but it no
+      // longer feels like waiting for the page to make up its mind.
+      const CHARGE_LIMIT = 1500;
+      const CHARGE_RATE = 1400;
+      const RELEASE_RATE = 3600;
+      const WIPE_SECS = 0.98;
+      const SETTLE_SECS = 0.5;
+      // Past the far corner, so the light never clips its own shadows and they
+      // run off every edge of the page rather than stopping in mid-air.
+      const REST_REACH = 2.6;
+
+      let isHolding = false, charge = 0, settling = 0;
+      let wiping = 0, wipeU = 0.5, wipeV = 0.5;
+      let inverted = 0;
+      let pointerU = 0.5, pointerV = 0.5, lightU = 0.5, lightV = 0.5;
+      let last = performance.now(), occDirty = true;
+
+      const startHold = (e) => {
+        if (e.target.closest('.back-btn') || e.target.closest('.mobile-nav-zone') || e.target.closest('#gmm-float')) return;
+        isHolding = true;
+      };
+      window.addEventListener('mousedown', startHold);
+      window.addEventListener('touchstart', startHold, { passive: true });
+      window.addEventListener('mouseup', () => { isHolding = false; });
+      window.addEventListener('touchend', () => { isHolding = false; });
+      // Dragging is how this page scrolls (assets/scroll-nav.js), and a slow
+      // drag lasts as long as a hold -- so a finger that moves is not holding.
+      window.addEventListener('touchmove', () => { if (window.FREE_DRAG) isHolding = false; }, { passive: true });
+      window.addEventListener('blur', () => { isHolding = false; });
+      window.addEventListener('pointermove', (e) => {
+        pointerU = e.clientX / window.innerWidth;
+        pointerV = 1 - e.clientY / window.innerHeight;
+      }, { passive: true });
+
+      // The page doesn't scroll natively — scroll-nav slides #main-wrapper with
+      // a transform — so a scroll listener would never fire. Read the transform
+      // instead: while it changes, the raster is left alone and only the offset
+      // moves, and it is rebuilt once the slide has come to rest.
+      const wrapper = document.getElementById('main-wrapper');
+      let baseY = 0, lastY = null, stillFor = 0;
+      // scroll-nav tweens the wrapper on this same clock and publishes where
+      // it has put it, so this is the exact position the letters are drawn at
+      // this frame — not a matrix parsed back out of the computed style, which
+      // is a thread behind whatever the compositor is showing.
+      function wrapperY(now) {
+        if (typeof window.wrapperYAt === 'function') return window.wrapperYAt(now);
+        return typeof window.WRAPPER_Y === 'number' ? window.WRAPPER_Y : 0;
+      }
+
+      const clamp01 = (t) => Math.min(1, Math.max(0, t));
+      const easeIn = (t) => Math.pow(clamp01(t), 3.4);
+      // Smootherstep run through smoothstep again: dead slow at both ends and
+      // quick through the middle, so the ring creeps, sweeps, then settles.
+      const easeInOut = (t) => {
+        const x = clamp01(t);
+        const a = x * x * x * (x * (x * 6 - 15) + 10);
+        return a * a * (3 - 2 * a);
+      };
+      const easeOut = (t) => 1 - Math.pow(1 - clamp01(t), 1.5);
+      const ease = (t) => { const x = clamp01(t); return x * x * (3 - 2 * x); };
+
+      function frame(now) {
+        requestAnimationFrame(frame);
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+
+        // Follow the slide by offset, and only redraw once it has settled — or
+        // when the content itself changes.
+        const curY = wrapperY(now);
+        const bandPx = window.innerHeight + occMargin * 2;
+        stillFor = (lastY !== null && Math.abs(curY - lastY) < 0.5) ? stillFor + dt : 0;
+        lastY = curY;
+        // Only glyphs on screen at raster time are in there, so once the page
+        // has come to rest somewhere else it has to be drawn again to pick up
+        // whatever has scrolled into view. The offset covers the journey.
+        if (Math.abs(curY - baseY) > 0.5) occDirty = true;
+        if (occDirty && stillFor > 0.1) { drawOccluders(now); occDirty = false; }
+
+        lightU += (pointerU - lightU) * Math.min(1, dt * 12);
+        lightV += (pointerV - lightV) * Math.min(1, dt * 12);
+
+        const ENGULF = CORNER * 1.12;
+        let reach;
+        if (settling > 0) {
+          settling = Math.max(0, settling - dt);
+          reach = REST_REACH + (ENGULF - REST_REACH) * easeIn(settling / SETTLE_SECS);
+        } else {
+          // Space holds exactly as the pointer does (assets/keys.js).
+          const holding = isHolding || (window.KEY_HOLD && window.KEY_HOLD.held);
+          charge = holding
+            ? Math.min(CHARGE_LIMIT, charge + dt * CHARGE_RATE)
+            : Math.max(0, charge - dt * RELEASE_RATE);
+          reach = REST_REACH + (ENGULF - REST_REACH) * easeIn(charge / CHARGE_LIMIT);
+          if (charge >= CHARGE_LIMIT && wiping === 0) {
+            wiping = WIPE_SECS; wipeU = pointerU; wipeV = pointerV;
+            charge = 0; settling = SETTLE_SECS;
+          }
+        }
+        // Cards elsewhere on the page read this to tell a tap from the tail of
+        // a hold, so it has to keep being published even while the wipe runs.
+        window.HOLD_STATE.charge = charge;
+
+        let wipe = -1;
+        if (wiping > 0) {
+          wiping = Math.max(0, wiping - dt);
+          wipe = ENGULF * (0.55 + 0.45 * easeInOut(1 - wiping / WIPE_SECS));
+          if (wiping === 0) {
+            // The edge is past the last corner, so the background already reads
+            // as the other mode everywhere. Asking scroll-nav to flip now turns
+            // the copy over at the same moment, and adopting the new palette
+            // changes nothing on screen.
+            inverted = window.toggleInvert();
+            stage.classList.toggle('inverted-bg', !!inverted);
+            wipe = -1;
+          }
+        }
+
+        gl.useProgram(shadowProg);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.viewport(0, 0, ANGLES, 1);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, occTex);
+        gl.uniform1i(SU.uOcc, 0);
+        gl.uniform2f(SU.uLight, lightU, lightV);
+        gl.uniform1f(SU.uAspect, aspect);
+        gl.uniform1f(SU.uAngles, ANGLES);
+        gl.uniform1f(SU.uMaxDist, MAX_DIST);
+        gl.uniform1f(SU.uOccScaleY, window.innerHeight / bandPx);
+        gl.uniform1f(SU.uOccShiftY, (occMargin + (curY - baseY)) / bandPx);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, W, H);
+        gl.useProgram(compProg);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, shadowTex);
+        gl.uniform1i(CU.uShadow, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, occTex);
+        gl.uniform1i(CU.uOcc, 1);
+        gl.uniform1f(CU.uOccScaleY, window.innerHeight / bandPx);
+        gl.uniform1f(CU.uOccShiftY, (occMargin + (curY - baseY)) / bandPx);
+        gl.uniform2f(CU.uLight, lightU, lightV);
+        gl.uniform1f(CU.uAspect, aspect);
+        gl.uniform1f(CU.uMaxDist, MAX_DIST);
+        gl.uniform1f(CU.uReach, reach);
+        // Holding opens the ring about halfway; the turn carries the same disc
+        // the rest of the way, so charge and turn are one movement.
+        const discR = wipe >= 0 ? wipe : ENGULF * 0.55 * easeInOut(charge / CHARGE_LIMIT);
+        gl.uniform1f(CU.uDisc, discR);
+        gl.uniform2f(CU.uDiscPoint, wipe >= 0 ? wipeU : pointerU, wipe >= 0 ? wipeV : pointerV);
+        gl.uniform3fv(CU.uInk, SWAP);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        // --- the ground, and the turn sweeping across it ---
+        // In CSS pixels, not the device pixels W and H are in: the ground
+        // context carries the device-ratio transform already.
+        const cssW = window.innerWidth, cssH = window.innerHeight;
+        gctx.fillStyle = inverted ? YELLOW_CSS : DARK_CSS;
+        gctx.fillRect(0, 0, cssW, cssH);
+      }
+
+      resize();
+      // Wrapped rather than passed straight in: .then hands the callback the
+      // FontFaceSet, which would arrive as the frame timestamp.
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawOccluders());
+      requestAnimationFrame(frame);
+
+      let resizeTimer = 0;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+    })();
   </script>
 </body>
 </html>

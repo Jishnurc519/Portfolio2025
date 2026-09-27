@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 380" fill="none" stroke="#6fd9c8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" font-family="Clash Display, sans-serif" font-size="13" font-weight="400">
+  <!-- From the notebook, "How it works": the table, the camera over it, and someone at it. -->
+  <title>The setup: a screen laid flat as a table, a camera overhead, a student placing tokens</title>
+
+  <!-- overhead camera -->
+  <path d="M150 38 H330"/>
+  <path d="M240 38 V62"/>
+  <rect x="222" y="62" width="36" height="22" rx="3"/>
+  <circle cx="240" cy="84" r="5"/>
+  <!-- what the camera sees -->
+  <path d="M234 88 L118 214 M246 88 L366 214" stroke-dasharray="3 6" opacity="0.55"/>
+
+  <!-- table top: a screen laid flat, in perspective. Both outlines run to
+       the same vanishing point (242, 85), just under the camera: the screen
+       is the table top inset by the same share at every depth. -->
+  <path d="M118 214 H366 L412 262 H72 Z"/>
+  <defs>
+    <clipPath id="fls-screen"><path d="M127 221 H357 L387 256 H97 Z"/></clipPath>
+  </defs>
+  <path d="M127 221 H357 L387 256 H97 Z" opacity="0.6"/>
+  <!-- legs -->
+  <path d="M84 262 V338 M400 262 V338 M130 262 V318 M354 262 V318"/>
+
+  <!-- field lines the screen draws between the two tokens: flattened the
+       way the table is, and kept to the screen; anything that would run
+       off its edge is clipped at it -->
+  <g opacity="0.7" clip-path="url(#fls-screen)">
+    <path d="M206 239 C226 229 262 229 282 239"/>
+    <path d="M206 239 C226 249 262 249 282 239"/>
+    <path d="M201 237 C220 219 268 219 287 237" opacity="0.6"/>
+    <path d="M201 241 C220 259 268 259 287 241" opacity="0.6"/>
+    <!-- and the lines that leave each token outward, bending round -->
+    <path d="M178 236 C160 228 140 226 118 228 M178 242 C160 250 140 252 110 251" opacity="0.45"/>
+    <path d="M310 236 C328 228 348 226 366 228 M310 242 C328 250 348 252 376 251" opacity="0.45"/>
+  </g>
+  <!-- tokens -->
+  <ellipse cx="192" cy="239" rx="15" ry="9"/>
+  <path d="M186 239 H198 M192 235 V243"/>
+  <ellipse cx="296" cy="239" rx="15" ry="9"/>
+  <path d="M290 239 H302"/>
+
+  <!-- the student: a flat silhouette, reaching for the table -->
+  <g fill="#6fd9c8" stroke="none">
+    <circle cx="456" cy="140" r="15"/>
+    <path d="M447 162 H465 Q475 162 475 172 L471 250 L469 332 H459 L456 264 L453 332 H443 L441 250 L437 172 Q437 162 447 162 Z"/>
+  </g>
+  <path d="M444 178 L404 224" stroke-width="10"/>
+
+  <!-- labels -->
+  <g stroke="none" fill="#6fd9c8">
+    <text x="272" y="72">camera</text>
+    <text x="14" y="186">screen, laid flat<tspan x="14" dy="16">as a table</tspan></text>
+    <text x="164" y="300">+ proton   − electron</text>
+    <text x="410" y="110">place, look, switch</text>
+  </g>
+  <path d="M190 290 L192 252" opacity="0.5"/>
+</svg>

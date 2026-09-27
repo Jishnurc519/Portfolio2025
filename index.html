@@ -4,22 +4,56 @@
   <meta charset="utf-8" />
   <title>Jishnu Roy Chaudhury</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="New media designer and creative technologist making interactive audio-visual work. Installations, prototypes and workshops." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <!-- Absolute URLs, because a scraper reading this page has no base to
+       resolve a relative one against. If the site moves to its own
+       domain, this constant is the only thing that changes. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="jishnu has an artpage">
+  <meta property="og:title" content="Jishnu Roy Chaudhury — new media designer">
+  <meta property="og:description" content="New media designer and creative technologist making interactive audio-visual work. Installations, prototypes and workshops.">
+  <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/jishnu/fieldlinesim/vid-01-poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
   <style>
-    html, body {
-      margin: 0; padding: 0; background: #0a0a0a; color: #f4f1ec;
-      min-height: 100dvh; width: 100vw;
-      font-family: 'Clash Display', sans-serif;
-      transition: background 0.05s linear, color 0.1s linear;
+    /* The two tones, and the operand that swaps them. Stated here as well as
+       in assets/page.css because this page does not load that stylesheet --
+       and the script below reads these same values as literals. */
+    :root {
+      --tone-dark:  #0b0e13;   /* rgb( 11,  14,  19) */
+      --tone-light: #f4f1ec;   /* rgb(244, 241, 236) */
+      --tone-swap:  #ffffff;   /* dark + light, channel by channel */
     }
-    body.inverted-theme { background: #f4f1ec; color: #141210; }
+
+    html, body {
+      margin: 0; padding: 0; background: var(--tone-dark); color: var(--tone-light);
+      min-height: 100dvh; width: 100vw; overflow: hidden;
+      font-family: 'Clash Display', sans-serif;
+    }
 
     #stage-container {
       position: fixed; top: 0; left: 0;
       width: 100vw; height: 100dvh; z-index: 1;
     }
+    #brush-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     canvas { display: block; }
+
+    /* The canvas draws every glyph itself, so the real text is laid out here
+       but never painted. Keeping it in the document is what gives the canvas
+       its positions, and keeps the links clickable and the page readable to a
+       screen reader. */
+    /* Behind a class the script adds once it has a canvas to draw on. If
+       the script never runs there is nothing to paint the words, so they had
+       better still be words. */
+    .js-canvas .content-overlay, .js-canvas .social-links { color: transparent; }
+    .content-overlay ::selection { background: transparent; }
+    /* Letters are measured and drawn one at a time; words stay unbreakable so
+       inline-block letters can't be split across a line. */
+    .w { white-space: nowrap; }
+    .ch { display: inline-block; }
 
     .content-overlay {
       position: relative; z-index: 10;
@@ -28,51 +62,103 @@
       padding: 30px 5vw;
       padding-top: max(30px, env(safe-area-inset-top));
       padding-bottom: max(30px, env(safe-area-inset-bottom));
+      pointer-events: none;
     }
 
     .site-nav {
       display: flex; justify-content: center; gap: clamp(20px, 4vw, 48px);
       list-style: none; margin: 0; padding: 0;
-      pointer-events: auto;
     }
 
     .nav-link {
-        font-family: 'Clash Display', sans-serif;
-        font-size: clamp(15px, 1.6vw, 18px);
-        font-weight: 500; text-transform: lowercase;
-        color: inherit; text-decoration: none; pointer-events: auto;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-        cursor: pointer;
+      font-family: 'Clash Display', sans-serif;
+      font-size: clamp(15px, 1.6vw, 18px);
+      font-weight: 500; text-transform: lowercase;
+      color: inherit; text-decoration: none; pointer-events: auto;
+      transition: transform 0.3s ease;
+      cursor: pointer;
     }
-    .nav-link:hover { transform: translateY(-4px); opacity: 0.7; }
+    .nav-link:hover { transform: translateY(-4px); }
 
     #hero {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center; text-align: center;
       gap: clamp(20px, 3vw, 36px);
       max-width: 720px; margin: 0 auto; padding: 40px 0;
-      pointer-events: auto;
     }
+
+    /* The name and the description are the two sides of the page and are
+       never on screen together, so they share one cell rather than sitting one
+       after the other. Each is centred on the same ground, which is what makes
+       either side read as a composed page instead of a block of copy stranded
+       above or below the middle -- and because neither is laid out around the
+       other, nothing shifts when the page turns over. */
+    #stack { display: grid; place-items: center; width: 100%; }
+    #stack > * { grid-area: 1 / 1; margin: 0; }
 
     #title, #bio-text {
       font-family: 'Clash Display', sans-serif;
-      line-height: 1.15; color: inherit; user-select: none;
-      text-shadow: 0 0 15px rgba(0,0,0,0.5);
-      transition: text-shadow 0.1s linear;
+      line-height: 1.15; user-select: none;
     }
-    body.inverted-theme #title, body.inverted-theme #bio-text { text-shadow: 0 0 15px rgba(255,255,255,0.5); }
-    #title { font-size: clamp(32px, 6.5vw, 76px); line-height: 1.05; }
-    #bio-text { font-size: clamp(16px, 2vw, 22px); max-width: 620px; line-height: 1.5; opacity: 0.85; font-weight: 300; }
+    /* The wordmark is the logo, and it is two weights: the light halves carry
+       the heavy ones. Stated here because #title is an <h1> for the document
+       outline, and an <h1> arrives already bold from the browser -- which
+       flattened "has" and "an" up to 700 and took the contrast out of the
+       mark. The canvas reads each letter's computed weight, so this is not
+       only what the DOM says, it is what gets painted. */
+    #title { font-size: clamp(32px, 6.5vw, 76px); line-height: 1.05; font-weight: 400; }
+    #bio-text { font-size: clamp(16px, 2vw, 22px); max-width: 620px; line-height: 1.5; font-weight: 300; }
 
     .bold { font-weight: 700; }
 
+    /* Nothing on the page announces the hold gesture, so this line does --
+       once as the page opens and again after every twenty seconds it goes
+       unused (assets/hold-hint.js). Like the rest of the overlay it is only a
+       position: the canvas paints it, reading this element's animated opacity
+       so the fade carries through to what is drawn. */
+    #hint {
+      font-size: clamp(11px, 1vw, 13px); font-weight: 400;
+      letter-spacing: 0.03em; opacity: 0;
+    }
+    #hint.hint-show { animation: hint-flash 4.5s ease-in-out forwards; }
+    @keyframes hint-flash {
+      0%   { opacity: 0; }
+      12%  { opacity: 0.55; }
+      70%  { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+    /* The opening showing, and the one that gives up being polite. Same pair
+       as assets/page.css -- stated again because this page does not load it. */
+    #hint.hint-intro { animation: hint-intro 7.5s ease-in-out forwards; }
+    @keyframes hint-intro {
+      0%   { opacity: 0; }
+      7%   { opacity: 0.85; }
+      80%  { opacity: 0.85; }
+      100% { opacity: 0; }
+    }
+    #hint.hint-urge { animation: hint-urge 6.5s ease-in-out forwards; }
+    @keyframes hint-urge {
+      0%   { opacity: 0; }
+      8%   { opacity: 0.92; }
+      24%  { opacity: 0.40; }
+      40%  { opacity: 0.92; }
+      56%  { opacity: 0.40; }
+      72%  { opacity: 0.92; }
+      100% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #hint.hint-urge { animation: hint-intro 6.5s ease-in-out forwards; }
+    }
+
     .social-links {
       position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom));
-      z-index: 300; display: flex; gap: 16px; pointer-events: auto;
+      z-index: 300; display: flex; gap: 16px; align-items: center;
     }
-    .social-links a { display: block; transition: opacity 0.2s ease, transform 0.2s ease; }
-    .social-links a:hover { opacity: 0.7; transform: translateY(-3px); }
+    .social-links a { display: block; pointer-events: auto; transition: transform 0.2s ease; }
+    .social-links a:hover { transform: translateY(-3px); }
     .social-links img { display: block; width: 22px; height: 22px; }
+    /* Once the canvas is drawing them, the originals only hold their place. */
+    .social-links.drawn img { visibility: hidden; }
 
     @media (max-width: 768px) {
       .content-overlay { padding-left: 6vw; padding-right: 6vw; }
@@ -81,217 +167,507 @@
       .social-links img { width: 20px; height: 20px; }
     }
   </style>
-  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
 
   <div id="stage-container"></div>
+
   <div class="content-overlay" id="content-overlay">
     <nav class="site-nav">
-      <a href="work.html" class="nav-link" data-link="work">work</a>
-      <a href="play.html" class="nav-link" data-link="play">play</a>
-      <a href="facilitation.html" class="nav-link" data-link="facil">facilitation</a>
+      <a href="work.html" class="nav-link">work</a>
+      <a href="play.html" class="nav-link">play</a>
+      <a href="facilitation.html" class="nav-link">learn</a>
     </nav>
 
     <div id="hero">
-      <div id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></div>
-      <p id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</p>
+      <div id="stack">
+        <h1 id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></h1>
+        <p id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</p>
+      </div>
+      <p id="hint" class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</p>
     </div>
   </div>
 
+  <!-- Fetched as ffffff because these are not white marks: the canvas draws
+       them in difference, where a fully-lit source is what inverts the ground
+       under it. Over the dark tone they come out as the light one exactly. -->
   <div class="social-links">
+    <a href="https://www.instagram.com/jishnuhasanartpage/" target="_blank" rel="noopener" aria-label="Instagram">
+      <img src="https://cdn.simpleicons.org/instagram/ffffff" alt="Instagram">
+    </a>
     <a href="https://github.com/Jishnurc519" target="_blank" rel="noopener" aria-label="GitHub">
-      <img src="https://cdn.simpleicons.org/github/f4f1ec" alt="GitHub" loading="lazy" data-icon="github">
+      <img src="https://cdn.simpleicons.org/github/ffffff" alt="GitHub">
     </a>
     <a href="https://www.behance.net/jishnuroycha" target="_blank" rel="noopener" aria-label="Behance">
-      <img src="https://cdn.simpleicons.org/behance/f4f1ec" alt="Behance" loading="lazy" data-icon="behance">
+      <img src="https://cdn.simpleicons.org/behance/ffffff" alt="Behance">
+    </a>
+    <!-- TODO: replace the address before this goes live. The mark is local
+         rather than fetched from simpleicons because email is not a brand,
+         and it is the same solid #ffffff as the three above it so the canvas
+         can paint it in difference along with them. -->
+    <a href="mailto:hello@example.com" aria-label="Email">
+      <img src="assets/mail.svg" alt="Email">
     </a>
   </div>
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+  <script src="assets/keys.js"></script>
+  <script src="assets/cursor.js"></script>
+  <script src="assets/hold-hint.js"></script>
+  <script>
+    (function () {
+      // A page you make marks on. Moving the cursor lays down brush shapes that
+      // grow in and shrink away again; pressing throws a burst of them; holding
+      // turns the page over, and the turn is carried by the shapes themselves —
+      // a barrage of them opening in the other tone until they have covered
+      // everything, at which point that tone simply becomes the page.
+      //
+      // Two rules hold the whole thing together. Shapes scale in and out rather
+      // than fading, so the canvas is only ever two tones and never a wash of
+      // greys. And the text is drawn last in difference, which turns it into
+      // whatever its background is not — so it stays readable over ground, over
+      // a mark, and mid-turn, without ever being recoloured.
+      //
+      // THE TONES. Neither is a pure black or a pure white -- ink and paper,
+      // not a screen switched on and off -- and they are exact complements:
+      // 11+244, 14+241, 19+236, every channel summing to 255. That is what
+      // makes the difference trick exact rather than approximate. Difference
+      // against SWAP is `255 - backdrop`, so a letter over DARK comes out as
+      // LIGHT to the byte, and a letter over LIGHT comes out as DARK. SWAP is
+      // not a colour on this page; it is the sum of the two, and the only
+      // operand that maps either one onto the other. Move one tone and the
+      // other has to move with it or the ink stops matching the ground.
+      const DARK = '#0b0e13';
+      const LIGHT = '#f4f1ec';
+      const SWAP = '#ffffff';
 
-    const isMobileCheck = () => window.innerWidth < 768;
-    let isMobile = isMobileCheck();
+      const stage = document.getElementById('stage-container');
+      const body = document.body;
 
-    const stage = document.getElementById('stage-container');
+      const canvas = document.createElement('canvas');
+      canvas.id = 'brush-canvas';
+      stage.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      // From here the canvas is the ink, so the DOM copy can stand down.
+      document.documentElement.classList.add('js-canvas');
 
-    // --- HOVER LOGIC ---
-    let targetWork = 0, currentWork = 0;
-    let targetPlay = 0, currentPlay = 0;
-    let targetFacil = 0, currentFacil = 0;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const addHover = (el, setVar) => {
-      el.addEventListener('mouseenter', () => setVar(1));
-      el.addEventListener('mouseleave', () => setVar(0));
-      el.addEventListener('touchstart', () => setVar(1), {passive: true});
-      el.addEventListener('touchend', () => setVar(0), {passive: true});
-    };
-    document.querySelectorAll('[data-link="work"]').forEach(el => addHover(el, (v) => targetWork = v));
-    document.querySelectorAll('[data-link="play"]').forEach(el => addHover(el, (v) => targetPlay = v));
-    document.querySelectorAll('[data-link="facil"]').forEach(el => addHover(el, (v) => targetFacil = v));
+      // --- the text, split so each letter can be measured ---
+      const chars = [];
+      (function splitChars() {
+        const walk = (node) => {
+          if (node.nodeType === 3) {
+            const frag = document.createDocumentFragment();
+            for (const part of node.nodeValue.split(/(\s+)/)) {
+              if (!part) continue;
+              if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); continue; }
+              const word = document.createElement('span');
+              word.className = 'w';
+              for (const ch of part) {
+                const s = document.createElement('span');
+                s.className = 'ch';
+                s.textContent = ch;
+                word.appendChild(s);
+                chars.push(s);
+              }
+              frag.appendChild(word);
+            }
+            node.parentNode.replaceChild(frag, node);
+          } else if (node.nodeType === 1 && !node.classList.contains('ch')) {
+            [...node.childNodes].forEach(walk);
+          }
+        };
+        [...document.getElementById('content-overlay').childNodes].forEach(walk);
+      })();
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 15);
+      // The hint fades in and out while everything else is painted flat, so
+      // its letters are kept apart here and drawn at the element's current
+      // opacity rather than at full strength.
+      const hintEl = document.getElementById('hint');
+      const hintChars = new Set(hintEl ? [...hintEl.querySelectorAll('.ch')] : []);
+      // ...unless the cursor ring has taken the line and put it on the
+      // pointer, where the gesture is. Painting the words here as well would
+      // be the same hint twice.
+      //
+      // Read every frame rather than once at startup, and off .ring-live
+      // rather than .has-ring: the ring is built at load but not drawn until
+      // the pointer first moves, so testing .has-ring here meant the hint was
+      // skipped on the canvas in favour of a ring that was not on screen yet.
+      // Someone who opened the page and read it without touching the mouse
+      // was told nothing at all.
+      // ...and not while the first showing is pinned to the page
+      // (assets/hold-hint.js), whatever the pointer has done.
+      const hintOnCursor = () => document.documentElement.classList.contains('ring-live')
+        && !document.documentElement.classList.contains('hint-pinned');
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor(0x0a0a0a, 1);
-    stage.appendChild(renderer.domElement);
+      // The name and the description live on opposite sides of the page. Dark
+      // carries the name, light carries the description, and the hold trades
+      // one for the other — so the two are never on screen together and the
+      // turn is what the second half of the page is read with.
+      //
+      // Neither moves out of the way of the other: the copy that is hidden
+      // still holds its place in the document, so the visible half sits where
+      // it always sits and nothing shifts under the turn.
+      const sideOf = (id, side) => {
+        const el = document.getElementById(id);
+        const set = new Set(el ? el.querySelectorAll('.ch') : []);
+        return (ch) => (set.has(ch) ? side : null);
+      };
+      const nameSide = sideOf('title', 0), bioSide = sideOf('bio-text', 1);
+      // 0 = only on the dark page, 1 = only on the light one, null = on both.
+      const sides = chars.map((ch) => {
+        const s = nameSide(ch);
+        return s === null ? bioSide(ch) : s;
+      });
 
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment()).texture;
+      const icons = [...document.querySelectorAll('.social-links img')];
+      let iconsReady = false;
+      Promise.all(icons.map((img) => (img.complete && img.naturalWidth)
+        ? Promise.resolve()
+        : new Promise((res) => { img.onload = res; img.onerror = res; })))
+        .then(() => {
+          iconsReady = icons.every((i) => i.complete && i.naturalWidth > 0);
+          if (iconsReady) document.querySelector('.social-links').classList.add('drawn');
+        });
 
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 }, uGrowth: { value: 0 }, uTargetScale: { value: 95.0 },
-        uInvert: { value: 0.0 }, uMouse: { value: new THREE.Vector3(0, 0, 5) },
-        uColorA: { value: new THREE.Color(0xf4f1ec) },
-        uColorB: { value: new THREE.Color(0x6fd9c8) },
-        uWork: { value: 0.0 }, uPlay: { value: 0.0 }, uFacil: { value: 0.0 },
-        uIsMobile: { value: isMobile ? 1.0 : 0.0 }
-      },
-      vertexShader: `
-        varying vec3 vNormal; varying vec3 vToLight;
-        attribute vec3 aInstancePos; attribute float aRand;
-        uniform float uTime; uniform float uGrowth; uniform float uTargetScale;
-        uniform vec3 uMouse;
-        uniform float uWork; uniform float uPlay; uniform float uFacil;
-        uniform float uIsMobile;
-
-        mat4 rotationMatrix(vec3 axis, float angle) {
-            axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
-            return mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-                        oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,  0.0,
-                        oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-                        0.0, 0.0, 0.0, 1.0);
+      // --- the brushes ---
+      // Each draws itself around the origin at a given radius, so a mark only
+      // has to carry a position, a size and an angle rather than a shape.
+      const BRUSHES = [
+        function disc(c, r) { c.beginPath(); c.arc(0, 0, r, 0, 6.2832); c.fill(); },
+        function ring(c, r) {
+          c.lineWidth = r * 0.34; c.beginPath(); c.arc(0, 0, r * 0.78, 0, 6.2832); c.stroke();
+        },
+        function square(c, r) { c.fillRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6); },
+        function triangle(c, r) {
+          c.beginPath();
+          c.moveTo(0, -r); c.lineTo(r * 0.92, r * 0.72); c.lineTo(-r * 0.92, r * 0.72);
+          c.closePath(); c.fill();
+        },
+        function bar(c, r) {
+          const w = r * 2.1, h = r * 0.44;
+          c.beginPath();
+          if (c.roundRect) c.roundRect(-w / 2, -h / 2, w, h, h / 2);
+          else c.rect(-w / 2, -h / 2, w, h);
+          c.fill();
+        },
+        function sweep(c, r) {
+          c.lineWidth = r * 0.5; c.lineCap = 'round';
+          c.beginPath(); c.arc(0, 0, r * 0.8, -0.6, 2.1); c.stroke();
+        },
+        function cross(c, r) {
+          const t = r * 0.28;
+          c.fillRect(-r, -t / 2, r * 2, t);
+          c.fillRect(-t / 2, -r, t, r * 2);
+        },
+        function petal(c, r) {
+          c.beginPath();
+          c.moveTo(0, -r);
+          c.quadraticCurveTo(r, -r * 0.2, 0, r);
+          c.quadraticCurveTo(-r, -r * 0.2, 0, -r);
+          c.fill();
         }
-        void main() {
-          vec3 pos = aInstancePos;
+      ];
 
-          float driftX = sin(uTime * 0.6 + aRand * 20.0) * 0.25;
-          float driftY = cos(uTime * 0.4 + aRand * 15.0) * 0.25;
+      // --- marks ---
+      // grow, then hold, then shrink — all in scale, never in opacity, so the
+      // page stays strictly two-tone and the text's difference trick keeps
+      // working.
+      const marks = [];
+      const addMark = (x, y, size, opts) => {
+        const o = opts || {};
+        if (marks.length > 220) marks.shift();
+        marks.push({
+          x, y, size,
+          brush: o.brush != null ? o.brush : (Math.random() * BRUSHES.length) | 0,
+          rot: Math.random() * 6.2832,
+          spin: (Math.random() - 0.5) * 0.9,
+          t: 0,
+          grow: o.grow != null ? o.grow : 0.22,
+          hold: o.hold != null ? o.hold : 0.5 + Math.random() * 0.7,
+          shrink: o.shrink != null ? o.shrink : 0.45,
+          turning: !!o.turning
+        });
+      };
 
-          float deskNavX = 3.5 + aRand * 6.0;
-          float mobNavX = (aRand - 0.5) * 5.0;
-          float targetNavX = mix(deskNavX, mobNavX, uIsMobile);
+      const clamp01 = (t) => Math.min(1, Math.max(0, t));
+      const easeOut = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+      const easeIn = (t) => Math.pow(clamp01(t), 2.2);
 
-          float curvyOffset = sin(uTime * 3.0 + pos.y * 0.5) * 1.5;
-          float flowOffset = mod(uTime * 4.0 + aRand * 10.0, 20.0) - 10.0;
-
-          vec3 finalPos = pos + vec3(driftX, driftY, 0.0);
-
-          finalPos = mix(finalPos, vec3(targetNavX, pos.y + (uIsMobile * 2.5), pos.z), uWork * 0.6);
-          finalPos.x += curvyOffset * uPlay * 0.6;
-          finalPos.y -= flowOffset * uFacil * 0.3;
-
-          float scale = mix(1.0, uTargetScale, smoothstep(0.0, 1.0, uGrowth));
-          mat4 rot = rotationMatrix(normalize(vec3(sin(aRand * 10.0), cos(aRand * 12.0), sin(aRand * 15.0))), uTime * 0.8 + aRand * 6.28);
-          vNormal = (rot * vec4(normal, 0.0)).xyz;
-          vec4 worldPos = vec4(finalPos + (rot * vec4(position * scale, 1.0)).xyz, 1.0);
-          vToLight = uMouse - worldPos.xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * worldPos;
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal; varying vec3 vToLight;
-        uniform float uInvert; uniform vec3 uColorA; uniform vec3 uColorB;
-        void main() {
-          vec3 normal = normalize(vNormal); vec3 lightDir = normalize(vToLight);
-          float diff = max(dot(normal, lightDir), 0.0);
-          float fresnel = pow(1.0 - dot(normal, vec3(0,0,1)), 3.0);
-          vec3 targetColor = mix(uColorA, uColorB, 0.5);
-          vec3 color = vec3(0.05) + targetColor * diff + fresnel * 0.15;
-          gl_FragColor = vec4(mix(color, 1.0 - color, uInvert), 1.0);
-        }
-      `
-    });
-
-    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), material, 8000);
-    mesh.count = 0; mesh.frustumCulled = false; scene.add(mesh);
-    const aInstancePos = new Float32Array(8000 * 3);
-    const aRand = new Float32Array(8000);
-    mesh.geometry.setAttribute('aInstancePos', new THREE.InstancedBufferAttribute(aInstancePos, 3));
-    mesh.geometry.setAttribute('aRand', new THREE.InstancedBufferAttribute(aRand, 1));
-
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let count = 0, triggered = false, triggerTime = 0, isDrawing = false, invertCycle = false;
-
-    // Nothing spawns on load — particles only appear once the user draws.
-    const updateInteraction = (x, y) => {
-      const mx = (x / window.innerWidth) * 2 - 1;
-      const my = -(y / window.innerHeight) * 2 + 1;
-      material.uniforms.uMouse.value.set(mx * 10, my * 10, 5.0);
-      if (triggered || count >= 8000 || !isDrawing) return;
-      pointer.x = mx; pointer.y = my;
-      raycaster.setFromCamera(pointer, camera);
-      const intersect = new THREE.Vector3();
-      raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
-      for(let i = 0; i < 3; i++) {
-        if(count >= 8000) break;
-        aInstancePos[count * 3] = intersect.x + (Math.random() - 0.5) * 0.4;
-        aInstancePos[count * 3 + 1] = intersect.y + (Math.random() - 0.5) * 0.4;
-        aInstancePos[count * 3 + 2] = intersect.z;
-        aRand[count] = Math.random(); count++;
+      function markScale(m) {
+        if (m.t < m.grow) return easeOut(m.t / m.grow);
+        if (m.t < m.grow + m.hold) return 1;
+        return 1 - easeIn((m.t - m.grow - m.hold) / m.shrink);
       }
-      mesh.count = count;
-      mesh.geometry.attributes.aInstancePos.needsUpdate = true;
-      mesh.geometry.attributes.aRand.needsUpdate = true;
-      if (count >= 500) { triggered = true; triggerTime = performance.now(); isDrawing = false; }
-    };
+      const markDone = (m) => m.t > m.grow + m.hold + m.shrink;
 
-    if (isMobile) {
-      window.addEventListener('touchstart', (e) => { isDrawing = true; updateInteraction(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-      window.addEventListener('touchmove', (e) => { if (isDrawing) updateInteraction(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-      window.addEventListener('touchend', () => isDrawing = false);
-    } else {
-      window.addEventListener('mousedown', (e) => { isDrawing = true; updateInteraction(e.clientX, e.clientY); });
-      window.addEventListener('mousemove', (e) => { if(isDrawing) updateInteraction(e.clientX, e.clientY); });
-      window.addEventListener('mouseup', () => isDrawing = false);
-    }
+      // --- input ---
+      // play and work add 20 a frame and shed 60, which at 60fps is 1200 and
+      // 3600 a second — a 1.25s hold. Written as rates so it is the same 1.25s
+      // on a 120Hz screen instead of half of it.
+      // 1200 was a 1.25s hold. A shade quicker at 1400 (~1.07s) -- still long
+      // enough to read as deliberate rather than as a mis-click, but it no
+      // longer feels like waiting for the page to make up its mind.
+      const CHARGE_LIMIT = 1500;
+      const CHARGE_RATE = 1400;
+      const RELEASE_RATE = 3600;
+      const TURN_SECS = 1.25;
 
-    function animate(now) {
-      requestAnimationFrame(animate);
-      material.uniforms.uTime.value = now * 0.001;
+      let pointerX = -1e5, pointerY = -1e5, lastSpawnX = 0, lastSpawnY = 0;
+      let isHolding = false, charge = 0;
+      let turning = 0, turnX = 0, turnY = 0, turnSpawned = 0;
+      let inverted = 0;
+      let last = performance.now(), spawnGap = 0, holdGap = 0;
 
-      currentWork += (targetWork - currentWork) * 0.1;
-      currentPlay += (targetPlay - currentPlay) * 0.1;
-      currentFacil += (targetFacil - currentFacil) * 0.1;
-      material.uniforms.uWork.value = currentWork;
-      material.uniforms.uPlay.value = currentPlay;
-      material.uniforms.uFacil.value = currentFacil;
+      const unit = () => Math.min(window.innerWidth, window.innerHeight);
 
-      if (triggered) {
-        const elapsed = (now - triggerTime) / 950;
-        material.uniforms.uGrowth.value = Math.min(elapsed, 1.0);
-        if (elapsed >= 0.4) {
-          invertCycle = !invertCycle;
-          material.uniforms.uInvert.value = invertCycle ? 1.0 : 0.0;
-          renderer.setClearColor(invertCycle ? 0xf4f1ec : 0x0a0a0a, 1);
-          document.body.classList.toggle('inverted-theme');
-          document.querySelectorAll('.social-links img[data-icon]').forEach((img) => {
-            img.src = `https://cdn.simpleicons.org/${img.dataset.icon}/${invertCycle ? '141210' : 'f4f1ec'}`;
-          });
-          triggered = false; count = 0; mesh.count = 0;
-          material.uniforms.uGrowth.value = 0;
+      window.addEventListener('pointermove', (e) => {
+        pointerX = e.clientX; pointerY = e.clientY;
+      }, { passive: true });
+      window.addEventListener('pointerdown', (e) => {
+        pointerX = e.clientX; pointerY = e.clientY;
+        isHolding = true;
+        if (turning > 0) return;
+        // A press throws a handful at once, scattered around the point.
+        const n = 5 + ((Math.random() * 4) | 0);
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * 6.2832;
+          const d = Math.random() * unit() * 0.16;
+          addMark(e.clientX + Math.cos(a) * d, e.clientY + Math.sin(a) * d,
+            unit() * (0.02 + Math.random() * 0.07), { hold: 0.35 + Math.random() * 0.5 });
         }
-      }
-      renderer.render(scene, camera);
-    }
-    animate(0);
+      });
+      ['pointerup', 'pointercancel', 'blur'].forEach(function (evt) {
+        window.addEventListener(evt, function () { isHolding = false; });
+      });
 
-    const handleResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        isMobile = isMobileCheck();
-        material.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
-    };
-    window.addEventListener('resize', handleResize);
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio, 2);
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+
+      function drawMark(m, colour) {
+        const s = markScale(m);
+        if (s <= 0.001) return;
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.rotate(m.rot);
+        ctx.fillStyle = colour;
+        ctx.strokeStyle = colour;
+        BRUSHES[m.brush](ctx, m.size * s);
+        ctx.restore();
+      }
+
+      function frame(now) {
+        requestAnimationFrame(frame);
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+
+        const W = window.innerWidth, H = window.innerHeight;
+
+        // --- the brush: marks are laid by distance travelled, not by time, so
+        // moving slowly draws a line and flicking across throws them wide ---
+        if (turning === 0 && !reduceMotion && pointerX > -1e4) {
+          spawnGap -= dt;
+          const moved = Math.hypot(pointerX - lastSpawnX, pointerY - lastSpawnY);
+          if (moved > unit() * 0.055 && spawnGap <= 0) {
+            addMark(pointerX + (Math.random() - 0.5) * 40,
+              pointerY + (Math.random() - 0.5) * 40,
+              unit() * (0.015 + Math.random() * 0.045));
+            lastSpawnX = pointerX; lastSpawnY = pointerY;
+            spawnGap = 0.05;
+          }
+        }
+
+        // --- holding: marks keep coming, faster and further out the longer it
+        // is held, so the charge is something you watch build rather than a
+        // wait with nothing happening and everything arriving at the end ---
+        if (turning === 0 && (isHolding || (window.KEY_HOLD && window.KEY_HOLD.held)) && !reduceMotion) {
+          const c = charge / CHARGE_LIMIT;
+          holdGap -= dt;
+          if (holdGap <= 0) {
+            const n = 1 + ((c * 2) | 0);
+            for (let i = 0; i < n; i++) {
+              const a = Math.random() * 6.2832;
+              // The spread opens up as the charge builds: tight around the
+              // cursor at first, most of the page by the end.
+              const d = Math.pow(Math.random(), 0.6) * unit() * (0.1 + c * 0.95);
+              addMark(pointerX + Math.cos(a) * d, pointerY + Math.sin(a) * d,
+                unit() * (0.015 + Math.random() * (0.04 + c * 0.09)),
+                { hold: 0.4 + Math.random() * 0.8 });
+            }
+            holdGap = 0.16 - c * 0.12;
+          }
+        }
+
+        // --- charge, and the turn ---
+        if (turning > 0) {
+          turning = Math.max(0, turning - dt);
+          const p = 1 - turning / TURN_SECS;
+          // Shapes keep arriving across the whole page for the first stretch,
+          // each opening in the new tone.
+          const want = Math.min(34, Math.floor(p * 48));
+          while (turnSpawned < want) {
+            turnSpawned++;
+            addMark(Math.random() * W, Math.random() * H,
+              unit() * (0.08 + Math.random() * 0.22),
+              { turning: true, grow: 0.35, hold: TURN_SECS, shrink: 0.001 });
+          }
+          if (turning === 0) {
+            // The closing disc has covered the page, so it already reads as the
+            // other mode everywhere. Adopting it changes nothing on screen.
+            inverted = 1 - inverted;
+            body.style.background = inverted ? LIGHT : DARK;
+            marks.length = 0;
+          }
+        } else {
+          // Space is held the same way the pointer is: KEY_HOLD is a flag
+          // assets/keys.js raises while the key is down, so the gesture keeps
+          // one owner and gains a second way in.
+          const holding = isHolding || (window.KEY_HOLD && window.KEY_HOLD.held);
+          charge = holding
+            ? Math.min(CHARGE_LIMIT, charge + dt * CHARGE_RATE)
+            : Math.max(0, charge - dt * RELEASE_RATE);
+          if (charge >= CHARGE_LIMIT) {
+            // Whatever is already on the page stays. Wiping it here was the
+            // stop in the middle of the gesture: everything built up during the
+            // hold vanished for a beat before the turn began.
+            turning = TURN_SECS; turnSpawned = 0;
+            // A key press has no position. Turning from the middle is the
+            // honest answer for one -- and the pointer, when there is one, is
+            // still where it started from.
+            turnX = pointerX > -1e4 ? pointerX : W / 2;
+            turnY = pointerX > -1e4 ? pointerY : H / 2;
+            charge = 0;
+            if (window.noteInvert) window.noteInvert();
+          }
+        }
+        // This page has no scroll-nav.js, so it publishes its own charge into
+        // the shared channel assets/keys.js declares. The meter drawn on the
+        // cursor (assets/cursor.js) is the only reader here, and it wants a
+        // number it can normalise without knowing that this particular page
+        // counts brush marks. Set outside the branch above so the turn, which
+        // zeroes the charge as it begins, reports zero too.
+        if (window.HOLD_STATE) window.HOLD_STATE.charge = charge;
+
+        // Read the tones only now. Taking them at the top of the frame meant
+        // that on the frame the page turned over, the state had already
+        // flipped but the colours had not — so it painted one frame of the old
+        // ground with nothing on it. That was the glitch.
+        const ground = inverted ? LIGHT : DARK;
+        const ink = inverted ? DARK : LIGHT;
+        // Mid-turn, marks are painted in the tone the page is becoming.
+        const turnTone = inverted ? DARK : LIGHT;
+
+        for (let i = marks.length - 1; i >= 0; i--) {
+          marks[i].t += dt;
+          marks[i].rot += marks[i].spin * dt;
+          if (markDone(marks[i])) marks.splice(i, 1);
+        }
+
+        // --- paint ---
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = ground;
+        ctx.fillRect(0, 0, W, H);
+
+        for (let i = 0; i < marks.length; i++) {
+          drawMark(marks[i], marks[i].turning ? turnTone : ink);
+        }
+
+        // Behind the barrage, one disc closes over the page to guarantee the
+        // turn completes — scattered shapes alone would leave gaps. Its radius
+        // is kept for the text below: inside it the page already reads as the
+        // side it is becoming, which is exactly where the incoming copy
+        // belongs and the outgoing copy does not.
+        let discR = 0;
+        if (turning > 0) {
+          const p = 1 - turning / TURN_SECS;
+          const reach = Math.hypot(W, H) * 1.05;
+          discR = reach * easeIn(clamp01((p - 0.32) / 0.68));
+          if (discR > 0) {
+            ctx.fillStyle = turnTone;
+            ctx.beginPath();
+            ctx.arc(turnX, turnY, discR, 0, 6.2832);
+            ctx.fill();
+          }
+        }
+
+        // --- the text, last and in difference ---
+        // Whatever it lands on it comes out the opposite: LIGHT over the dark
+        // ground, DARK over a light mark, and right at every moment of the
+        // turn. SWAP rather than a tone, because the two tones sum to it.
+        ctx.globalCompositeOperation = 'difference';
+        ctx.fillStyle = SWAP;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const hintAlpha = hintEl ? parseFloat(getComputedStyle(hintEl).opacity) || 0 : 0;
+        // `side` is which page this pass is painting: the one still standing
+        // outside the disc, then the one arriving inside it. Letters belonging
+        // to the other side are skipped, and letters belonging to neither —
+        // the nav, the hint — are painted in both.
+        const drawText = (side) => {
+          for (let i = 0; i < chars.length; i++) {
+            if (sides[i] !== null && sides[i] !== side) continue;
+            const el = chars[i];
+            const faded = hintChars.has(el);
+            if (faded && (hintOnCursor() || hintAlpha < 0.01)) continue;
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.bottom < 0 || r.top > H) continue;
+            const cs = getComputedStyle(el);
+            ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+            // A partial alpha under difference lands the letter part-way
+            // between the ground and its opposite, which is the fade.
+            ctx.globalAlpha = faded ? hintAlpha : 1;
+            ctx.fillText(el.textContent, r.left + r.width / 2, r.top + r.height / 2);
+          }
+          ctx.globalAlpha = 1;
+        };
+
+        if (discR <= 0) {
+          drawText(inverted);
+        } else {
+          // Clipped rather than switched once the turn lands: the trade then
+          // happens where the wipe is, letter by letter and part-way through
+          // the letters it is crossing, instead of a whole page of copy
+          // changing over in the single frame after the disc has already
+          // covered it. By then the disc is past every corner, so adopting the
+          // new side changes nothing on screen.
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, 0, W, H);
+          ctx.arc(turnX, turnY, discR, 0, 6.2832);
+          ctx.clip('evenodd');
+          drawText(inverted);
+          ctx.restore();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(turnX, turnY, discR, 0, 6.2832);
+          ctx.clip();
+          drawText(1 - inverted);
+          ctx.restore();
+        }
+        if (iconsReady) {
+          for (let i = 0; i < icons.length; i++) {
+            const r = icons[i].getBoundingClientRect();
+            if (r.width === 0) continue;
+            ctx.drawImage(icons[i], r.left, r.top, r.width, r.height);
+          }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      requestAnimationFrame(frame);
+
+      let resizeTimer = 0;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+    })();
   </script>
 </body>
 </html>

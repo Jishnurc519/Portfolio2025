@@ -1,0 +1,588 @@
+/* Shared shell for the per-project pages under projects/. Every one of those
+   files is generated from the same template by scripts/build_project_pages.py,
+   so all of the styling lives here rather than in any single page.
+
+   Unlike the list pages (assets/page.css) these scroll natively and have no
+   WebGL backdrop — they are the quiet end of the site, where the media is the
+   only thing moving. */
+
+:root {
+  /* THE TWO TONES, same pair as the list pages (assets/page.css carries the
+     full reasoning). Not pure black and not pure white, and exact complements
+     of each other -- 11+244, 14+241, 19+236 -- so that the nav below, which
+     paints itself by difference against --tone-swap, lands exactly on
+     --tone-light over the page rather than a hair off it. These pages never
+     flip, but their ink has to be the same ink as everywhere else. */
+  --tone-dark:  #0b0e13;
+  --tone-light: #f4f1ec;
+  --tone-dark-rgb:  11, 14, 19;
+  --tone-light-rgb: 244, 241, 236;
+  --tone-swap: #ffffff;
+
+  /* Same pair as the list pages: one hue stated twice, mirrored in lightness,
+     each side clearing 4.5:1 on the ground it sits on. */
+  --accent:     #6fd9c8;
+  --accent-alt: #207a6b;
+}
+
+::selection { background: var(--accent); color: var(--tone-dark); }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--tone-dark); color: var(--tone-light);
+  font-family: 'Clash Display', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- GETTING OUT --- */
+.project-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px max(20px, 5vw); pointer-events: none;
+  mix-blend-mode: difference;
+}
+.project-nav > * { pointer-events: auto; }
+
+.home-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; margin-left: -11px; color: var(--tone-swap);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.home-mark svg { width: 20px; height: 20px; display: block; }
+.home-mark:hover { transform: rotate(180deg); }
+
+.back-btn {
+  /* 44px tall with a thumb's worth of padding — it used to be a 40x22 target
+     in the corner a thumb reaches least accurately. */
+  display: inline-flex; align-items: center; min-height: 44px; padding: 11px 12px;
+  font-size: 18px; text-decoration: none; color: var(--tone-swap); font-weight: 600;
+  transition: opacity 0.2s ease, font-weight 0.1s linear;
+}
+.back-btn:hover { opacity: 0.7; }
+
+.section-nav { margin-left: auto; display: flex; gap: 4px; }
+.section-nav a {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 11px 12px;
+  color: var(--tone-swap); text-decoration: none; font-size: 15px; font-weight: 500;
+  opacity: 0.75; transition: opacity 0.2s ease, font-weight 0.1s linear;
+}
+.section-nav a:hover { opacity: 1; }
+
+#main-wrapper {
+  max-width: 1200px; margin: 0 auto;
+  padding: 20vh 5vw 10vh;
+}
+/* Nothing behind the overlay should move while it is open. */
+body.lightbox-open { overflow: hidden; }
+
+#header-section { margin-bottom: 6vh; }
+.category-tag {
+  font-size: clamp(12px, 1.2vw, 16px); font-weight: 400;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent);
+}
+h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line-height: 0.95; }
+
+.meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px 28px;
+  margin-top: 24px; padding-top: 20px;
+  border-top: 1px solid rgba(var(--tone-light-rgb), 0.2);
+}
+.meta-row:empty { display: none; }
+.meta-item { display: flex; flex-direction: column; gap: 4px; }
+.meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.meta-value { font-size: clamp(14px, 1.3vw, 17px); font-weight: 500; }
+
+.overview {
+  font-size: clamp(16px, 1.8vw, 22px); font-weight: 300; line-height: 1.6;
+  max-width: 760px; margin: 6vh 0; opacity: 0.9;
+}
+.overview:empty { display: none; }
+
+/* Masonry via CSS columns: each image/video keeps its natural aspect
+   ratio, so portrait photos never get force-cropped into a landscape box. */
+.gallery {
+  columns: 3 320px;
+  column-gap: 16px;
+}
+/* Each still is a <button> wrapping its <img> — the only way the lightbox is
+   reachable without a mouse — so the button has to stop looking like one. */
+.still {
+  display: block; width: 100%; padding: 0; margin: 0 0 16px;
+  border: 0; background: none; cursor: zoom-in;
+  break-inside: avoid; border-radius: 6px;
+}
+/* A documentation clip sits in the masonry as a still with one mark on it.
+   The <video> keeps its controls off until the mark is pressed (see
+   assets/render-project.js), so what the column holds until then is the
+   poster and nothing else -- rather than a browser's play bar, timecode and
+   overflow menu drawn across a designed page. */
+.video-still {
+  position: relative; display: block; margin: 0 0 16px;
+  break-inside: avoid; border-radius: 6px; overflow: hidden;
+  background: rgba(var(--tone-light-rgb), 0.05);
+}
+.gallery video { width: 100%; height: auto; display: block; }
+.video-play {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: 0; padding: 0; background: none; cursor: pointer;
+  display: grid; place-items: center;
+}
+/* The disc and the triangle are drawn rather than fetched: one more request
+   for a play button on a page that is already mostly media is a request too
+   many, and this way the mark takes the section's own tones. */
+.video-play::before {
+  content: ''; grid-area: 1 / 1;
+  width: clamp(48px, 7vw, 68px); aspect-ratio: 1; border-radius: 50%;
+  background: rgba(var(--tone-dark-rgb), 0.55);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.video-play::after {
+  content: ''; grid-area: 1 / 1; justify-self: center; align-self: center;
+  width: 0; height: 0; transform: translateX(3px);
+  border-style: solid; border-width: 10px 0 10px 17px;
+  border-color: transparent transparent transparent var(--tone-light);
+}
+.video-play:hover::before {
+  transform: scale(1.08); background: rgba(var(--tone-dark-rgb), 0.72);
+}
+.video-play:focus-visible { outline: 2px solid var(--tone-light); outline-offset: -4px; }
+/* The finished film, where there is one. It spans every column rather than
+   sitting in the first of them: a 16:9 player squeezed into a 320px column is
+   a postage stamp underneath the photographs of how it was made. */
+.video-embed {
+  column-span: all; display: block; position: relative;
+  aspect-ratio: 16 / 9; margin: 0 0 24px; border-radius: 6px; overflow: hidden;
+  background: rgba(var(--tone-light-rgb), 0.05);
+}
+.video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.gallery img, .still img {
+  width: 100%; height: auto; display: block;
+  border-radius: 6px; background: rgba(var(--tone-light-rgb), 0.05);
+  transition: opacity 0.2s ease;
+}
+.still:hover img { opacity: 0.88; }
+/* The AVIF wrapper around a still must not change how it lays out. */
+.still picture { display: block; }
+
+.empty-state {
+  opacity: 0.6; font-size: clamp(16px, 2vw, 22px); font-weight: 300;
+  border: 1px dashed rgba(var(--tone-light-rgb), 0.25); border-radius: 8px;
+  padding: 8vh 5vw; text-align: center; margin: 0;
+}
+
+/* --- THE CASE STUDY --- */
+/* Text column at a readable measure, with figures allowed to step outside it
+   on wide screens so the page has a rhythm rather than one long ribbon. */
+.story { margin-top: 10vh; }
+.story-placeholder {
+  display: inline-block; margin: 0 0 4vh;
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  font-weight: 600; color: var(--accent);
+  border: 1px solid currentColor; border-radius: 2px; padding: 5px 10px;
+}
+.story h2 {
+  font-size: clamp(24px, 3.4vw, 40px); font-weight: 700; line-height: 1.1;
+  letter-spacing: -0.02em; margin: 9vh 0 3vh; max-width: 16ch;
+}
+.story h2:first-of-type { margin-top: 0; }
+.story p {
+  font-size: clamp(16px, 1.5vw, 19px); font-weight: 300; line-height: 1.65;
+  margin: 0 0 1.4em; max-width: 62ch;
+}
+.story p strong { font-weight: 600; }
+.story p em { font-style: italic; opacity: 0.95; }
+
+.story-row { margin-bottom: 3vh; }
+.story-row.side-left, .story-row.side-right {
+  display: grid; gap: clamp(24px, 4vw, 56px); align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.story-row.side-left .story-figure { order: -1; }
+.story-row.side-left p, .story-row.side-right p { max-width: 46ch; }
+
+.story-figure { margin: 0; }
+.story-figure .still { margin-bottom: 0; }
+/* A side figure is a companion to a paragraph, not a monument beside one.
+   Uncapped, a portrait scan took the whole width of its column and ran to
+   650px and more of image next to four lines of text, with the rest of the
+   row empty underneath it. A ceiling on the height lets a tall still come
+   down to something a paragraph can sit alongside. `contain` and not `cover`,
+   because these are drawings and photographs of the work: cropping one to
+   fill a box throws away the part that was worth showing. Full-width figures
+   are left alone -- nothing is competing with them for the line. */
+.story-row.side-left .story-figure .still,
+.story-row.side-right .story-figure .still { width: auto; }
+.story-row.side-left .story-figure img,
+.story-row.side-right .story-figure img {
+  max-height: min(58vh, 480px);
+  width: auto; max-width: 100%;
+  object-fit: contain;
+}
+.story-figure figcaption {
+  margin-top: 10px; font-size: 13px; font-weight: 300;
+  line-height: 1.45; opacity: 0.6; max-width: 46ch;
+}
+.story-figure.side-full { margin: 5vh 0; }
+
+/* A clip beside a paragraph is as wide as the clip, not as wide as the
+   column: a portrait phone clip used to sit in the left of a column-wide
+   box, with the rest of the box an empty dark plate beside it. */
+.story-row.side-left .story-figure:not(.multi) .video-still,
+.story-row.side-right .story-figure:not(.multi) .video-still {
+  width: fit-content; max-width: 100%; background: none;
+}
+/* Clips that play on their own, as pictures. */
+.story-figure video.loop-clip { border-radius: 6px; display: block; }
+.story-row.side-left .story-figure video.loop-clip,
+.story-row.side-right .story-figure video.loop-clip { max-height: min(62vh, 520px); width: auto; max-width: 100%; }
+/* Clips inside the story sit at the width of their column, like stills. */
+.story-figure .video-still { margin: 0; }
+.story-figure video { width: 100%; height: auto; display: block; }
+.story-row.side-left .story-figure video,
+.story-row.side-right .story-figure video { max-height: min(62vh, 520px); width: auto; max-width: 100%; }
+
+/* Several files in one figure, side by side. Each keeps its own shape: the
+   row aligns them at the top rather than cropping them to a common box. */
+.story-figure.multi {
+  display: grid; gap: 12px; align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.story-figure.multi.n-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.story-figure.multi figcaption { grid-column: 1 / -1; }
+.story-row.side-left .story-figure.multi img,
+.story-row.side-right .story-figure.multi img,
+.story-row.side-left .story-figure.multi video,
+.story-row.side-right .story-figure.multi video { width: 100%; max-height: none; }
+
+/* Line drawings redrawn from the notebook. Their strokes are currentColor,
+   so they are ink on the section's ground like the type around them. */
+.diagram { color: var(--tone-light); }
+.diagram svg, .diagram img { display: block; width: 100%; height: auto; max-height: 70vh; }
+.story-figure.side-full .diagram { max-width: 880px; }
+
+/* Instagram's own player. It sizes itself by postMessage once loaded (see
+   render-project.js); the height here is what it holds until then. */
+.embed-figure { max-width: 400px; width: 100%; }
+.story-row.side-right .embed-figure { justify-self: end; order: 1; }
+.ig-embed {
+  display: block; width: 100%; height: 680px; border: 0; border-radius: 8px;
+  background: rgba(var(--tone-light-rgb), 0.05);
+}
+.embed-figure figcaption a, .story p a { color: var(--accent); text-underline-offset: 3px; }
+.embed-figure figcaption a:hover, .story p a:hover { color: var(--tone-light); }
+
+/* --- THE FILM, BEFORE IT IS ASKED FOR ---
+   The video's own thumbnail and the site's play mark (render-project.js
+   swaps the player in on the press). The link is for a reader who would
+   rather watch it on YouTube, and it is the whole route on file://. */
+.yt-facade { background: #000; }
+.yt-facade > img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block; opacity: 0.9;
+}
+.yt-facade .video-play { z-index: 1; }
+.yt-link {
+  position: absolute; right: 12px; bottom: 10px; z-index: 2;
+  font-size: 13px; font-weight: 500; letter-spacing: 0.02em;
+  color: var(--tone-light); text-decoration: none; opacity: 0.8;
+  padding: 6px 10px; border-radius: 999px;
+  background: rgba(var(--tone-dark-rgb), 0.6);
+}
+.yt-link:hover { opacity: 1; }
+.story-film { margin: 6vh 0; scroll-margin-top: 90px; }
+
+/* --- SPREADS ---
+   A page placed the way it was placed somewhere else: every item sits at the
+   x, y and width it had on the original, as a share of the spread, and the
+   spread keeps the original's proportions. Type is sized in the original's
+   units (--fs over --sw, the spread's width in those units) through a
+   container query, so it grows and shrinks with the page around it -- with a
+   floor, because a 12px caption on a 1024px Readymag page would otherwise be
+   9px on a laptop. */
+.spread {
+  position: relative; width: 100%;
+  container-type: inline-size;
+  margin: 0 0 clamp(40px, 8vh, 96px);
+}
+.spread-item {
+  position: absolute; box-sizing: border-box;
+  --fs: 13;
+  font-size: max(13px, calc(var(--fs) * 100cqw / var(--sw)));
+  line-height: 1.5;
+}
+.spread-item > p { margin: 0 0 1em; max-width: none; font-size: inherit; }
+.spread-item > p:last-child { margin-bottom: 0; }
+.spread-item p strong { font-weight: 600; }
+.spread-title {
+  margin: 0; font-size: max(28px, calc(var(--fs) * 100cqw / var(--sw)));
+  font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; max-width: none;
+}
+.spread-lead {
+  font-size: max(22px, calc(var(--fs) * 100cqw / var(--sw))) !important;
+  font-weight: 300; line-height: 1.3 !important;
+}
+.spread-h {
+  margin: 0 0 0.6em; font-weight: 600; letter-spacing: 0;
+  font-size: max(17px, calc(var(--fs) * 1.3 * 100cqw / var(--sw)));
+}
+.spread-tag {
+  display: block; padding: 5px 0 4px; font-size: 0.85em; font-style: italic;
+  border-bottom: 1px solid rgba(var(--tone-light-rgb), 0.55);
+}
+.spread-caption { font-size: 0.85em !important; font-style: italic; opacity: 0.75; }
+.spread-link {
+  display: inline-block; font-weight: 600; color: var(--tone-light);
+  text-underline-offset: 3px;
+}
+.spread-link:hover { color: var(--accent); }
+
+/* Media fills its box and is cropped to it, the way the original crops. */
+.spread-item.is-media > *,
+.spread-item.is-media .still,
+.spread-item.is-media picture { width: 100%; height: 100%; margin: 0; }
+.spread-item.is-media img,
+.spread-item.is-media video {
+  width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 4px;
+}
+.spread-item.is-media .video-embed { aspect-ratio: auto; margin: 0; }
+.spread-item.is-media .yt-facade > img { border-radius: 0; }
+/* A drawing is ink on the page: never cropped, never on a plate. */
+.spread-item.is-art .still,
+.spread-item.is-art picture { width: 100%; height: 100%; margin: 0; background: none; cursor: default; }
+.spread-item.is-art img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  background: none; border-radius: 0;
+}
+.spread-item.is-art .diagram { width: 100%; height: 100%; }
+.spread-item.is-art .diagram svg { width: 100%; height: 100%; max-height: none; }
+/* Photographs shot on black, laid over a page that is not quite black: the
+   lighter of the two wins, so the black goes and the picture stays. */
+.spread-item.lighten { mix-blend-mode: lighten; }
+.spread-item.lighten img { border-radius: 0; }
+
+/* A spread-laid page brings its own title page, so the stock header steps
+   aside -- kept for screen readers, since it is still the page's h1. */
+.layout-spread #header-section {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.layout-spread .overview, .layout-spread #project-film:empty { display: none; }
+.layout-spread #main-wrapper { padding-top: 12vh; max-width: 1180px; }
+.layout-spread .story { margin-top: 0; }
+/* Full-bleed pieces of a spread may hang past the column; the page does not
+   scroll sideways for them. */
+body.layout-spread { overflow-x: clip; }
+
+/* A film in a side column: the full width of the column, 16:9, its
+   thumbnail cropped to fill it. The side-figure rule above caps and
+   contains every <img> beside a paragraph, which left YouTube's
+   letterboxed thumbnail small and off to one side inside the frame. */
+.yt-figure .video-embed { margin: 0; width: 100%; }
+.story-row .yt-figure .yt-facade > img,
+.spread-item .yt-facade > img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  max-width: none; max-height: none; object-fit: cover;
+}
+
+/* --- THE 3-D PLAN --- */
+.space-block { margin: 3vh 0 6vh; }
+.space-host {
+  position: relative; width: 100%; height: min(70vh, 620px);
+  overflow: hidden; border-radius: 8px;
+  border: 1px solid rgba(var(--tone-light-rgb), 0.12);
+  cursor: grab; user-select: none; -webkit-user-select: none;
+}
+.space-host canvas { display: block; width: 100%; height: 100%; }
+.space-labels { position: absolute; inset: 0; pointer-events: none; }
+.space-label {
+  position: absolute; top: 0; left: 0; white-space: nowrap; opacity: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 10px; border-radius: 4px;
+  background: rgba(var(--tone-dark-rgb), 0.82);
+}
+.space-label-name {
+  font-size: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent);
+}
+.space-label-note {
+  font-size: 12px; font-weight: 300; max-width: 28ch; white-space: normal;
+  text-align: center; color: var(--tone-light); opacity: 0.85;
+}
+.space-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.space-legend button {
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--tone-light);
+  background: none; cursor: pointer; min-height: 36px; padding: 6px 12px;
+  border: 1px solid rgba(var(--tone-light-rgb), 0.3); border-radius: 999px;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.space-legend button:hover, .space-legend button:focus-visible {
+  border-color: var(--accent); color: var(--accent);
+}
+
+/* Where a click on the plan lands: the heading, with room above it for the
+   fixed nav, and a brief flash so the eye finds it after the scroll. */
+.story h2[id] { scroll-margin-top: 90px; }
+.story h2.flash { animation: heading-flash 1.4s ease-out; }
+@keyframes heading-flash {
+  0%, 30% { color: var(--accent); }
+  100% { color: inherit; }
+}
+
+blockquote {
+  margin: 8vh 0; padding-left: clamp(16px, 2.5vw, 32px);
+  border-left: 2px solid var(--accent);
+  font-size: clamp(20px, 2.6vw, 30px); font-weight: 300; line-height: 1.35;
+  letter-spacing: -0.01em; max-width: 24ch;
+}
+blockquote cite {
+  display: block; margin-top: 16px; font-size: 13px; font-style: normal;
+  letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55;
+}
+
+.text-section { max-width: 760px; margin-top: 8vh; }
+.text-section h2 {
+  font-size: clamp(12px, 1.2vw, 16px); font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--accent); margin: 0 0 14px;
+}
+.text-section p {
+  font-size: clamp(15px, 1.5vw, 18px); font-weight: 300; line-height: 1.6; opacity: 0.9; margin: 0;
+}
+
+/* --- PREV / NEXT --- */
+/* Walks the project's own section in assets/page-config.js, so the arrows
+   follow the same order the list page shows. */
+.project-pager {
+  display: flex; justify-content: space-between; gap: 20px;
+  margin-top: 14vh; padding-top: 24px;
+  border-top: 1px solid rgba(var(--tone-light-rgb), 0.2);
+}
+.project-pager:empty { display: none; }
+.pager-link {
+  display: flex; flex-direction: column; gap: 6px;
+  text-decoration: none; color: inherit; max-width: 45%;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.pager-link:hover { opacity: 0.7; }
+.pager-next { text-align: right; margin-left: auto; }
+.pager-next:hover { transform: translateX(4px); }
+.pager-prev:hover { transform: translateX(-4px); }
+.pager-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.pager-name { font-size: clamp(18px, 2.4vw, 30px); font-weight: 600; line-height: 1.1; }
+
+/* --- LIGHTBOX --- */
+#lightbox {
+  position: fixed; inset: 0; z-index: 400;
+  /* The dark tone at 94%, so the page behind it is a shade of the same ink
+     rather than a second, blacker dark. */
+  background: rgba(11, 14, 19, 0.94);
+  display: none; align-items: center; justify-content: center;
+  padding: 5vh 5vw; cursor: zoom-out;
+}
+#lightbox.is-open { display: flex; }
+#lightbox img { max-width: 100%; max-height: 90vh; border-radius: 6px; display: block; cursor: default; }
+/* "Click anywhere" was the only way out, and nothing said so. */
+.lightbox-close {
+  position: absolute; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
+  width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(var(--tone-light-rgb), 0.35); border-radius: 50%;
+  background: none; color: var(--tone-light); font-size: 26px; line-height: 1;
+  cursor: pointer; transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.lightbox-close:hover { border-color: var(--tone-light); transform: rotate(90deg); }
+.lightbox-close:focus-visible { border-color: var(--accent); color: var(--accent); }
+
+/* --- FOCUS --- */
+/* A step of weight and a move to the accent — the same quiet language the
+   list pages use, rather than a rectangle drawn around a page made of type. */
+:focus { outline: none; }
+:focus-visible { outline: none; }
+.back-btn:focus-visible, .section-nav a:focus-visible {
+  font-weight: 800; opacity: 1;
+}
+.home-mark:focus-visible { transform: rotate(180deg); }
+.pager-link:focus-visible .pager-name { color: var(--accent); font-weight: 700; }
+.still:focus-visible img { outline: 2px solid var(--accent); outline-offset: 3px; opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-mark, .lightbox-close, .pager-link, .still img { transition: none; }
+  .story h2.flash { animation: none; }
+  .home-mark:hover, .lightbox-close:hover { transform: none; }
+}
+
+@media (max-width: 768px) {
+  #main-wrapper { padding: 16vh 6vw 10vh; }
+  .project-nav { gap: 6px; padding: 8px 4vw; }
+  .back-btn { font-size: 16px; padding: 11px 8px; }
+  .section-nav a { font-size: 14px; padding: 11px 8px; }
+  .gallery { columns: 2 160px; column-gap: 10px; }
+  .still, .gallery video { margin-bottom: 10px; }
+  .pager-name { font-size: 18px; }
+  /* Side-by-side needs width the phone does not have. */
+  .story-row.side-left, .story-row.side-right { grid-template-columns: 1fr; }
+  .story-row.side-left .story-figure { order: 0; }
+  .story h2 { margin: 6vh 0 2.5vh; }
+  .story-row.side-right .embed-figure { justify-self: start; order: 0; }
+  .space-host { height: 62vh; }
+  .story-figure.multi.n-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* No room for the original arrangement: the spread becomes a column, in
+     the order its items were written, and narrow pieces pair up. */
+  .spread {
+    aspect-ratio: auto !important;
+    display: flex; flex-wrap: wrap; gap: 14px 10px; align-items: flex-start;
+  }
+  .spread-item {
+    position: static; width: 100% !important; height: auto !important;
+    font-size: 16px; left: auto !important; top: auto !important;
+    text-align: left !important;
+  }
+  .spread-item.narrow { width: calc(50% - 5px) !important; }
+  .spread-item.is-media img, .spread-item.is-media video { height: auto; }
+  .spread-item.is-media .video-embed { aspect-ratio: 16 / 9; }
+  .spread-item.is-art img { height: auto; }
+  .spread-item.mobile-hide { display: none; }
+  .spread-title { font-size: 30px; }
+}
+
+/* --- SECTION PALETTES ---
+   Set by assets/render-project.js from the list a project appears in, so a
+   case study opened from work is cyan and one opened from play is magenta,
+   the same pair its list page runs on. The two tones of each pair are exact
+   complements and --tone-swap is their channel-by-channel sum, because
+   everything on this site that paints itself by difference resolves its ink
+   from that one variable. Move a tone and the operand moves with it. */
+body.sec-work {
+  --tone-light: #a3e9e6;
+  --tone-light-rgb: 163, 233, 230;
+  --tone-swap: #aef7f9;
+  --tone-swap-rgb: 174, 247, 249;
+      --accent: #56a8a4;
+      --accent-alt: #185249;
+      --card-accent: #185249;
+      --card-accent-alt: #7cc9c5;
+}
+/* GMMBBQ is not a fourth section: it sits under play and runs on play's
+   magenta, so the CMY set stays closed at three and a gig page and the page
+   that linked to it are the same colour. */
+body.sec-play,
+body.sec-gmmbbq {
+  --tone-light: #eeaae8;
+  --tone-light-rgb: 238, 170, 232;
+  --tone-swap: #f9b8fb;
+  --tone-swap-rgb: 249, 184, 251;
+      --accent: #cf86ca;
+      --accent-alt: #5d1f5e;
+      --card-accent: #5d1f5e;
+      --card-accent-alt: #e3a3de;
+}
+body.sec-facilitation {
+  --tone-light: #eab84a;
+  --tone-light-rgb: 234, 184, 74;
+  --tone-swap: #f5c65d;
+  --tone-swap-rgb: 245, 198, 93;
+  --accent: #d8a63f;
+  --accent-alt: #5a3f0c;
+  --card-accent: #5a3f0c;
+  --card-accent-alt: #e0b558;
+}

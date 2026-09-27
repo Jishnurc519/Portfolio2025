@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Gamma Barbecue — Jishnu Roy Chaudhury</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Gamma Barbecue — a DJ and graphic design duo making audio visual experiences for clubs, gigs and festivals. New media stuff, deep fried." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="jishnu has an artpage">
+  <meta property="og:title" content="Gamma Barbecue — Jishnu Roy Chaudhury">
+  <meta property="og:description" content="A DJ and graphic design duo making audio visual experiences for clubs, gigs and festivals.">
+  <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/gmmbbq.html">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/gmmbbq/cr2s/rm-hero.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/css?f[]=clash-display@400,600,700&display=swap" rel="stylesheet">
+  <!-- Sanchez is the Readymag site's own body face. The rest of the portfolio
+       is set in Clash Display alone; this page keeps Clash for everything
+       that shouts and gives the copy the slab it had on gammabbq. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sanchez:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    /* GMMBBQ runs on play's pair: the site's near-black and magenta, exact
+       complements channel by channel, and --tone-swap their sum -- the
+       operand the cursor ring (assets/cursor.js) paints itself with by
+       difference. It is its own page rather than a project, so it scrolls
+       natively and carries its own styles instead of page.css's fixed shell. */
+    :root {
+      --tone-dark: #0b0e13;
+      --tone-light: #eeaae8;
+      --tone-dark-rgb: 11, 14, 19;
+      --tone-light-rgb: 238, 170, 232;
+      --tone-swap: #f9b8fb;
+      --tone-swap-rgb: 249, 184, 251;
+      --bg: var(--tone-dark);
+      --ink: var(--tone-light);
+      --ink-rgb: var(--tone-light-rgb);
+      --bg-rgb: var(--tone-dark-rgb);
+      --slab: 'Sanchez', Georgia, serif;
+      --gutter: max(20px, 4vw);
+    }
+    /* The turn. Everything reads --bg and --ink, so swapping the two is the
+       whole flip; photographs and film are left as they are. */
+    body.inverted {
+      --bg: var(--tone-light);
+      --ink: var(--tone-dark);
+      --ink-rgb: var(--tone-dark-rgb);
+      --bg-rgb: var(--tone-light-rgb);
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: 'Clash Display', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: clip;
+    }
+    body.holding { user-select: none; -webkit-user-select: none; }
+    ::selection { background: var(--ink); color: var(--bg); }
+    a { color: inherit; }
+    img, video { display: block; max-width: 100%; }
+
+    /* The flock, behind everything. */
+    #flock {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+    main { position: relative; z-index: 1; }
+
+    .back-btn {
+      position: fixed; top: max(12px, env(safe-area-inset-top)); left: var(--gutter); z-index: 300;
+      display: inline-flex; align-items: center; min-height: 44px; padding: 11px 12px 11px 0;
+      font-size: 18px; font-weight: 600; text-decoration: none;
+      color: var(--tone-swap); mix-blend-mode: difference;
+    }
+    .back-btn:hover { opacity: 0.7; }
+
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 var(--gutter); }
+    section { padding: clamp(64px, 12vh, 140px) 0; }
+
+    .slab { font-family: var(--slab); }
+    p { font-family: var(--slab); font-size: clamp(16px, 1.25vw, 18px); line-height: 1.7; margin: 0 0 1.1em; max-width: 62ch; }
+    p strong { font-weight: normal; font-family: 'Clash Display', sans-serif; font-weight: 600; letter-spacing: 0.01em; }
+    .kicker {
+      display: block; font-family: var(--slab); font-style: italic;
+      font-size: 15px; opacity: 0.9; margin-bottom: 14px;
+    }
+    h2 {
+      font-size: clamp(34px, 5.4vw, 72px); font-weight: 700; line-height: 0.95;
+      letter-spacing: -0.02em; margin: 0 0 clamp(20px, 4vh, 40px);
+    }
+    h3 { font-size: clamp(22px, 2.4vw, 30px); font-weight: 600; margin: 0 0 12px; line-height: 1.1; }
+    .caption { font-family: var(--slab); font-style: italic; font-size: 14px; opacity: 0.9; margin-top: 10px; }
+    .tags span {
+      display: block; font-family: var(--slab); font-style: italic; font-size: 13px;
+      padding: 6px 0 5px; border-bottom: 1px solid rgba(var(--ink-rgb), 0.55);
+    }
+    .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; }
+    .media { border-radius: 4px; overflow: hidden; background: rgba(var(--ink-rgb), 0.06); }
+    .media img, .media video { width: 100%; height: 100%; object-fit: cover; }
+    /* Drawings are ink: they take --ink by being masks, not pictures. A
+       drawing is a pink PNG from scripts/build_slide_art.py; turned over,
+       it would be pink on pink, so the inverted page darkens it instead. */
+    .art { background: none; }
+    .art img { object-fit: contain; }
+    body.inverted .art img { filter: brightness(0.06); }
+
+    /* --- HERO --- */
+    /* The title page: the logo in the middle of the first screen, the two
+       lines under it centred on it. */
+    .hero {
+      min-height: 100vh; min-height: 100svh; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 12vh var(--gutter) 10vh;
+    }
+    .hero-mark { width: clamp(64px, 9vw, 120px); margin-bottom: 28px; color: var(--ink); }
+    .hero-logo { margin: 0; width: min(100%, clamp(280px, 56vw, 780px)); }
+    .hero-logo img { width: 100%; height: auto; }
+    .hero-logo .on-light, body.inverted .hero-logo .on-dark { display: none; }
+    body.inverted .hero-logo .on-light { display: block; }
+    .hero .sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 30px; }
+    .hero .sub span + span::before { content: '·'; margin-right: 14px; opacity: 0.6; }
+    .hero .sub span { font-family: var(--slab); font-size: clamp(16px, 1.6vw, 22px); }
+    .hint {
+      display: block; margin-top: 22px; font-size: 13px; letter-spacing: 0.03em; opacity: 0;
+    }
+    .hint.hint-show { animation: hint-flash 4.5s ease-in-out forwards; }
+    .hint.hint-intro { animation: hint-intro 7.5s ease-in-out forwards; }
+    .hint.hint-urge { animation: hint-urge 6.5s ease-in-out forwards; }
+    @keyframes hint-flash { 0% { opacity: 0; } 12% { opacity: 0.62; } 70% { opacity: 0.62; } 100% { opacity: 0; } }
+    @keyframes hint-intro { 0% { opacity: 0; } 7% { opacity: 0.88; } 80% { opacity: 0.88; } 100% { opacity: 0; } }
+    @keyframes hint-urge {
+      0% { opacity: 0; } 8% { opacity: 0.94; } 24% { opacity: 0.42; } 40% { opacity: 0.94; }
+      56% { opacity: 0.42; } 72% { opacity: 0.94; } 100% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { .hint.hint-urge { animation: hint-intro 6.5s ease-in-out forwards; } }
+
+    /* --- WHAT IS --- */
+    .what .text { grid-column: 1 / span 6; }
+    .what .figure { grid-column: 7 / span 6; position: relative; }
+    .what .figure .caption { position: absolute; left: 14%; bottom: 8%; max-width: 60%; font-size: 15px; opacity: 1; }
+
+    /* --- ELEMENTS --- */
+    .elements .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center; }
+    .elements .col svg { width: 58px; height: 58px; margin: 0 auto 14px; display: block; }
+    .elements ol { list-style: none; padding: 0; margin: 12px 0 0; font-family: var(--slab); font-size: 16px; line-height: 1.8; }
+    .elements p { margin-left: auto; margin-right: auto; }
+    .elements .merge { display: block; width: 100%; height: 70px; margin: 10px 0; }
+    .elements .out { text-align: center; }
+    .elements .out svg.screen { width: 64px; height: 64px; margin: 10px auto; display: block; }
+
+    /* --- SEED --- */
+    .seed .text { grid-column: 1 / span 5; align-self: center; }
+    .seed .img { grid-column: 6 / span 7; }
+
+    /* --- WORK INDEX (the Readymag "Work" page) --- */
+    .index-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+      border-top: 4px solid var(--ink); padding: 4px 0 0; margin: 0;
+      text-decoration: none;
+    }
+    .index-row:last-child { border-bottom: 4px solid var(--ink); padding-bottom: 4px; }
+    .index-row .t { display: flex; flex-direction: column; justify-content: space-between; padding: 8px 0 12px; }
+    .index-row .t b { font-family: var(--slab); font-weight: normal; font-size: clamp(20px, 2vw, 26px); }
+    .index-row .t span { font-family: var(--slab); font-size: 15px; }
+    .index-row .media { aspect-ratio: 482 / 277; border-radius: 0; }
+    .index-row:hover .t b { text-decoration: underline; text-underline-offset: 4px; }
+
+    /* --- CR2s, laid out as the Readymag page was --- */
+    .cr2-top .img { grid-column: 1 / span 6; aspect-ratio: 482 / 263; }
+    .cr2-top .text { grid-column: 7 / span 6; }
+    .cr2-top h2 { margin-bottom: 18px; }
+    .cr2-setup { grid-column: 3 / span 8; margin: 40px 0 10px; }
+    .cr2-setup .caption { text-align: center; }
+    .cr2-tvs { margin-top: 50px; }
+    .cr2-tvs .copy { grid-column: 1 / span 6; }
+    .cr2-tvs .tv { aspect-ratio: 1; }
+    /* The first two TVs stand beside both the copy and the word under it, as
+       they did on Readymag; the other seven run in rows of four and three. */
+    .cr2-tvs .copy { grid-row: 1; }
+    .cr2-tvs .tv.a { grid-column: 7 / span 3; grid-row: 1 / span 2; align-self: start; }
+    .cr2-tvs .tv.b { grid-column: 10 / span 3; grid-row: 1 / span 2; align-self: start; }
+    .cr2-tvs .word {
+      grid-column: 1 / span 6; grid-row: 2; align-self: end;
+      font-size: clamp(48px, 8.4vw, 104px); font-weight: 700; line-height: 0.85; letter-spacing: -0.035em;
+    }
+    .cr2-tvs .tv.row { grid-column: span 3; }
+    .cr2-tvs .word.key { grid-column: 10 / span 3; grid-row: auto; align-self: end; text-align: right; }
+    .cr2-end { margin-top: 20px; }
+    .cr2-end .tall { grid-column: 1 / span 3; aspect-ratio: 230 / 498; }
+    .cr2-end .text { grid-column: 7 / span 6; }
+    .cr2-end ul { font-family: var(--slab); padding: 0; margin: 0 0 1em; list-style: none; line-height: 1.7; }
+    .cr2-end ul li::before { content: '- '; }
+    .venues { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 24px; align-items: center; margin-top: 26px; }
+    .venues img { width: 100%; max-height: 64px; object-fit: contain; }
+
+    /* --- GIGS --- */
+    .gig-strip { margin-top: clamp(24px, 5vh, 56px); }
+    /* The name of the night, kept out of sight until asked for. */
+    .labelled { position: relative; }
+    .tile-label {
+      position: absolute; left: 10px; bottom: 10px; z-index: 2;
+      padding: 5px 10px 4px; border-radius: 999px;
+      background: var(--bg); color: var(--ink);
+      font-family: var(--slab); font-style: italic; font-size: 13px; line-height: 1.3;
+      max-width: calc(100% - 20px);
+      opacity: 0; translate: 0 4px; pointer-events: none;
+      transition: opacity 0.18s ease, translate 0.18s ease;
+    }
+    .labelled:hover .tile-label, .labelled:focus-visible .tile-label { opacity: 1; translate: 0 0; }
+    .labelled:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    /* Rows of equal height, each picture as wide as its own shape asks for:
+       nothing is cropped, and a portrait phone clip sits beside a landscape
+       still without either being bent to the other. */
+    .strip { display: flex; flex-wrap: wrap; gap: 10px; }
+    /* A spacer that soaks up a short last row, so its pictures keep their
+       own widths instead of one of them being stretched across the page and
+       cropped to a sliver. */
+    .strip::after { content: ''; flex: 1000 1 0; }
+    .strip .media { flex: 1 1 auto; height: clamp(200px, 30vw, 360px); }
+    .strip .media img, .strip .media video { width: 100%; height: 100%; }
+
+    /* --- PDF SPREADS: repaints, blending, abhyu, gig photos --- */
+    .repaints .text { grid-column: 1 / span 6; }
+    .repaints .smalls { grid-column: 1 / span 8; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
+    .blend { margin-top: 60px; }
+    .blend .smalls { grid-column: 1 / span 5; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .blend .big { grid-column: 6 / span 7; }
+    .blend .caption { grid-column: 1 / span 6; font-size: 15px; }
+    .abhyu .photo { grid-column: 1 / span 4; }
+    .abhyu .text { grid-column: 5 / span 8; }
+    .abhyu .covers { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0 20px; }
+    .photos { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; grid-auto-flow: dense; }
+    .photos .p-wide { grid-column: span 8; }
+    .photos .p-side { grid-column: span 4; }
+    .photos .p-tall { grid-column: span 4; grid-row: span 2; }
+
+    /* --- @PLAY --- */
+    .play-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 24px; align-items: start; }
+    .play-grid figure { margin: 0; }
+    .play-grid iframe {
+      display: block; width: 100%; height: 560px; border: 0; border-radius: 6px;
+      background: rgba(var(--ink-rgb), 0.06);
+    }
+    .play-grid figcaption { font-family: var(--slab); font-style: italic; font-size: 13px; margin-top: 8px; }
+
+    /* --- ABOUT --- */
+    .about .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .about .pair .media { aspect-ratio: 482 / 274; }
+    .about .text { max-width: 62ch; margin: 30px auto 0; text-align: center; }
+    .about .text p, .contact p { margin-left: auto; margin-right: auto; }
+    .contact { text-align: center; padding-bottom: 20vh; }
+    .contact a { font-family: var(--slab); font-size: clamp(18px, 2vw, 24px); }
+
+    :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; gap: 16px; }
+      .grid > * { grid-column: 1 / -1 !important; grid-row: auto !important; }
+      .what .figure .caption { position: static; max-width: none; }
+      .elements .cols { grid-template-columns: 1fr; gap: 34px; }
+      .elements .merge { display: none; }
+      .index-row { grid-template-columns: 1fr; }
+      .cr2-tvs .tv { grid-column: auto !important; }
+      .cr2-tvs { grid-template-columns: 1fr 1fr !important; }
+      .cr2-tvs .copy, .cr2-tvs .word { grid-column: 1 / -1 !important; }
+      .cr2-tvs .word.key { text-align: left; }
+      .cr2-end .tall { aspect-ratio: auto; }
+      .repaints .smalls { grid-template-columns: repeat(3, 1fr); }
+      .photos { grid-template-columns: 1fr 1fr; }
+      .photos .media { grid-column: span 1 !important; grid-row: auto !important; }
+      .photos .p-wide { grid-column: 1 / -1 !important; }
+      .play-grid { grid-template-columns: 1fr; }
+      .about .pair { grid-template-columns: 1fr; }
+      .strip .media { height: 46vw; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="gamma-speaker" viewBox="0 0 900 1153">
+      <!-- assets/gamma-speaker.svg -->
+      <path d="M76 186 A660 660 0 0 1 824 186 M158 296 A560 560 0 0 1 742 296 M268 414 A300 300 0 0 1 632 414"
+            fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round"/>
+      <path d="M30 530 L870 530 L630 862 L630 1126 L270 1126 L270 862 Z"
+            fill="currentColor" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/>
+    </symbol>
+  </svg>
+
+  <canvas id="flock" aria-hidden="true"></canvas>
+  <a href="play.html" class="back-btn">← play</a>
+
+  <main>
+    <!-- Sources: the GMMBBQ Readymag site (readymag.website/u2816148450/4716300)
+         and the Gamma Barbecue pages of the old portfolio PDF (13-20). The
+         photographs from the PDF are cut out by scripts/build_slide_art.py;
+         the ones from Readymag were saved off that site as it cropped them. -->
+    <header class="hero wrap">
+      <!-- The Gamma Barbecue logo itself (assets/Asset 1.png), inked twice --
+           pink for the dark page, near-black for the turned one -- because an
+           image cannot take the page's colour and a CSS mask will not load
+           from disk. -->
+      <h1 class="hero-logo">
+        <img class="on-dark" src="assets/gmmbbq/about/logo-pink.png" alt="Gamma Barbecue" width="1595" height="470">
+        <img class="on-light" src="assets/gmmbbq/about/logo-dark.png" alt="" width="1595" height="470">
+      </h1>
+      <div class="sub"><span>new media stuff</span><span>deep fried experiences</span></div>
+      <span class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</span>
+    </header>
+
+    <section class="what">
+      <div class="wrap grid">
+        <div class="text">
+          <h2>What is Gamma Barbecue?</h2>
+          <p>We are a dj and graphic design duo who create audio visual experiences for ourselves and our clientele. I take care of the visual and audio production side of things and my partner <strong>Hrithwik Dhanpal</strong> covers the DJing and logistical side of things. We usually work in the space of music and dance. Creating synesthetic experiences is our passion, and telling the stories that we, along with our collaborators, want to convey to our audiences through these experiences is integral to our process of building the experience.</p>
+          <p>In the cinemas, the complex interactions between the physical and the digital systems create an experience where this recognition of either space is suspended. An entirely new experience is created through sounds and visuals — characters, contexts and stories emerge from the cohesive use of technology and physical (and metaphysical) materials. It’s this space, <strong>where new technology informs our story telling and expression</strong> and vice versa <strong>through performance</strong>, that I find myself interested in.</p>
+          <p>We love working with cool tech, old and new.</p>
+        </div>
+        <div class="figure media art">
+          <img src="assets/gmmbbq/about/pdf-figure.png" alt="A figure drawn out of a point cloud" loading="lazy">
+          <p class="caption">These are the base ideas that drive the aspects of performance behind <strong>Gamma Barbecue</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="origin">
+      <div class="wrap grid">
+        <div class="text" style="grid-column: 1 / span 7;">
+          <span class="kicker">Origin story</span>
+          <h2>Two stolen CRTs, and everything after them.</h2>
+          <p>Throwback to 2023. Hrithwik Dhanpal — a photographer, DJ and cool guy — and I were sitting in a room messing around with this software we had found called TouchDesigner.</p>
+          <p>We had stolen a couple of those old CRT TVs we found lying on the road. After removing the smell of dog piss and reconnecting some wires, we were absolutely ecstatic when we saw one of them working.</p>
+          <p>We had anyway been working on trying to create a visual system that could recognise the kind of music that was playing and set the lights and projection content appropriately, for some of Hrithwik’s sets — when someone offered us money to do the same. That’s how we got our very first gig, and we haven’t looked back since. Except now.</p>
+          <p>Over the course of the next few years we experimented with more material that we found <em>(stole)</em>, with more tech, and with an ever growing appetite for exploring the unexplored.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="elements">
+      <div class="wrap">
+        <h2>Elements of a gmmbbq performance</h2>
+        <div class="cols">
+          <div class="col">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 18h8l11-9v30l-11-9H8z"/><path d="M33 17a10 10 0 0 1 0 14M38 12a17 17 0 0 1 0 24"/></svg>
+            <h3>Audio</h3>
+            <p class="slab">Some key features extracted from audio are:</p>
+            <ol><li>Kick / beat / peak detection</li><li>Waveforms</li><li>Frequency plots (FFTs)</li></ol>
+          </div>
+          <div class="col">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="14" width="38" height="26" rx="5"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="27" r="7"/></svg>
+            <h3>Visual</h3>
+            <p class="slab">Visual input maybe in the form of:</p>
+            <ol><li>Noise (Perlin, Simplex etc)</li><li>Camera source (live stream, depth maps)</li><li>Pre-recorded video</li><li>3D models / scans</li></ol>
+          </div>
+          <div class="col">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M20 22V9a3 3 0 0 1 6 0v11h12a3 3 0 0 1 0 6h-4v4a3 3 0 0 1-3 3H20c-5 0-8-3-8-8v-6c0-2 1.5-3 3.5-3H20"/></svg>
+            <h3>Input</h3>
+            <p class="slab">Manual input may involve using:</p>
+            <ol><li>MIDI</li><li>Instruments</li><li>A keyboard</li><li>A web interface</li></ol>
+          </div>
+        </div>
+        <svg class="merge" viewBox="0 0 900 70" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" vector-effect="non-scaling-stroke">
+          <path d="M150 0V52H430M750 0V52H470M450 0V60" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <div class="out">
+          <p class="slab">Signal processing in <strong>TouchDesigner</strong></p>
+          <svg class="screen" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M24 0v8"/><rect x="5" y="11" width="38" height="25" rx="4"/><path d="M18 42h12M24 36v6"/></svg>
+          <h3>Project</h3>
+          <p class="slab">In the form of projection mapping, LED walls, projectors, other screens and media.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="seed">
+      <div class="wrap grid">
+        <div class="text">
+          <p style="font-size: clamp(18px, 1.8vw, 24px); line-height: 1.45;">The coolest thing about real life is that <strong>nothing happens exactly the same way twice</strong> (atleast from what I can tell). This gives us an opportunity to use <strong>real life situations as an initial seed</strong> for the chaotic systems running the visuals.</p>
+        </div>
+        <div class="img media"><img src="assets/gmmbbq/about/pdf-seed.jpg" alt="A camera feed of a face pulled apart by a feedback system" loading="lazy"></div>
+      </div>
+    </section>
+
+    <!-- CR2s, as the Readymag page laid it out. -->
+    <section class="cr2">
+      <div class="wrap">
+        <div class="grid cr2-top">
+          <div class="img media"><img src="assets/gmmbbq/cr2s/rm-hero.jpg" alt="The CRTs lit up beside the decks" loading="lazy"></div>
+          <div class="text">
+            <h2>CR2s</h2>
+            <p>CR2s is an installation that we carry around to perform for our own music, and for other musicians that we vibe with. It’s a fairly simple set up: two TVs, an audio processor and a DJing deck. And cables.</p>
+            <p>The setup allows us to control the visuals through the same intuition that one uses to mix different songs on a DJ deck — using concepts of faders, samplers and the different offerings that the equipment gives, and relating those to different parameters of our visualisations.</p>
+            <div class="tags"><span>Installation / Space Design</span><span>Performance Art</span></div>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="cr2-setup media art">
+            <img src="assets/gmmbbq/cr2s/rm-setup.png" alt="DJ deck (MIDI) and mixer (audio) into TouchDesigner, out to two CRTs" loading="lazy">
+            <p class="caption">The CR2 setup</p>
+          </div>
+        </div>
+        <div class="grid cr2-tvs" id="cr2-tvs">
+          <div class="copy">
+            <p>Music does not exist in a vacuum. It is made by people and for people. It serves as a powerful medium for expression, storytelling and dance, capturing the rhythms of life and the nuances of human experience.</p>
+            <p>We love working with musicians. Through our installations and set design we hope to be able to convey the stories that they want to tell.</p>
+          </div>
+          <!-- the nine TV loops go in here, around the two words -->
+        </div>
+        <div class="grid cr2-end">
+          <div class="tall media"><img src="assets/gmmbbq/cr2s/rm-tall.jpg" alt="Running the visuals from the side of the booth" loading="lazy"></div>
+          <div class="text">
+            <p>Having visuals be audio reactive creates a driving force on a dance floor, a call to action. The combination of curated visuals interacting with sounds and camera feed, along with the music, allows for subjective experiences while tapping into the human tendency to move to the pulsing beats.</p>
+            <p>Each performance calls for a different use of tech and storytelling to carry the vibes across. We do stuff with:</p>
+            <ul><li>Sensors</li><li>Lights</li><li>Cameras</li><li>Projectors</li><li>Mirrors</li><li>Lens and films</li></ul>
+            <p>and a bunch of other stuff.</p>
+            <p style="margin-top: 2em;">We’ve played at:</p>
+            <div class="venues">
+              <img src="assets/gmmbbq/cr2s/rm-venue-1.png" alt="Indiranagar Social" loading="lazy">
+              <img src="assets/gmmbbq/cr2s/rm-venue-2.png" alt="Koramangala Social" loading="lazy">
+              <img src="assets/gmmbbq/cr2s/rm-venue-3.png" alt="Sly Granny" loading="lazy">
+              <img src="assets/gmmbbq/cr2s/rm-venue-5.png" alt="F Super Club" loading="lazy">
+              <img src="assets/gmmbbq/cr2s/rm-venue-6.png" alt="Pebble" loading="lazy">
+              <img src="assets/gmmbbq/cr2s/rm-venue-4.png" alt="Taj" loading="lazy">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The gigs. Each one reads its media straight out of assets/manifest.js
+         and assets/curated-media.js (see the script at the bottom), so a
+         rebuilt gig shows up here without this page being touched. Nothing
+         here links anywhere: this page is the gigs. -->
+    <section class="gigs">
+      <div class="wrap" id="gigs">
+        <span class="kicker">The gigs</span>
+        <h2>Visuals for the room, run live from the booth.</h2>
+      </div>
+    </section>
+
+    <section class="repaints-sec">
+      <div class="wrap">
+        <div class="grid repaints">
+          <div class="text">
+            <h2>Digital Repaints</h2>
+            <p><strong>Digital Repaints</strong> is a series where I explore using the characteristics of the forms and materials of a real life subject (such as this painting by V.S. Gaitonde) to dictate the nature of the visuals that are generated. By superimposing the two and allowing the work to interact with the viewer, the agency that we grant the viewer to be an integral part of the nature of the piece helps in creating an experience that transcends the physical and the digital.</p>
+          </div>
+          <div class="smalls">
+            <div class="media"><img src="assets/gmmbbq/about/pdf-repaint-1.jpg" alt="" loading="lazy"></div>
+            <div class="media"><img src="assets/gmmbbq/about/pdf-repaint-2.jpg" alt="" loading="lazy"></div>
+            <div class="media"><img src="assets/gmmbbq/about/pdf-repaint-3.jpg" alt="" loading="lazy"></div>
+          </div>
+        </div>
+        <div class="grid blend">
+          <div class="smalls">
+            <div class="media"><img src="assets/gmmbbq/about/pdf-blend-1.jpg" alt="" loading="lazy"></div>
+            <div class="media"><img src="assets/gmmbbq/about/pdf-blend-2.jpg" alt="" loading="lazy"></div>
+            <div class="media"><img src="assets/gmmbbq/about/pdf-blend-3.jpg" alt="" loading="lazy"></div>
+            <div class="media"><img src="assets/gmmbbq/about/pdf-blend-4.jpg" alt="" loading="lazy"></div>
+          </div>
+          <div class="big media"><img src="assets/gmmbbq/about/pdf-blend-big.jpg" alt="The repaint pushed through blending modes into blue, green and white" loading="lazy"></div>
+          <p class="caption">Messing around with blending modes and transparencies can lead to some very interesting results.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="abhyu-sec">
+      <div class="wrap grid abhyu">
+        <div class="photo media"><img src="assets/gmmbbq/about/pdf-abhyu.jpg" alt="Abhyu at the decks with a CRT beside him" loading="lazy"></div>
+        <div class="text">
+          <h2>Abhyu</h2>
+          <p><strong>Abhyu</strong> is a sound engineer from Chennai, India. He makes liminal minimalist soundscapes. His music aims to offer a sonic space that invites listeners to question conventions and embrace alternative narratives and perspectives that disrupt hegemonic discourses. The focus is on creating new sonic possibilities, encouraging listeners to embrace the nomadic and the unpredictable.</p>
+          <p>The following pieces were created as covers for two of his songs, <em>Superlinear</em> and <em>Intrication</em>. To him, <em>“the images lend a ‘Polar’ atmosphere without resorting to obvious polar symbols, which is something I aim to achieve sonically as well.”</em></p>
+          <div class="covers">
+            <div class="media art"><img src="assets/gmmbbq/about/pdf-abhyu-1.png" alt="Superlinear: a dotted surface folding over itself" loading="lazy"></div>
+            <div class="media art"><img src="assets/gmmbbq/about/pdf-abhyu-2.png" alt="Intrication: a ribbon of lines twisting" loading="lazy"></div>
+          </div>
+          <p class="caption">Left, a still from an audiovisual gig that Abhyu and I worked on together.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="photos-sec">
+      <div class="wrap">
+        <span class="kicker">Images from some of our gigs</span>
+        <div class="photos">
+          <div class="media p-wide"><img src="assets/gmmbbq/about/pdf-gig-5.jpg" alt="" loading="lazy"></div>
+          <div class="media p-side"><img src="assets/gmmbbq/about/pdf-gig-3.jpg" alt="" loading="lazy"></div>
+          <div class="media p-wide"><img src="assets/gmmbbq/about/pdf-gig-6.jpg" alt="" loading="lazy"></div>
+          <div class="media p-tall" data-label="Hrithwik showing someone from the crowd how to drive the visuals"><img src="assets/gmmbbq/about/pdf-gig-7.jpg" alt="Hrithwik showing someone from the audience how to control the visuals" loading="lazy"></div>
+          <div class="media p-wide"><img src="assets/gmmbbq/about/pdf-gig-8.jpg" alt="" loading="lazy"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- @play, from the Readymag page of the same name. -->
+    <section class="play-sec">
+      <div class="wrap">
+        <h2>@play</h2>
+        <p>Stuff we do for fun. <em>Cookin’.</em></p>
+        <div class="play-grid" id="play-grid"></div>
+      </div>
+    </section>
+
+    <section class="about">
+      <div class="wrap">
+        <div class="pair">
+          <div class="media"><img src="assets/gmmbbq/about/rm-jishnu.jpg" alt="Jishnu at the lightboard" loading="lazy"></div>
+          <div class="media"><img src="assets/gmmbbq/about/rm-hrithwik.jpg" alt="Hrithwik at the decks" loading="lazy"></div>
+        </div>
+        <div class="text">
+          <p>We are a dj and graphic design duo who create audio visual experiences for ourselves and our clientele. We usually work in the space of music and dance.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact">
+      <div class="wrap">
+        <svg class="hero-mark" viewBox="0 0 900 1153" aria-hidden="true" style="margin: 0 auto 24px; width: 54px;"><use href="#gamma-speaker"/></svg>
+        <p>Reach out to us at</p>
+        <p><a href="mailto:gammabbq@gmail.com">gammabbq@gmail.com</a></p>
+        <p><a href="https://www.instagram.com/gammabbq/" target="_blank" rel="noopener">@gammabbq on instagram</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/keys.js"></script>
+  <script src="assets/cursor.js"></script>
+  <script src="assets/manifest.js"></script>
+  <script src="assets/curated-media.js"></script>
+  <script src="assets/hold-hint.js"></script>
+
+  <script>
+    // Fills in the parts of the page that come from data: the CR2s TV loops,
+    // the gigs, and the @play embeds.
+    (function () {
+      const M = (typeof SITE_MANIFEST !== 'undefined') ? SITE_MANIFEST : {};
+      const C = (typeof CURATED_MEDIA !== 'undefined') ? CURATED_MEDIA : {};
+      const el = (tag, cls, html) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (html !== undefined) n.innerHTML = html;
+        return n;
+      };
+
+      // Clips on this page play like moving pictures: muted, looping, no
+      // controls, and only while they are on screen.
+      const playing = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          const v = e.target;
+          if (e.isIntersecting) { if (!v.src) v.src = v.dataset.src; v.play().catch(() => {}); }
+          else v.pause();
+        });
+      }, { rootMargin: '200px 0px' });
+      // `size` is the file's own width and height where the data knows it:
+      // a clip that has not loaded has no shape of its own yet, and without
+      // one a portrait phone clip was laid out as a landscape box.
+      function sized(box, size) {
+        if (size && size[0] && size[1]) {
+          box.style.aspectRatio = size[0] + ' / ' + size[1];
+          // Rows share out their spare width in proportion to shape, so a
+          // full row is justified without any one picture being bent.
+          box.style.flexGrow = (size[0] / size[1]).toFixed(3);
+        }
+        return box;
+      }
+      function clip(src, poster, alt, size) {
+        const box = sized(el('div', 'media'), size);
+        const v = document.createElement('video');
+        v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
+        v.setAttribute('muted', '');
+        v.dataset.src = src;
+        if (poster) v.poster = poster;
+        if (alt) v.setAttribute('aria-label', alt);
+        box.appendChild(v);
+        playing.observe(v);
+        return box;
+      }
+      function still(src, alt, size) {
+        const box = sized(el('div', 'media'), size);
+        const img = new Image();
+        img.src = src; img.alt = alt || ''; img.loading = 'lazy'; img.decoding = 'async';
+        box.appendChild(img);
+        return box;
+      }
+
+      // A name that shows only under the pointer, or when the tile has focus.
+      function labelled(box, name) {
+        box.classList.add('labelled');
+        box.tabIndex = 0;
+        box.setAttribute('aria-label', name);
+        box.appendChild(el('span', 'tile-label', name));
+        return box;
+      }
+      document.querySelectorAll('[data-label]').forEach((n) => labelled(n, n.dataset.label));
+
+      // --- CR2s: the TV loops around "Collabrxn" and "is key" ---
+      const tvs = document.getElementById('cr2-tvs');
+      if (tvs) {
+        const tv = (i, cls) => {
+          const n = clip('assets/gmmbbq/cr2s/rm-tv-' + i + '.mp4', 'assets/gmmbbq/cr2s/rm-tv-' + i + '-poster.jpg');
+          n.classList.add('tv');
+          if (cls) n.classList.add(cls);
+          return n;
+        };
+        tvs.appendChild(tv(2, 'a'));
+        tvs.appendChild(tv(1, 'b'));
+        tvs.appendChild(el('div', 'word', 'Collabrxn'));
+        [4, 6, 3, 5, 8, 7, 9].forEach((i) => tvs.appendChild(tv(i, 'row')));
+        tvs.appendChild(el('div', 'word key', 'is key'));
+      }
+
+      // --- The gigs ---
+      // One gallery, the gigs dealt into it in turn rather than filed under
+      // their names: which picture came from which night is there if you
+      // want it -- on hover, or on focus -- and out of the way if you do not.
+      const GIGS = [
+        { key: 'gmmbbq/joyorbisonwhp', name: 'Joy Orbison' },
+        { key: 'gmmbbq/aliengarden', name: 'Alien Garden', skip: ['img-08.jpg'] },
+        { key: 'gmmbbq/burrow', name: 'Burrow' }
+      ];
+      const piles = GIGS.map((g) => {
+        const data = M[g.key] || {};
+        const cur = (C[g.key] && C[g.key].items) || {};
+        const curated = Object.keys(cur).map((k) => cur[k]);
+        const sizes = data.sizes || {};
+        // A gig with its own picked clips shows those; otherwise whatever
+        // the manifest has, clips first.
+        const items = curated.length
+          ? curated.map((m) => m.type === 'video' ? () => clip(m.src, m.poster, '', m.size) : () => still(m.src, '', m.size))
+          : [].concat(
+              (data.videos || []).map((v) => () => clip(v.src, v.poster, '', sizes[v.poster])),
+              (data.images || []).filter((src) => !(g.skip || []).some((n) => src.endsWith('/' + n)))
+                .map((src) => () => still(src, '', sizes[src])));
+        return items.map((make) => ({ make: make, name: g.name }));
+      });
+      const strip = el('div', 'strip gig-strip');
+      for (let round = 0; piles.some((p) => p.length); round++) {
+        piles.forEach((p) => {
+          const it = p.shift();
+          if (!it) return;
+          const tile = it.make();
+          labelled(tile, it.name);
+          strip.appendChild(tile);
+        });
+      }
+      document.getElementById('gigs').appendChild(strip);
+
+      // --- @play ---
+      // The eight posts the Readymag @play page embedded, in its order. That
+      // page scattered its titles (Flight, v1.0, Pepprs ghost...) around the
+      // grid rather than under any one post, so none are attached here.
+      const PLAY = [
+        ['reel', 'Cy8aVdXP8wl'], ['reel', 'Cy8a2DevAci'], ['reel', 'CwaigNbpq4D'],
+        ['p', 'Cke77waySxG'], ['p', 'CvQPuaQyqrl'], ['tv', 'CgffY0_FrmK'],
+        ['reel', 'CyR77iOJamf'], ['reel', 'CyR9IKlJxEW']
+      ];
+      const grid = document.getElementById('play-grid');
+      if (grid) PLAY.forEach(([kind, id]) => {
+        const fig = el('figure');
+        const f = document.createElement('iframe');
+        f.src = 'https://www.instagram.com/' + kind + '/' + id + '/embed/';
+        f.title = 'Instagram post';
+        f.loading = 'lazy';
+        f.setAttribute('scrolling', 'no');
+        f.allow = 'encrypted-media; picture-in-picture; fullscreen';
+        fig.appendChild(f);
+        const cap = el('figcaption');
+        const a = el('a', '', 'on instagram ↗');
+        a.href = 'https://www.instagram.com/' + kind + '/' + id + '/';
+        a.target = '_blank'; a.rel = 'noopener';
+        cap.appendChild(a);
+        fig.appendChild(cap);
+        grid.appendChild(fig);
+      });
+      // Instagram's player reports its own height; take it.
+      window.addEventListener('message', (e) => {
+        if (e.origin !== 'https://www.instagram.com') return;
+        let d = e.data;
+        try { if (typeof d === 'string') d = JSON.parse(d); } catch (err) { return; }
+        if (!d || d.type !== 'MEASURE' || !d.details) return;
+        grid.querySelectorAll('iframe').forEach((f) => {
+          if (f.contentWindow === e.source) f.style.height = Math.ceil(d.details.height) + 'px';
+        });
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      // The flock: little Gamma speakers, flying.
+      //
+      // This is play.html's old background -- five hundred boids in a box of
+      // space in front of a camera, three.js instanced sticks -- moved onto a
+      // 2D canvas and flown with its own numbers, unchanged: the same box,
+      // the same camera, the same neighbour radii and forces, the same speed
+      // limits, stepped at the 60 frames a second those numbers were written
+      // for. What changed is the thing being flown. Each boid is the speaker
+      // off the Gamma Barbecue mark, waves forward, drawn at its depth.
+      //
+      // The hold is the old one too. Charging pulls the flock in to the
+      // pointer and stretches every speaker along its heading, up to sixteen
+      // times its length, while they brighten; when the charge is full they
+      // are thrown outward, swelling as they go, and the page turns over a
+      // few frames into the burst, under them.
+      const canvas = document.getElementById('flock');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      window.HOLD_STATE = window.HOLD_STATE || { charge: 0, limit: 1500 };
+      window.HOLD_STATE.owned = true;
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const COUNT = reduceMotion ? 150 : (window.innerWidth < 760 ? 300 : 500);
+
+      // --- the old scene's numbers ---
+      const CAM_Z = 30, FOV = 60;                 // PerspectiveCamera(60, …) at z = 30
+      const RANGE_X = 50, RANGE_Y = 40, RANGE_Z = 20;
+      const NEIGHBOR = 12.0, SEPARATION = 3.5;
+      const CHARGE_LIMIT = 1500;
+      const CHARGE_UP = 20, CHARGE_DOWN = 60;     // per step
+      const BURST_DECAY = 0.025;                  // per step
+      const STEP = 1 / 60;
+      // The speaker, in scene units: a little smaller than the old sticks
+      // were long, so the flock reads as grit until it is charged.
+      const SPK_H = 0.36, SPK_W = SPK_H * 900 / 1153;
+
+      // --- the mark ---
+      const WAVES = new Path2D('M76 186 A660 660 0 0 1 824 186 M158 296 A560 560 0 0 1 742 296 M268 414 A300 300 0 0 1 632 414');
+      const CONE = new Path2D('M30 530 L870 530 L630 862 L630 1126 L270 1126 L270 862 Z');
+      const SPR_H = 96, SPR_W = Math.round(SPR_H * 900 / 1153);
+      function sprite(color) {
+        const c = document.createElement('canvas');
+        c.width = SPR_W + 6; c.height = SPR_H + 6;
+        const g = c.getContext('2d');
+        g.translate(3, 3);
+        g.scale(SPR_H / 1153, SPR_H / 1153);
+        g.fillStyle = g.strokeStyle = color;
+        g.lineCap = 'round'; g.lineJoin = 'round';
+        g.lineWidth = 88; g.stroke(WAVES);
+        g.lineWidth = 44; g.fill(CONE); g.stroke(CONE);
+        return c;
+      }
+      // Two shades for the flock and the colour a charge pulls them towards,
+      // read off the page so they follow the turn: on the dark, pink going
+      // to paper; on the pink, near-black going darker still.
+      let shades = [], glow = null;
+      function mix(a, b, t) { return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
+      function rgbOf(v) { return v.split(',').map((n) => parseInt(n, 10) || 0); }
+      function paintSprites() {
+        const cs = getComputedStyle(document.body);
+        const ink = rgbOf(cs.getPropertyValue('--ink-rgb'));
+        const bg = rgbOf(cs.getPropertyValue('--bg-rgb'));
+        const inverted = document.body.classList.contains('inverted');
+        const lit = inverted ? mix(ink, [0, 0, 0], 0.5) : [244, 241, 236];
+        shades = [sprite('rgb(' + ink + ')'), sprite('rgb(' + mix(ink, bg, 0.4) + ')')];
+        glow = sprite('rgb(' + lit + ')');
+      }
+      paintSprites();
+
+      let W = 0, H = 0, dpr = 1, focal = 1;
+      function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+        focal = (H / 2) / Math.tan(FOV * Math.PI / 360);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      // --- the flock ---
+      const pos = new Float32Array(COUNT * 3);
+      const vel = new Float32Array(COUNT * 3);
+      const shade = new Uint8Array(COUNT);
+      for (let i = 0; i < COUNT; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 60;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 60;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 30;
+        let vx = Math.random() - 0.5, vy = Math.random() - 0.5, vz = Math.random() - 0.5;
+        const l = Math.hypot(vx, vy, vz) || 1;
+        vel[i * 3] = vx / l * 0.1; vel[i * 3 + 1] = vy / l * 0.1; vel[i * 3 + 2] = vz / l * 0.1;
+        shade[i] = Math.random() < 0.5 ? 0 : 1;
+      }
+
+      // The pointer, on the z = 0 plane, as the old raycast put it.
+      let mx = 0, my = 0;
+      const toPlane = (x, y) => { mx = (x - W / 2) * CAM_Z / focal; my = -(y - H / 2) * CAM_Z / focal; };
+      window.addEventListener('pointermove', (e) => toPlane(e.clientX, e.clientY), { passive: true });
+
+      let holding = false;
+      window.addEventListener('pointerdown', (e) => {
+        // Links, film, embeds and anything labelled are things to press,
+        // not ground to hold.
+        if (e.target.closest && e.target.closest('a, button, video, iframe, input')) return;
+        toPlane(e.clientX, e.clientY);
+        holding = true;
+        document.body.classList.add('holding');
+      });
+      const stop = () => { holding = false; document.body.classList.remove('holding'); };
+      ['pointerup', 'pointercancel', 'blur'].forEach((ev) => window.addEventListener(ev, stop));
+
+      let chargeTime = 0, exploding = false, force = 0, invertCycle = false, growth = 0;
+
+      function turnOver() {
+        document.body.classList.toggle('inverted');
+        paintSprites();
+        if (window.noteInvert) window.noteInvert();
+      }
+
+      const clampLen = (i, min, max) => {
+        const x = vel[i], y = vel[i + 1], z = vel[i + 2];
+        const l = Math.hypot(x, y, z);
+        if (l < 1e-9) return;
+        const t = l < min ? min / l : (l > max ? max / l : 1);
+        vel[i] = x * t; vel[i + 1] = y * t; vel[i + 2] = z * t;
+      };
+
+      // One step of the old animate(), as it ran at 60 frames a second.
+      function step() {
+        const held = holding || (window.KEY_HOLD && window.KEY_HOLD.held);
+        if (held && !exploding) chargeTime = Math.min(chargeTime + CHARGE_UP, CHARGE_LIMIT);
+        else if (!exploding) chargeTime = Math.max(0, chargeTime - CHARGE_DOWN);
+        if (chargeTime >= CHARGE_LIMIT && !exploding) {
+          exploding = true; force = 1; invertCycle = false;
+        }
+        const c = chargeTime / CHARGE_LIMIT;
+
+        if (exploding) {
+          force -= BURST_DECAY;
+          growth = Math.sin((1 - force) * Math.PI);
+          if (force < 0.9 && !invertCycle) { invertCycle = true; turnOver(); }
+          if (force <= 0) { exploding = false; chargeTime = 0; growth = 0; }
+        }
+
+        for (let i = 0; i < COUNT; i++) {
+          const i3 = i * 3;
+          const px = pos[i3], py = pos[i3 + 1], pz = pos[i3 + 2];
+          let ax = 0, ay = 0, az = 0, cx = 0, cy = 0, cz = 0, sx = 0, sy = 0, sz = 0, n = 0;
+          for (let j = 0; j < COUNT; j += 2) {
+            if (i === j) continue;
+            const j3 = j * 3;
+            const dx = px - pos[j3], dy = py - pos[j3 + 1], dz = pz - pos[j3 + 2];
+            const d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 > 0.001 && d2 < NEIGHBOR * NEIGHBOR) {
+              ax += vel[j3]; ay += vel[j3 + 1]; az += vel[j3 + 2];
+              cx += pos[j3]; cy += pos[j3 + 1]; cz += pos[j3 + 2];
+              if (d2 < SEPARATION * SEPARATION) {
+                const d = Math.sqrt(d2);
+                sx += dx / d; sy += dy / d; sz += dz / d;
+              }
+              n++;
+            }
+          }
+          let fx = 0, fy = 0, fz = 0;
+          // steer toward a desired velocity (normalised x 0.5), capped
+          const steer = (tx, ty, tz, cap) => {
+            const l = Math.hypot(tx, ty, tz);
+            if (l <= 0) return;
+            let ux = tx / l * 0.5 - vel[i3], uy = ty / l * 0.5 - vel[i3 + 1], uz = tz / l * 0.5 - vel[i3 + 2];
+            const ul = Math.hypot(ux, uy, uz);
+            if (ul > cap) { ux *= cap / ul; uy *= cap / ul; uz *= cap / ul; }
+            fx += ux; fy += uy; fz += uz;
+          };
+          if (n > 0) {
+            steer(ax / n, ay / n, az / n, 0.015);
+            steer(cx / n - px, cy / n - py, cz / n - pz, 0.015);
+            steer(sx / n, sy / n, sz / n, 0.04);
+          }
+          if (exploding) {
+            const dx = px - mx, dy = py - my, dz = pz;
+            const l = Math.hypot(dx, dy, dz);
+            if (l * l > 0.001) { fx += dx / l * force * 3; fy += dy / l * force * 3; fz += dz / l * force * 3; }
+          } else if (c > 0) {
+            const dx = mx - px, dy = my - py, dz = -pz;
+            const l = Math.hypot(dx, dy, dz);
+            if (l * l > 0.001) { fx += dx / l * c * 1.5; fy += dy / l * c * 1.5; fz += dz / l * c * 1.5; }
+          }
+
+          if (px > RANGE_X) pos[i3] = -RANGE_X; if (px < -RANGE_X) pos[i3] = RANGE_X;
+          if (py > RANGE_Y) pos[i3 + 1] = -RANGE_Y; if (py < -RANGE_Y) pos[i3 + 1] = RANGE_Y;
+          if (pz > RANGE_Z) pos[i3 + 2] = -RANGE_Z; if (pz < -RANGE_Z) pos[i3 + 2] = RANGE_Z;
+
+          const limit = 0.5 + c * 1.0 + (exploding ? 2.0 : 0);
+          vel[i3] = (vel[i3] + fx) * 0.92;
+          vel[i3 + 1] = (vel[i3 + 1] + fy) * 0.92;
+          vel[i3 + 2] = (vel[i3 + 2] + fz) * 0.92;
+          clampLen(i3, 0.02, limit);
+          pos[i3] += vel[i3]; pos[i3 + 1] += vel[i3 + 1]; pos[i3 + 2] += vel[i3 + 2];
+        }
+        return c;
+      }
+
+      let last = performance.now(), acc = 0, charge = 0;
+      function frame(now) {
+        requestAnimationFrame(frame);
+        acc += Math.min(0.1, (now - last) / 1000);
+        last = now;
+        if (document.hidden) return;
+        let steps = 0;
+        while (acc >= STEP && steps < 4) { charge = step(); acc -= STEP; steps++; }
+        if (steps === 4) acc = 0;
+        window.HOLD_STATE.charge = chargeTime;
+
+        // --- paint ---
+        // The old shader: stretched along the heading by 1 + c^2 x 15,
+        // thickened by 1 + 2c + 5 x growth, and lit towards white by 0.9c.
+        const warp = 1 + charge * charge * 15;
+        const thick = 1 + charge * 2 + growth * 5;
+        const light = charge * 0.9;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cxs = W / 2, cys = H / 2;
+        for (let i = 0; i < COUNT; i++) {
+          const i3 = i * 3;
+          const z = pos[i3 + 2];
+          const depth = CAM_Z - z;
+          if (depth < 0.5) continue;
+          const vx = vel[i3], vy = vel[i3 + 1], vz = vel[i3 + 2];
+          const vl = Math.hypot(vx, vy, vz) || 1;
+          // the speaker's length, as a segment along its heading, projected
+          const half = SPK_H * warp / 2;
+          const hx = vx / vl * half, hy = vy / vl * half, hz = vz / vl * half;
+          const dF = CAM_Z - (z + hz), dB = CAM_Z - (z - hz);
+          if (dF < 0.3 || dB < 0.3) continue;
+          const fxs = cxs + (pos[i3] + hx) * focal / dF, fys = cys - (pos[i3 + 1] + hy) * focal / dF;
+          const bxs = cxs + (pos[i3] - hx) * focal / dB, bys = cys - (pos[i3 + 1] - hy) * focal / dB;
+          const ux = fxs - bxs, uy = fys - bys;
+          const len = Math.max(Math.hypot(ux, uy), SPK_H * focal / depth * 0.35);
+          const ang = Math.atan2(uy, ux);
+          const ex = Math.cos(ang), ey = Math.sin(ang);
+          const wid = SPK_W * thick * focal / depth;
+          if (fxs < -200 && bxs < -200 || fxs > W + 200 && bxs > W + 200) continue;
+          if (fys < -200 && bys < -200 || fys > H + 200 && bys > H + 200) continue;
+          // sprite x -> across the heading, sprite y -> against it, so the
+          // waves lead
+          const sxw = wid / SPR_W * dpr, syl = len / SPR_H * dpr;
+          ctx.setTransform(-ey * sxw, ex * sxw, -ex * syl, -ey * syl,
+            (fxs + bxs) / 2 * dpr, (fys + bys) / 2 * dpr);
+          ctx.drawImage(shades[shade[i]], -(SPR_W + 6) / 2, -(SPR_H + 6) / 2);
+          if (light > 0.01) {
+            ctx.globalAlpha = light;
+            ctx.drawImage(glow, -(SPR_W + 6) / 2, -(SPR_H + 6) / 2);
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

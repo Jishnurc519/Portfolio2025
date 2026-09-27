@@ -4,165 +4,76 @@
   <meta charset="utf-8" />
   <title>Jishnu Roy Chaudhury — Work</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Interactive installations and creative technology: seven selected projects, with the tools and the year behind each." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <!-- Absolute URLs, because a scraper reading this page has no base to
+       resolve a relative one against. If the site moves to its own
+       domain, this constant is the only thing that changes. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="jishnu has an artpage">
+  <meta property="og:title" content="Selected works — Jishnu Roy Chaudhury">
+  <meta property="og:description" content="Interactive installations and creative technology: seven selected projects, with the tools and the year behind each.">
+  <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/work.html">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/jishnu/fieldlinesim/vid-01-poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
+  <!-- Layout, snap-scroll shell and all theme/inversion rules are shared by
+       work / play / facilitation. Anything page-specific goes below it. -->
+  <link rel="stylesheet" href="assets/page.css">
   <style>
-    html, body { 
-      margin: 0; padding: 0; 
-      background: transparent; 
-      color: #fff; 
-      font-family: 'Clash Display', sans-serif;
-      overflow-x: hidden;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      transition: color 0.1s linear;
+    /* THE PAIR, restated for this section. The three sections take the three
+       subtractive primaries -- work cyan, play magenta, facilitation yellow --
+       so the site reads as one CMY set rather than three unrelated tints.
+       Work runs on cyan and the site's near-black rather than on paper and
+       near-black, so the value that difference blending swaps them with is
+       dark + cyan, not the site-wide #ffffff. Every mark on the page that
+       paints itself by difference resolves its ink from --tone-swap -- the
+       cursor ring and its charge meter, the section counter, the chevrons,
+       the back link -- and so does the bar layer below, which reads the
+       variable rather than carrying its own copy of it. The two have to move
+       together: with the site-wide operand the bars come out a flat orange
+       over the cyan, because |a3e9e6 - ffffff| is rgb(92, 22, 25).
+       11+163, 14+233, 19+230 -- exact complements, which is what makes the
+       swap land on the other tone to the byte instead of near it. */
+    :root {
+      --tone-light: #a3e9e6;
+      --tone-light-rgb: 163, 233, 230;
+      --tone-swap: #aef7f9;
+      --tone-swap-rgb: 174, 247, 249;
+      /* And the rest of the palette in the same hue. page.css ships a teal
+         accent and an amber card accent, which are the paper palette's and
+         are simply a different colour sitting next to this one. The gold page
+         settled this already: on a coloured ground the quiet type is a muted
+         version of that ground, not a second hue.
+         `accent` reads on the dark side, `accent-alt` on the cyan; the card
+         pair is the same two swapped, because a live card flips to whichever
+         ground the page is not. Cyan is the lightest of the three primaries,
+         so both are pulled down from where the magenta pair sits to land on
+         the same contrast against their own ground: 6.9:1 and 6.6:1. */
+      --accent: #56a8a4;
+      --accent-alt: #185249;
+      --card-accent: #185249;
+      --card-accent-alt: #7cc9c5;
     }
 
-    #stage-container {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      z-index: -1;
-      background: #0a0a0a;
-      transition: background 0.05s linear;
+    /* Above the copy, not behind it. The bars are painted in --tone-swap and
+       the layer is differenced against everything under it, so a rectangle
+       sliding over the heading inverts the heading along with the ground. It
+       sits below .back-btn, the nav chevrons and the cursor ring (all z-index
+       200-300, all differenced themselves) so those keep reading against
+       whatever the bars have just done to the page. */
+    #bar-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: 100; pointer-events: none; mix-blend-mode: difference;
     }
-    canvas { display: block; }
-    #stage-container.inverted-bg { background: #f4f1ec; }
-
-    /* --- MOBILE NAV ZONES --- */
-    .mobile-nav-zone {
-      position: fixed; left: 0; width: 100%; height: 100px; 
-      display: none; align-items: center; justify-content: center;
-      z-index: 200; /* High Z-Index was blocking the button */
-      pointer-events: auto; mix-blend-mode: difference;
-      cursor: pointer;
-    }
-    .nav-top { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
-    .nav-bottom { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
-    
-    .chevron { width: 20px; height: 20px; border-right: 3px solid white; border-bottom: 3px solid white; transition: opacity 0.3s ease; }
-    .chevron.up { transform: rotate(-135deg); margin-top: 15px; }
-    .chevron.down { transform: rotate(45deg); margin-bottom: 15px; }
-
-    /* --- THEME & ACTIVE STATES --- */
-    body.inverted-theme { color: #000; }
-    
-    .project-item.active {
-        background: #f4f1ec !important;
-        color: #141210 !important;
-        border-top: 1px solid #f4f1ec !important;
-        transform: scale(1.02);
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    }
-    .project-item.active .project-tags { color: #b87a3d !important; }
-    .project-item.active * { color: #141210 !important; }
-
-    body.inverted-theme .project-item.active {
-        background: #0a0a0a !important;
-        color: #f4f1ec !important;
-        border-top: 1px solid #0a0a0a !important;
-    }
-    body.inverted-theme .project-item.active .project-tags { color: #f2b880 !important; }
-    body.inverted-theme .project-item.active * { color: #f4f1ec !important; }
-
-    #main-wrapper {
-      position: relative;
-      padding: 10vw 5vw;
-      max-width: 1200px;
-      margin: 0 auto;
-      z-index: 10;
-      pointer-events: none; 
-      will-change: transform;
-      padding-top: 35vh; 
-      padding-bottom: 35vh;
-    }
-
-    #header-section {
-        margin-bottom: 80vh; 
-        text-align: left;
-        pointer-events: auto;
-    }
-
-    h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
-    .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
-    .hint {
-      font-size: clamp(11px, 1vw, 13px); font-weight: 400; margin-top: 14px;
-      display: block; letter-spacing: 0.03em;
-      opacity: 0; animation: hint-flash 4.5s ease-in-out forwards;
-    }
-    @keyframes hint-flash {
-      0% { opacity: 0; }
-      12% { opacity: 0.4; }
-      70% { opacity: 0.4; }
-      100% { opacity: 0; }
-    }
-
-    .project-list {
-      display: flex; flex-direction: column; gap: 20vh;
-      pointer-events: auto;
-    }
-
-    .project-item {
-      border-top: 1px solid rgba(255, 255, 255, 0.4);
-      padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-      cursor: pointer; display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 20px;
-      background: rgba(0,0,0,0.0); border-radius: 8px;
-    }
-
-    .project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
-    .project-details { display: flex; flex-direction: column; gap: 10px; }
-    .thumb-stack { position: relative; width: 100%; max-width: 320px; height: 200px; }
-    .project-thumb {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: left center;
-      border-radius: 6px; display: block; background: rgba(255,255,255,0.06);
-      transition: transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease;
-    }
-    .thumb-stack .thumb-main { z-index: 3; }
-    .thumb-stack .thumb-bg-1 { z-index: 2; opacity: 0; transform: translate(6px, 6px) scale(0.97); }
-    .thumb-stack .thumb-bg-2 { z-index: 1; opacity: 0; transform: translate(12px, 12px) scale(0.94); }
-    .thumb-stack:hover .thumb-main { transform: translate(-10px, -10px) scale(1.05); }
-    .thumb-stack:hover .thumb-bg-1 { opacity: 0.85; transform: translate(10px, 10px) scale(1.0); }
-    .thumb-stack:hover .thumb-bg-2 { opacity: 0.65; transform: translate(20px, 20px) scale(0.96); }
-    .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
-    .project-tags { font-size: clamp(12px, 1.2vw, 16px); font-weight: 400; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; color: #6fd9c8; transition: color 0.1s linear; }
-    body.inverted-theme .project-tags { color: #2f9c8c; }
-    .project-desc { font-size: clamp(14px, 1.5vw, 18px); font-weight: 300; line-height: 1.4; max-width: 600px; margin-top: 5px; opacity: 0.9; }
-
-    .past-work {
-      margin-top: 20vh; padding-top: 20px;
-      display: flex; flex-direction: column; align-items: center; text-align: center;
-      gap: 10px; pointer-events: auto;
-    }
-    .behance-frame { width: 100%; max-width: 404px; aspect-ratio: 404 / 316; margin-top: 10px; }
-    .behance-frame iframe { width: 100%; height: 100%; border: 0; border-radius: 8px; display: block; }
-    .behance-link {
-      margin-top: 8px; font-size: clamp(13px, 1.2vw, 16px); font-weight: 500;
-      color: #6fd9c8; text-decoration: none; transition: color 0.1s linear, opacity 0.2s ease;
-    }
-    .behance-link:hover { opacity: 0.75; }
-    body.inverted-theme .behance-link { color: #2f9c8c; }
-
-    /* UPDATED BACK BUTTON */
-    .back-btn {
-      position: fixed; 
-      top: 40px; /* Moved to TOP */
-      left: 5vw;
-      font-size: 18px; text-decoration: none; color: white; font-weight: 600; 
-      z-index: 300; /* Highest Z-index */
-      pointer-events: auto; 
-      transition: color 0.1s linear;
-      mix-blend-mode: difference; /* Ensures visibility on any background */
-    }
-    body.inverted-theme .back-btn { color: #fff; /* Blend mode handles contrast, but we keep this consistent */ }
-
-    @media (max-width: 768px) {
-      html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; }
-      .mobile-nav-zone { display: flex; }
-      .project-item { grid-template-columns: 1fr; gap: 5px; }
-    }
+    /* The bars ARE the transition. page.css cross-fades the ground over 50ms
+       and the copy over 100ms, which everywhere else is the softness of the
+       flip -- here it is the old page fading back in on the very frame the
+       bars are dropped, because the bars had already been showing the new one
+       for a beat. Instant, so the hand-off is exact. */
+    #stage-container, html, body { transition: none !important; }
   </style>
-  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" } }</script>
 </head>
 <body>
 
@@ -170,325 +81,373 @@
   <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
 
   <div id="stage-container"></div>
-  
+
   <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
 
   <div id="main-wrapper">
     <div id="header-section" class="scroll-target">
       <h1>selected<br>works</h1>
       <span class="subtitle">Interactive Installations & Creative Technology</span>
-      <span class="hint">hold anywhere to shift between light and dark</span>
+      <span class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</span>
     </div>
 
-    <div class="project-list">
-      <div class="project-item scroll-target" data-project="onebyzero/echoesofearth" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/echoesofearth/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2026</span>
-          <h2 class="project-title">Echoes of Earth</h2>
-          <span class="project-tags">Projection Mapping • Lighting Control</span>
-          <p class="project-desc">A comprehensive audio-visual installation featuring immersive projection mapping and DMX lighting synchronization.</p>
-        </div>
-      </div>
-      <div class="project-item scroll-target" data-project="onebyzero/middleroom" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/middleroom/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2026</span>
-          <h2 class="project-title">MiddleRoom</h2>
-          <span class="project-tags">GLSL • Generative Art</span>
-          <p class="project-desc">Simulates thousands of particles exhibiting organic, life-like behaviors such as "Orbs" and "Swimmers".</p>
-        </div>
-      </div>
-      <div class="project-item scroll-target" data-project="onebyzero/nodeshed" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/nodeshed/vid-01-poster.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">NodeShed</h2>
-          <span class="project-tags">Spatial Design • Interactive Furniture</span>
-          <p class="project-desc">Concept design for an interactive information desk acting as a hub for orientation.</p>
-        </div>
-      </div>
-      <div class="project-item scroll-target" data-project="onebyzero/sixthsense" onclick="handleProjectClick(event)">
-        <div class="thumb-stack"><img class="project-thumb thumb-main" src="assets/onebyzero/sixthsense/img-01.jpg" alt="" loading="lazy"></div>
-        <div class="project-details">
-          <span class="project-year">2025</span>
-          <h2 class="project-title">SixthSense</h2>
-          <span class="project-tags">IoT • Python • TouchDesigner</span>
-          <p class="project-desc">Custom integration bridging consumer smart home hardware with professional performance software.</p>
-        </div>
-      </div>
-    </div>
+    <div class="project-list" id="project-list"></div>
 
     <div class="past-work scroll-target">
       <h2 class="project-title">past work</h2>
       <p class="project-desc">More of my work, archived on Behance.</p>
       <div class="behance-frame">
-        <iframe src="https://www.behance.net/embed/project/189285821?ilo0=1" allowfullscreen loading="lazy" allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <iframe src="https://www.behance.net/embed/project/189285821?ilo0=1"
+                title="Behance: more work by Jishnu Roy Chaudhury"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
       <a href="https://www.behance.net/jishnuroycha" target="_blank" rel="noopener" class="behance-link">view full profile →</a>
     </div>
   </div>
 
+  <script src="assets/keys.js"></script>
+  <script src="assets/cursor.js"></script>
   <script src="assets/manifest.js"></script>
+  <script src="assets/curated-media.js"></script>
+  <script src="assets/project-details.js"></script>
+  <script src="assets/page-config.js"></script>
+  <script src="assets/render-projects.js"></script>
+  <script src="assets/scroll-nav.js"></script>
+  <script src="assets/hold-hint.js"></script>
+  <script src="assets/gmm-float.js"></script>
+
   <script>
-    document.querySelectorAll('.thumb-stack').forEach((stack) => {
-      const key = stack.closest('.project-item')?.dataset.project;
-      const data = (typeof SITE_MANIFEST !== 'undefined' && key) ? SITE_MANIFEST[key] : null;
-      if (!data) return;
-      const mainImg = stack.querySelector('.thumb-main');
-      const pool = [...(data.images || []), ...(data.videos || []).map(v => v.poster)]
-        .filter((src) => src !== mainImg.getAttribute('src'));
-      pool.slice(0, 2).forEach((src, i) => {
-        const img = document.createElement('img');
-        img.src = src; img.alt = ''; img.loading = 'lazy';
-        img.className = `project-thumb thumb-bg-${i + 1}`;
-        stack.insertBefore(img, mainImg);
-      });
-    });
-  </script>
+    (function () {
+      // Long rectangles, sliding in from the sides toward the cursor and
+      // packing around it. A few of them follow the pointer; holding brings
+      // more and more until they have tiled the whole page, and at that point
+      // the page has already turned over — because every one of these bars is
+      // an inversion, not a shape.
+      //
+      // That is the whole trick. The canvas sits ABOVE the copy in
+      // `mix-blend-mode: difference` and the bars are painted in --tone-swap,
+      // and difference against white is `255 - backdrop`. The two page tones
+      // are exact complements (11+244, 14+241, 19+236), so a bar crossing the
+      // ground lands on the other tone to the byte, and a bar crossing a line
+      // of type flips the type with it. Nothing is recoloured and nothing is
+      // drawn twice: the heading, the cards, the thumbnails all invert simply
+      // by being underneath.
+      //
+      // So when the pack is complete the page already reads as the other mode
+      // everywhere, and window.toggleInvert() only has to make that official.
+      // Dropping the bars on the same frame changes nothing on screen.
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+      const body = document.body;
+      const canvas = document.createElement('canvas');
+      canvas.id = 'bar-canvas';
+      body.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      // No 2d context is the one case where this page cannot own the gesture.
+      // Leaving HOLD_STATE.owned false hands it to the standby in
+      // assets/scroll-nav.js, which is the same hold with no picture behind it.
+      if (!ctx) return;
 
-    // --- NAVIGATION ENGINE ---
-    let currentIndex = 0;
-    let targets = [];
-    const wrapper = document.getElementById('main-wrapper');
-    const isMobile = window.innerWidth < 768;
+      window.HOLD_STATE = window.HOLD_STATE || { charge: 0, limit: 1500 };
+      window.HOLD_STATE.owned = true;
 
-    // As the page scrolls (native scroll on desktop, the transform-driven
-    // slide on mobile), cards pass underneath a stationary cursor and the
-    // browser re-evaluates :hover on whatever lands there — making the
-    // thumbnail hover-reveal look like it's swapping at random. Suspend
-    // pointer-events on the list while scroll is actually happening.
-    const projectListEl = document.querySelector('.project-list');
-    let hoverLockTimeout;
-    function suspendHover(duration) {
-        if (!projectListEl) return;
-        projectListEl.style.pointerEvents = 'none';
-        clearTimeout(hoverLockTimeout);
-        hoverLockTimeout = setTimeout(() => { projectListEl.style.pointerEvents = 'auto'; }, duration);
-    }
-    window.addEventListener('scroll', () => suspendHover(200), { passive: true });
+      // Not a colour anyone sees: --tone-swap, the sum of this page's two
+      // tones, and the only operand that maps either one onto the other. Read
+      // from the stylesheet rather than written here twice -- the pair is a
+      // per-page decision now, and a hardcoded #ffffff would paint the bars
+      // orange the moment the section stopped being paper-on-black.
+      const SWAP = 'rgb(' + getComputedStyle(document.documentElement)
+        .getPropertyValue('--tone-swap-rgb').trim() + ')';
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function initTargets() {
-        const header = document.getElementById('header-section');
-        const projects = document.querySelectorAll('.project-item');
-        targets = [header, ...projects];
-        updateChevronVisibility();
-    }
-    
-    initTargets();
+      // --- the tiling ---
+      // Rows of varying height, each cut into one, two or three long cells, so
+      // the finished pack reads as a set of rectangles rather than as a grid.
+      //
+      // All of it is laid out on the turn — the bars run at 45° — so the tiling
+      // is built in its own rotated frame and the whole thing is drawn through
+      // one rotate(). Turning each rectangle about its own centre instead would
+      // tear the tessellation open, and the gaps that left would be
+      // un-inverted ground still showing at the end of the hold, which is the
+      // one thing this pack may not do.
+      const ROT = Math.PI / 4;
+      const COS = Math.cos(ROT), SIN = Math.sin(ROT);
+      let bars = [], W = 0, H = 0, unit = 0, dpr = 1, half = 0;
 
-    function updateChevronVisibility() {
-        const upBtn = document.getElementById('nav-up');
-        const downBtn = document.getElementById('nav-down');
-        if(!upBtn || !downBtn) return;
-        
-        upBtn.style.opacity = currentIndex === 0 ? '0.2' : '1';
-        downBtn.style.opacity = currentIndex === targets.length - 1 ? '0.2' : '1';
-    }
-
-    window.handleNav = (dir) => {
-        if (!isMobile) return;
-        
-        const nextIndex = Math.max(0, Math.min(targets.length - 1, currentIndex + dir));
-        if (nextIndex === currentIndex) return; 
-        
-        currentIndex = nextIndex;
-        updateChevronVisibility();
-        
-        const targetEl = targets[currentIndex];
-        
-        const elementCenter = targetEl.offsetTop + (targetEl.offsetHeight / 2);
-        const viewportCenter = window.innerHeight / 2;
-        const shiftAmount = elementCenter - viewportCenter;
-        
-        wrapper.style.transform = `translateY(${-shiftAmount}px)`;
-        wrapper.style.transition = "transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)";
-        suspendHover(750);
-
-        // Remove active class from ALL items
-        targets.forEach(t => {
-            if(t.classList.contains('project-item')) t.classList.remove('active');
-        });
-
-        // Apply active class if it's a project
-        if (currentIndex > 0) {
-            targetEl.classList.add('active');
+      // Box against box on four axes — exact, for two convex rectangles.
+      const AXES = [[1, 0], [0, 1], [COS, SIN], [-SIN, COS]];
+      function span(pts, ax, ay) {
+        let lo = Infinity, hi = -Infinity;
+        for (let i = 0; i < pts.length; i += 2) {
+          const v = pts[i] * ax + pts[i + 1] * ay;
+          if (v < lo) lo = v;
+          if (v > hi) hi = v;
         }
-    };
-
-    // --- INTERACTION GUARD ---
-    window.checkInteraction = (e) => {
-        if (chargeTime > 200) { 
-            e.preventDefault(); e.stopPropagation(); return false;
-        }
-        return true;
-    }
-
-    window.handleProjectClick = (e) => {
-        if (!checkInteraction(e)) return;
-        const key = e.currentTarget.dataset.project;
-        if (key) window.location.href = `project.html?p=${key}&from=work.html`;
-    }
-
-    // --- THREE.JS ENGINE ---
-    const stage = document.getElementById('stage-container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 15);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor(0x000000, 0); 
-    stage.appendChild(renderer.domElement);
-
-    const material = new THREE.ShaderMaterial({
-      uniforms: { 
-        uTime: { value: 0 },
-        uMouse: { value: new THREE.Vector3(0, 0, -100) },
-        uClickStrength: { value: 0.0 }, uCharge: { value: 0.0 }, uGrowth: { value: 0.0 }, uInvert: { value: 0.0 },
-        uColorA: { value: new THREE.Color(0x6fd9c8) }, uColorB: { value: new THREE.Color(0xf2b880) }
-      },
-      vertexShader: `
-        varying vec3 vNormal; varying vec3 vToLight;
-        attribute vec3 aInstancePos; attribute float aRand;
-        uniform float uTime; uniform vec3 uMouse;
-        uniform float uClickStrength; uniform float uCharge; uniform float uGrowth;
-        mat4 rotationMatrix(vec3 axis, float angle) {
-            axis = normalize(axis); float s = sin(angle); float c = cos(angle); float oc = 1.0 - c;
-            return mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-                        oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,  0.0,
-                        oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-                        0.0, 0.0, 0.0, 1.0);
-        }
-        void main() {
-          vec3 pos = aInstancePos;
-          float driftSpeed = 1.0 - (uCharge * 0.8);
-          float driftX = sin(uTime * 0.3 + aRand * 10.0) * 0.5 * driftSpeed;
-          float driftY = cos(uTime * 0.2 + aRand * 8.0) * 0.5 * driftSpeed;
-          pos.x += driftX; pos.y += driftY;
-          float shake = sin(uTime * 50.0 + aRand * 10.0) * (uCharge * 0.1); pos += shake;
-          float dist = distance(pos.xy, uMouse.xy);
-          float baseRadius = 5.0; float baseInfluence = smoothstep(baseRadius, 0.0, dist) * 1.5;
-          float clickRadius = 60.0; float clickInfluence = smoothstep(clickRadius, 0.0, dist) * 12.0;
-          float totalForce = mix(baseInfluence, clickInfluence, uClickStrength);
-          totalForce += uCharge * 2.0; 
-          vec3 pullDir = normalize(uMouse - pos); pos += pullDir * totalForce; 
-          vec3 axis = normalize(vec3(sin(aRand), cos(aRand), aRand));
-          mat4 rot = rotationMatrix(axis, uTime * (0.5 + uCharge * 5.0) + aRand);
-          vNormal = (rot * vec4(normal, 0.0)).xyz;
-          float size = mix(1.2, 50.0, uGrowth); size += sin(uTime * 20.0) * uCharge * 0.5;
-          vec4 worldPos = vec4(pos + (rot * vec4(position * size, 1.0)).xyz, 1.0);
-          vToLight = uMouse - worldPos.xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * worldPos;
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal; varying vec3 vToLight;
-        uniform vec3 uColorA; uniform vec3 uColorB;
-        uniform float uInvert; uniform float uCharge;
-        void main() {
-          vec3 normal = normalize(vNormal); vec3 lightDir = normalize(vToLight);
-          float diff = max(dot(normal, lightDir), 0.0);
-          float fresnel = pow(1.0 - dot(normal, vec3(0,0,1)), 3.0);
-          vec3 cyanState = vec3(0.05) + uColorA * diff + fresnel * 0.25;
-          cyanState = mix(cyanState, vec3(1.0), uCharge * 0.8);
-          vec3 magentaState = vec3(0.0) + uColorB * diff + fresnel * 0.4;
-          magentaState = mix(magentaState, vec3(1.0), uCharge * 0.8);
-          vec3 finalColor = mix(cyanState, magentaState, uInvert);
-          gl_FragColor = vec4(finalColor, 1.0);
-        }
-      `
-    });
-
-    const count = 500;
-    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), material, count);
-    mesh.frustumCulled = false; scene.add(mesh);
-    const aInstancePos = new Float32Array(count * 3);
-    const aRand = new Float32Array(count);
-    const spreadX = isMobile ? 20 : 70;
-    const spreadY = isMobile ? 70 : 50;
-
-    for(let i = 0; i < count; i++) {
-        aInstancePos[i * 3] = (Math.random() - 0.5) * spreadX; 
-        aInstancePos[i * 3 + 1] = (Math.random() - 0.5) * spreadY; 
-        aInstancePos[i * 3 + 2] = -20 + (Math.random() * 25); 
-        aRand[i] = Math.random();
-    }
-    mesh.geometry.setAttribute('aInstancePos', new THREE.InstancedBufferAttribute(aInstancePos, 3));
-    mesh.geometry.setAttribute('aRand', new THREE.InstancedBufferAttribute(aRand, 1));
-
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let isHolding = false; let chargeTime = 0; const CHARGE_LIMIT = 1500;
-    let isExploding = false; let explosionProgress = 0;
-    let currentClickStrength = 0; let invertCycle = false;
-
-    const startHold = (e) => { 
-        // Ignore clicks on back button or nav chevrons
-        if(e.target.closest('.back-btn') || e.target.closest('.mobile-nav-zone')) return;
-        isHolding = true; 
-    };
-    const stopHold = () => { isHolding = false; };
-
-    window.addEventListener('touchmove', (e) => { if(isMobile) e.preventDefault(); }, {passive: false});
-    window.addEventListener('mousedown', startHold);
-    window.addEventListener('touchstart', startHold, {passive: true});
-    window.addEventListener('mouseup', stopHold);
-    window.addEventListener('touchend', stopHold);
-    window.addEventListener('mouseleave', stopHold);
-
-    const updateMouse = (x, y) => {
-        const mx = (x / window.innerWidth) * 2 - 1;
-        const my = -(y / window.innerHeight) * 2 + 1;
-        pointer.set(mx, my);
-        raycaster.setFromCamera(pointer, camera);
-        const intersect = new THREE.Vector3();
-        raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), -6), intersect);
-        material.uniforms.uMouse.value.set(intersect.x, intersect.y, intersect.z);
-    };
-    window.addEventListener('mousemove', (e) => updateMouse(e.clientX, e.clientY));
-    window.addEventListener('touchmove', (e) => updateMouse(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
-
-    let lastTime = 0;
-    function animate(time) {
-      requestAnimationFrame(animate);
-      const dt = time - lastTime; lastTime = time;
-      material.uniforms.uTime.value = time * 0.001;
-      const targetStrength = isHolding && !isExploding ? 1.0 : 0.0;
-      currentClickStrength += (targetStrength - currentClickStrength) * 0.05;
-      if (isHolding && !isExploding) { chargeTime = Math.min(chargeTime + dt, CHARGE_LIMIT); } 
-      else if (!isExploding) { chargeTime = Math.max(0, chargeTime - dt * 3.0); }
-      if (chargeTime >= CHARGE_LIMIT && !isExploding) { isExploding = true; explosionProgress = 0; invertCycle = false; }
-      material.uniforms.uCharge.value = chargeTime / CHARGE_LIMIT;
-      material.uniforms.uClickStrength.value = currentClickStrength;
-      if (isExploding) {
-        explosionProgress += dt * 0.0015; material.uniforms.uGrowth.value = Math.min(explosionProgress, 1.0);
-        if (explosionProgress > 0.1 && !invertCycle) {
-          invertCycle = true;
-          const bg = document.getElementById('stage-container'); const body = document.body;
-          if (bg.classList.contains('inverted-bg')) {
-             bg.classList.remove('inverted-bg'); body.classList.remove('inverted-theme'); material.uniforms.uInvert.value = 0.0;
-          } else {
-             bg.classList.add('inverted-bg'); body.classList.add('inverted-theme'); material.uniforms.uInvert.value = 1.0;
+        return [lo, hi];
+      }
+      // The tiled square has to overhang the screen on every side to still
+      // cover its corners once turned, so a good third of it never shows. Those
+      // bars have to exist — they are what the corners are made of — but they
+      // must not count toward how far the pack has to reach, or the screen is
+      // full long before the charge is.
+      function onScreen(b) {
+        const cx = W / 2, cy = H / 2, pts = [];
+        const xs = [b.x, b.x + b.w], ys = [b.y, b.y + b.h];
+        for (let i = 0; i < 2; i++) {
+          for (let j = 0; j < 2; j++) {
+            pts.push(cx + xs[i] * COS - ys[j] * SIN, cy + xs[i] * SIN + ys[j] * COS);
           }
         }
-        if (explosionProgress >= 1.0) { isExploding = false; material.uniforms.uGrowth.value = 0; chargeTime = 0; }
+        const vp = [0, 0, W, 0, W, H, 0, H];
+        for (let a = 0; a < AXES.length; a++) {
+          const s = span(pts, AXES[a][0], AXES[a][1]);
+          const v = span(vp, AXES[a][0], AXES[a][1]);
+          if (s[1] < v[0] || v[1] < s[0]) return false;
+        }
+        return true;
       }
-      renderer.render(scene, camera);
-    }
-    animate(0);
 
-    window.addEventListener('resize', () => { 
-        camera.aspect = window.innerWidth / window.innerHeight; 
-        camera.updateProjectionMatrix(); 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        if(isMobile) handleNav(0); 
-    });
+      function buildBars() {
+        W = window.innerWidth; H = window.innerHeight;
+        unit = Math.min(W, H);
+        // Far enough out in the rotated frame to hold every corner of the
+        // viewport: the furthest any of them lands is (W + H) / 2, over root 2.
+        half = (W + H) / (2 * Math.SQRT2) + 6;
+        const wide = half * 2;
+        bars = [];
+        let y = -half;
+        while (y < half - 0.5) {
+          let h = unit * (0.045 + Math.random() * 0.045);
+          // Rather than leave a sliver, the last row swallows the remainder.
+          if (half - (y + h) < unit * 0.04) h = half - y;
+          // Cuts are evenly spaced and then jittered, which is what keeps every
+          // cell long: three cells vary between roughly a quarter and two
+          // fifths of the row, never a stub. Mostly two or three to a row —
+          // enough full-length ones and the pack reads as a stack of bands
+          // rather than as rectangles arriving from either side.
+          const r = Math.random();
+          const n = r < 0.16 ? 1 : (r < 0.60 ? 2 : 3);
+          const edge = [0];
+          for (let i = 1; i < n; i++) edge.push(i / n + (Math.random() - 0.5) * 0.12);
+          edge.push(1);
+          for (let i = 0; i < n; i++) {
+            const x0 = -half + edge[i] * wide, x1 = -half + edge[i + 1] * wide;
+            const b = { x: x0, y: y, w: x1 - x0, h: h, p: 0, left: false, rank: 0, vis: false };
+            b.vis = onScreen(b);
+            bars.push(b);
+          }
+          y += h;
+        }
+      }
+
+      // --- the cards, which the bars leave alone ---
+      // Punched straight out of the inversion layer rather than protected in
+      // CSS: this canvas is what does the inverting, so a hole in it is a piece
+      // of page the bars cannot reach.
+      //
+      // The whole card comes out, not just the picture in it. A project card is
+      // one object — plate, photo, year, title, tags, description — and a bar
+      // slicing through the middle of it, flipping half a title and a corner of
+      // a photograph, reads as damage rather than as an effect. It is left to
+      // turn over with the page, once, when the theme does.
+      //
+      // The heading and the ground still invert under every bar. That is the
+      // whole point of the layer being up here; it is only the cards that are
+      // held out of it.
+      //
+      // The stacked layers sit at opacity 0 until their card is live and fade
+      // in and out on a transition, and a hole cut for something that is not
+      // being painted is just an un-inverted rectangle. Their painted opacity
+      // is the only thing that actually answers that, so it is what gets asked;
+      // a class test would open the hole a fifth of a second before the layer
+      // it is meant to be protecting arrives.
+      let media = [];
+      function findMedia() {
+        media = [].slice.call(document.querySelectorAll(
+          '#main-wrapper .project-item, #main-wrapper .behance-frame'));
+      }
+
+      function resize() {
+        dpr = Math.min(window.devicePixelRatio, 2);
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        buildBars();
+        findMedia();
+      }
+      resize();
+
+      // --- input ---
+      // The same numbers as every other page: 1400 up, 3600 down, 1500 to
+      // fire, all per second so the hold is the same length on a 120Hz screen.
+      const CHARGE_LIMIT = 1500;
+      const CHARGE_RATE = 1400;
+      const RELEASE_RATE = 3600;
+      // The beat at the end, where the stragglers land and the seams between
+      // the bars close up. Until they do the pack is not quite the whole page.
+      const CLOSE_SECS = reduceMotion ? 0.2 : 0.38;
+      // The hairline of un-inverted ground left around each bar. Without it a
+      // finished pack is one flat inverted rectangle and the rectangles stop
+      // being visible at exactly the moment there are most of them.
+      const GAP = 3;
+
+      let pointerX = window.innerWidth / 2, pointerY = window.innerHeight / 2;
+      let isHolding = false, charge = 0, closing = 0;
+      let last = performance.now();
+
+      window.addEventListener('pointermove', (e) => {
+        pointerX = e.clientX; pointerY = e.clientY;
+      }, { passive: true });
+
+      const down = (e) => {
+        // The back link and the mobile chevrons are targets, not ground. Cards
+        // are held over freely: scroll-nav.js cancels their click once the
+        // charge has passed ~200, which is what makes a hold over a card a
+        // hold and not a mis-tap.
+        const el = e.target && e.target.closest ? e.target : null;
+        if (el && (el.closest('.back-btn') || el.closest('.mobile-nav-zone') || el.closest('#gmm-float'))) return;
+        pointerX = e.clientX; pointerY = e.clientY;
+        isHolding = true;
+      };
+      window.addEventListener('pointerdown', down);
+      ['pointerup', 'pointercancel', 'blur'].forEach(
+        (evt) => window.addEventListener(evt, () => { isHolding = false; }));
+
+      const clamp01 = (t) => Math.min(1, Math.max(0, t));
+      const easeOut = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+
+      function frame(now) {
+        requestAnimationFrame(frame);
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+
+        // --- charge, and the close ---
+        if (closing > 0) {
+          closing = Math.max(0, closing - dt);
+          if (closing === 0) {
+            // The pack covers every pixel, so the page already reads as the
+            // other mode. Adopting it changes nothing, and the bars can go.
+            window.toggleInvert();
+            for (let i = 0; i < bars.length; i++) bars[i].p = 0;
+          }
+        } else {
+          // Space is held exactly as the pointer is — assets/keys.js raises
+          // KEY_HOLD while the key is down, so the gesture keeps one owner.
+          const holding = isHolding || (window.KEY_HOLD && window.KEY_HOLD.held);
+          charge = holding
+            ? Math.min(CHARGE_LIMIT, charge + dt * CHARGE_RATE)
+            : Math.max(0, charge - dt * RELEASE_RATE);
+          if (charge >= CHARGE_LIMIT) {
+            closing = CLOSE_SECS;
+            charge = 0;
+            if (window.noteInvert) window.noteInvert();
+          }
+        }
+        // The ring drawn on the cursor (assets/cursor.js) is the only reader,
+        // and it wants a number it can normalise without knowing this page
+        // counts rectangles. Set outside the branch, so the close reports zero.
+        window.HOLD_STATE.charge = charge;
+
+        const shutting = closing > 0;
+        // How far out the pack has reached. Distance is measured with the
+        // horizontal axis discounted, because the bars are long: a row fills
+        // sideways much faster than the pack climbs into the next row, which is
+        // what makes it read as rectangles arriving rather than a circle.
+        //
+        // The far end of the scale is the furthest bar there actually is from
+        // where the pointer actually is, measured fresh each frame — not the
+        // worst case of a pointer in a corner. Against the worst case, a
+        // pointer anywhere near the middle had the whole page packed at half
+        // charge and then stood still for the rest of the hold.
+        // The pointer, read in the tiling's own turned frame, so a bar's rank
+        // is measured along the bars rather than across the screen.
+        const ox = pointerX - W / 2, oy = pointerY - H / 2;
+        const px = ox * COS + oy * SIN;
+        const py = -ox * SIN + oy * COS;
+
+        let reach = 1;
+        for (let i = 0; i < bars.length; i++) {
+          const b = bars[i];
+          const r = Math.abs(b.y + b.h * 0.5 - py) +
+                    Math.abs(b.x + b.w * 0.5 - px) * 0.45;
+          b.rank = r;
+          if (b.vis && r > reach) reach = r;
+        }
+        reach += 1;
+        const restReach = Math.min(unit * 0.17, reach);
+        const c = shutting ? 1 : charge / CHARGE_LIMIT;
+        const thr = shutting ? reach : restReach + (reach - restReach) * Math.pow(c, 0.85);
+
+        // The seams hold until the very end and then close, so the last thing
+        // the pack does before the page turns is tighten.
+        const gap = reduceMotion ? 0 : GAP * (shutting ? closing / CLOSE_SECS : 1);
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = SWAP;
+
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(ROT);
+        for (let i = 0; i < bars.length; i++) {
+          const b = bars[i];
+          // Whichever side of the cursor the slot is on is the side the bar
+          // comes in from, so every one of them is travelling toward the
+          // pointer and the two halves of the pack close on it. Fixed while a
+          // bar is out of play, so one that is already on its way does not
+          // turn round mid-slide when the pointer crosses it.
+          if (b.p < 0.01) b.left = b.x + b.w * 0.5 < px;
+
+          const target = b.rank < thr ? 1 : 0;
+          // Eased while the pack is following the pointer; driven the last of
+          // the way home while it is shutting, because "nearly there" is a
+          // sliver of old ground along one edge of the screen.
+          b.p = shutting
+            ? Math.min(1, b.p + dt * 5)
+            : b.p + (target - b.p) * (1 - Math.exp(-dt * 9));
+
+          if (b.p < 0.002) continue;
+          const from = b.left ? -half - b.w - 24 : half + 24;
+          const x = from + (b.x - from) * easeOut(b.p);
+          // Overlaps while a bar is still travelling are free: the bars are
+          // composited into this canvas first and the canvas is differenced
+          // once, so two of them crossing invert the page once, not twice.
+          ctx.fillRect(x + gap, b.y + gap, b.w - gap * 2, b.h - gap * 2);
+        }
+        ctx.restore();
+
+        // And the media comes back out of the layer. destination-out rather
+        // than clearRect so the corners can be rounded the way the thumbnails
+        // are; a square hole around a rounded photo leaves four un-inverted
+        // notches.
+        ctx.globalCompositeOperation = 'destination-out';
+        for (let i = 0; i < media.length; i++) {
+          const el = media[i];
+          const r = el.getBoundingClientRect();
+          if (r.width < 1 || r.height < 1) continue;
+          if (r.right < 0 || r.left > W || r.bottom < 0 || r.top > H) continue;
+          if (+getComputedStyle(el).opacity < 0.02) continue;
+          // A pixel out and a corner radius under the real one, so the hole
+          // overshoots the card very slightly rather than leaving four notches
+          // of un-punched arc at the corners — which is exactly what a radius
+          // matched to the card's own 8px does.
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(r.left - 1, r.top - 1, r.width + 2, r.height + 2, 5);
+          else ctx.rect(r.left - 1, r.top - 1, r.width + 2, r.height + 2);
+          ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      requestAnimationFrame(frame);
+
+      let resizeTimer = 0;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+    })();
   </script>
+
 </body>
 </html>

@@ -3,3 +3,29 @@
 /OnebyZero/
 /scripts/_tmp/
 /scripts/_tmp_server.log
+__pycache__/
+# Raw camera files dropped into assets/ as sources for
+# scripts/build_curated_media.py. Only the converted c-*, img-*, thumb-* and
+# vid-* files are the site; these are far too big to serve or push.
+/assets/NewAssets/
+/assets/**/*.MOV
+/assets/**/*.mov
+/assets/**/*.HEIC
+/assets/**/*.heic
+/assets/**/IMG_*
+/assets/**/WhatsApp*
+/scripts/_*.log
+# Working material, not the site: notes, the old portfolio, correction
+# lists, throwaway test pages, and the raw learn-page sources that
+# scripts/build_curated_media.py converts into assets/jishnu/.
+/Notes/
+/Old Portfolio.pdf
+/Corrections*.txt
+/_turntest.html
+/space-demo.html
+/.claude/
+/assets/Learn/
+/assets/GAmmalogo.png
+/assets/Speaker_Icon.svg
+/assets/logo.svg
+*.lnk

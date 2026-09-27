@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The site's one idea: a page that is two tones and turns over. Half the
+       disc is filled, half is only its edge. -->
+  <circle cx="16" cy="16" r="13" fill="none" stroke="#eab84a" stroke-width="3"/>
+  <path d="M16 3a13 13 0 0 0 0 26z" fill="#eab84a"/>
+</svg>

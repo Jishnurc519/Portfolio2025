@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /project.html
+
+Sitemap: https://jishnurc519.github.io/Portfolio2025/sitemap.xml

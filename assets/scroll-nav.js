@@ -16,7 +16,10 @@
   // takes it instead of snapping from target to target. Its .scroll-targets
   // are chapter marks: the counter reads which one you are in, and the
   // chevrons / arrow keys step by a screen rather than by a card.
-  const FREE = document.body && document.body.dataset.scroll === 'free';
+  // A phone gets it on every page: a finger expects to drag the page, and the
+  // snap only ever answered the chevrons, so a swipe did nothing at all.
+  const FREE = !!document.body && (document.body.dataset.scroll === 'free'
+    || window.matchMedia('(hover: none) and (pointer: coarse)').matches);
   let targets = [];
   let currentIndex = 0;
 
@@ -154,7 +157,12 @@
     // positioned .flow, which offsetTop would be relative to instead.
     const wTop = wrapper.getBoundingClientRect().top;
     targets.forEach((el, i) => { if (el.getBoundingClientRect().top - wTop <= mid) idx = i; });
-    if (idx !== currentIndex) { currentIndex = idx; counterNow.textContent = pad(idx + 1); }
+    if (idx !== currentIndex) {
+      currentIndex = idx; counterNow.textContent = pad(idx + 1);
+      // The card at the centre stands out, as a snapped-to card does.
+      document.querySelectorAll('.project-item.active').forEach((t) => t.classList.remove('active'));
+      if (targets[idx].classList.contains('project-item')) targets[idx].classList.add('active');
+    }
     const min = freeMin();
     const p = min < 0 ? freeY / min : 1;
     counterFill.style.transform = `scaleY(${Math.max(0.02, Math.min(1, p))})`;

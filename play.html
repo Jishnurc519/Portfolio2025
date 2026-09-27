@@ -500,6 +500,9 @@
       window.addEventListener('pointerdown', down);
       ['pointerup', 'pointercancel', 'blur'].forEach(
         (evt) => window.addEventListener(evt, () => { isHolding = false; }));
+      // On a phone a drag scrolls the page (assets/scroll-nav.js), and a slow
+      // one lasts as long as a hold -- so a finger that moves is not holding.
+      window.addEventListener('touchmove', () => { if (window.FREE_DRAG) isHolding = false; }, { passive: true });
 
       // --- packing under the hold ---
       // Points offered to the pack inside a disc that opens out of the

@@ -248,6 +248,26 @@
     wrapper.style.transformOrigin = `${originX}px ${originY}px`;
     wrapper.style.transform =
       `translate(${panX}px, ${window.WRAPPER_Y + panY}px) scale(${zoom})`;
+    gateEffect();
+  }
+
+  // --- THE EFFECT, ON A PHONE ---
+  // On a phone screen the page's effect (work's bars, play's circles,
+  // learn's light) running over a stack of project pictures and copy is more
+  // than the screen can hold. So once the opening screen has scrolled away
+  // the effect steps out -- body.effect-off, which each page's stylesheet
+  // fades its layer out on and its hold refuses to start under -- and comes
+  // back when the reader returns to the top. A desktop screen keeps it
+  // throughout.
+  const phone = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
+  const headerEl = document.getElementById('header-section');
+  let effectOff = false;
+  function gateEffect() {
+    if (!headerEl) return;
+    const off = phone.matches && headerEl.getBoundingClientRect().bottom < window.innerHeight * 0.35;
+    if (off === effectOff) return;
+    effectOff = off;
+    document.body.classList.toggle('effect-off', off);
   }
 
   // How far the content may be dragged before it is off its own edges. Slack

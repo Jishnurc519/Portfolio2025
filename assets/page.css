@@ -353,6 +353,15 @@ body.inverted-theme .behance-link:focus-visible { color: var(--accent-alt); }
 }
 .nav-count-all { opacity: 0.55; }
 
+/* --- PAST THE OPENING SCREEN, ON A PHONE ---
+   assets/scroll-nav.js sets body.effect-off once the opening screen has
+   scrolled away on a phone, and the page's effect layer steps out until the
+   reader is back at the top. */
+#bar-canvas, #pack-canvas, #light-canvas { transition: opacity 0.4s ease; }
+body.effect-off #bar-canvas, body.effect-off #pack-canvas, body.effect-off #light-canvas {
+  opacity: 0;
+}
+
 /* --- ZOOMED --- */
 /* While the content is pinched open, the hover fan and the card lift would
    fight the pan for the same fingers. */

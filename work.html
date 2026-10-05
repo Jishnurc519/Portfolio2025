@@ -295,6 +295,9 @@
       }, { passive: true });
 
       const down = (e) => {
+        // Not while the effect is stepped out (a phone, past the opening
+        // screen): there is nothing to show the charge, so no hold either.
+        if (document.body.classList.contains('effect-off')) return;
         // The back link and the mobile chevrons are targets, not ground. Cards
         // are held over freely: scroll-nav.js cancels their click once the
         // charge has passed ~200, which is what makes a hold over a card a

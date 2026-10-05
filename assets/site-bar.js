@@ -70,12 +70,11 @@
     }
 
     /* Narrow screens: the wordmark keeps the left corner, the sections move
-       to the right, and the mobile up-chevron steps down under them both. */
+       to the right. */
     @media (max-width: 700px) {
       .site-mark { left: 16px; font-size: 15px; }
       .site-nav-bar { left: auto; right: 16px; transform: none; gap: 16px; }
       .site-nav-bar a { font-size: 14px; }
-      .mobile-nav-zone.nav-top { top: 52px; }
     }
     /* 320-wide phones: both a size down, so they never meet. */
     @media (max-width: 360px) {

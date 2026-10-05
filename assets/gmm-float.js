@@ -172,6 +172,41 @@
     el.classList.add('live');
   }, reduce ? 0 : DELAY);
 
+  // --- the pictures are walls too ---
+  // It drifts over type and ground, but a photograph or a clip turns it
+  // back, the way the screen's edges do. Whichever side it went in by the
+  // least is the side it came through, so that is the axis it bounces on.
+  // The pictures move under it as the page slides, and one can arrive on
+  // top of it; then it is pushed back out quickly rather than in one jump,
+  // so it reads as being shoved aside rather than teleported.
+  const PICTURES = '.screen-media, .behance-frame, .frames figure, .bleed, .onward img, .posts .post';
+  let pictures = [];
+  const findPictures = () => { pictures = [].slice.call(document.querySelectorAll(PICTURES)); };
+  findPictures();
+  window.addEventListener('load', findPictures);
+  window.addEventListener('resize', findPictures);
+  function bounceOffPictures(w, h, W, H, dt) {
+    const PAD = 6, SHOVE = 900 * dt;
+    for (let i = 0; i < pictures.length; i++) {
+      const r = pictures[i].getBoundingClientRect();
+      if (r.width < 2 || r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) continue;
+      const left = r.left - PAD, right = r.right + PAD, top = r.top - PAD, bottom = r.bottom + PAD;
+      if (x + w <= left || x >= right || y + h <= top || y >= bottom) continue;
+      const outL = x + w - left, outR = right - x, outT = y + h - top, outB = bottom - y;
+      const ox = Math.min(outL, outR), oy = Math.min(outT, outB);
+      if (ox < oy) {
+        const dir = outL < outR ? -1 : 1;
+        x += dir * Math.min(ox, SHOVE);
+        // Only turn round if it is heading in; otherwise it is already leaving.
+        if (Math.sign(Math.cos(a)) === -dir) a = Math.PI - a;
+      } else {
+        const dir = outT < outB ? -1 : 1;
+        y += dir * Math.min(oy, SHOVE);
+        if (Math.sign(Math.sin(a)) === -dir) a = -a;
+      }
+    }
+  }
+
   (function tick(now) {
     requestAnimationFrame(tick);
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -201,6 +236,7 @@
         if (x > W - w - 8) { x = W - w - 8; a = Math.PI - a; }
         if (y < 60) { y = 60; a = -a; }
         if (y > H - h - 8) { y = H - h - 8; a = -a; }
+        bounceOffPictures(w, h, W, H, dt);
       }
     }
     el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' +

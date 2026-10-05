@@ -46,6 +46,28 @@
     /* Under the canvas, which paints its frames (see the showreel in the
        script below). */
     #stage-container .reel { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    /* The reel's sound, off until asked for: the GMMBBQ speaker, with its
+       curls only while the sound is on. Ink by difference like the rest of
+       the page's marks, so it reads on both sides -- the light side has the
+       reel too now, heard through the shapes the pointer draws. */
+    .reel-sound {
+      /* A 64 x 56 target around a mark half that size, set so the mark sits
+         where it always has: the corner a thumb reaches least accurately. */
+      position: fixed; left: max(4px, env(safe-area-inset-left));
+      bottom: max(3px, env(safe-area-inset-bottom)); z-index: 300;
+      width: 64px; height: 56px; padding: 0; border: 0; background: none;
+      color: #ffffff; mix-blend-mode: difference; cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.3s ease;
+    }
+    /* The mark stands upright, sound coming off the top; here it is turned a
+       quarter round to face across the page the way a speaker icon does. */
+    .reel-sound svg {
+      position: absolute; left: 50%; top: 50%; width: 26px; height: 33px;
+      margin: -16.5px 0 0 -13px; overflow: visible; transform: rotate(90deg);
+    }
+    .reel-sound .curls { opacity: 0; transition: opacity 0.2s ease; }
+    .reel-sound[aria-pressed="true"] .curls { opacity: 1; }
+    .reel-sound:hover, .reel-sound:focus-visible { transform: translateY(-3px); }
     canvas { display: block; }
 
     /* The canvas draws every glyph itself, so the real text is laid out here
@@ -175,13 +197,18 @@
       .social-links img { width: 20px; height: 20px; }
     }
   </style>
-  <script src="assets/site-bar.js" defer></script>
 </head>
 <body>
 
   <div id="stage-container"></div>
 
   <div class="content-overlay" id="content-overlay">
+    <nav class="site-nav">
+      <a href="work.html" class="nav-link">work</a>
+      <a href="play.html" class="nav-link">play</a>
+      <a href="facilitation.html" class="nav-link">learn</a>
+    </nav>
+
     <div id="hero">
       <div id="stack">
         <h1 id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></h1>
@@ -278,7 +305,21 @@
       // and covered is not the same as off screen.
       const REEL_ALPHA = 0.42;
       const saveData = navigator.connection && navigator.connection.saveData;
-      let reel = null;
+      let reel = null, reelB = null, btn = null;
+      // The beat: the average length of a cut, written beside the reel by
+      // scripts/build_showreel.py, so anything timed to it moves at the rate
+      // the reel itself cuts. The fallback is the same number, for a page
+      // opened from disk, where the fetch is refused.
+      let BEAT = 0.566;
+      // Where each cut starts, from the same file; until it arrives, every
+      // beat is taken to be a cut.
+      let CUT_STARTS = null;
+      // What the reel is doing; see "what a hold does to it" below.
+      //   play     running, sound in step
+      //   stutter  a hold under way
+      //   tape     the charge is complete; running down
+      //   rest     the light side, where there is no reel
+      let mode = 'play';
       if (!reduceMotion && !saveData) {
         reel = document.createElement('video');
         reel.className = 'reel';
@@ -287,29 +328,432 @@
         reel.setAttribute('aria-hidden', 'true');
         reel.preload = 'auto';
         stage.insertBefore(reel, stage.firstChild);
+        // A second copy, which a hold's repeats take turns with (below).
+        reelB = reel.cloneNode();
+        reelB.autoplay = false;
+        stage.insertBefore(reelB, reel);
         const pickReel = () => {
           const want = 'assets/showreel/reel-' + (window.innerWidth / window.innerHeight < 0.9 ? 'tall' : 'wide') + '.mp4';
           if (reel.getAttribute('src') !== want) {
-            reel.src = want;
-            reel.play().catch(() => {});
+            reel.src = want; reelB.src = want;
+            if (mode === 'play') reel.play().catch(() => {});
           }
         };
         pickReel();
         window.addEventListener('resize', pickReel);
+        fetch('assets/showreel/reel.json').then((r) => r.json())
+          .then((j) => {
+            if (j && j.beat > 0.1) BEAT = j.beat;
+            if (j && Array.isArray(j.cuts)) {
+              let t = 0;
+              CUT_STARTS = j.cuts.map((d) => { const at = t; t += d; return at; });
+            }
+          }).catch(() => {});
+
+        // Sound, which a browser will only allow once it has been asked for:
+        // the GMMBBQ speaker, turned to face across the page like any speaker,
+        // with its curls only while the sound is on.
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'reel-sound';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('aria-label', 'Showreel sound');
+        btn.innerHTML = '<svg viewBox="0 0 900 1153" aria-hidden="true" focusable="false">'
+          + '<path class="curls" d="M76 186 A660 660 0 0 1 824 186 M158 296 A560 560 0 0 1 742 296 M268 414 A300 300 0 0 1 632 414"'
+          + ' fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round"/>'
+          + '<path d="M30 530 L870 530 L630 862 L630 1126 L270 1126 L270 862 Z"'
+          + ' fill="currentColor" stroke="currentColor" stroke-width="44" stroke-linejoin="round"/></svg>';
+        // A press on it is a press on a button, not the start of a hold.
+        ['pointerdown', 'mousedown', 'touchstart'].forEach((t) =>
+          btn.addEventListener(t, (e) => e.stopPropagation(), { passive: true }));
+        btn.addEventListener('click', toggleSound);
+        document.body.appendChild(btn);
         document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') reel.play().catch(() => {});
+          if (document.visibilityState === 'visible' && mode === 'play') reel.play().catch(() => {});
         });
       }
+
+      // --- the reel's sound ---
+      // Played from the reel's own soundtrack, decoded once, rather than out
+      // of the <video>, because what a hold does to it (below) needs a sound
+      // that can be looped and slowed to a stop, and a reverb that can keep
+      // ringing after the sound itself has gone. The <video> stays muted and
+      // the two are kept in step.
+      //
+      // Two reverbs, both impulses of noise made here rather than fetched:
+      //
+      //   room   about 2.5 seconds to die away, always on under the reel, so
+      //          it sits somewhere without smearing; and short enough that on
+      //          the light side, when the shapes have gone, the sound has
+      //          gone too
+      //   hall   about 14 seconds, fed only while a hold is chopping the
+      //          sound and through the end of the charge. When the page turns
+      //          over the sound stops and this is what is left, still ringing
+      //          long after the light side has come in
+      const WET = 0.3, HALL_HOLD = 0.6, HALL_END = 1.0;
+      let soundOn = false, ac = null, abuf = null, master = null, input = null, wet = null;
+      let src = null, srcCtx0 = 0, srcPos0 = 0, decoding = null, gate = null, hall = null;
+      let decodeFailed = false;
+      const hallTo = (v, tc) => { if (hall) hall.gain.setTargetAtTime(v, ac.currentTime, tc); };
+
+      function impulse(secs, rt60) {
+        const n = Math.floor(ac.sampleRate * secs);
+        const b = ac.createBuffer(2, n, ac.sampleRate);
+        // The decay as a running multiplier rather than an exp() a sample:
+        // the hall is a million and a half samples, made on the click.
+        const k = Math.exp(-6.91 / (rt60 * ac.sampleRate));
+        for (let ch = 0; ch < 2; ch++) {
+          const d = b.getChannelData(ch);
+          let env = 1;
+          for (let i = 0; i < n; i++) {
+            d[i] = (Math.random() * 2 - 1) * env;
+            env *= k;
+          }
+        }
+        return b;
+      }
+      function ensureAudio() {
+        if (decoding) return decoding;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return (decoding = Promise.resolve(false));
+        ac = new AC();
+        master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+        input = ac.createGain();
+        // The chop: every source goes through this on its way in.
+        gate = ac.createGain(); gate.connect(input);
+        const dry = ac.createGain(); dry.gain.value = 0.85;
+        const room = ac.createConvolver(); room.buffer = impulse(3, 2.5);
+        wet = ac.createGain(); wet.gain.value = WET;
+        const hallVerb = ac.createConvolver(); hallVerb.buffer = impulse(16, 14);
+        hall = ac.createGain(); hall.gain.value = 0;
+        input.connect(dry); dry.connect(master);
+        input.connect(room); room.connect(wet); wet.connect(master);
+        input.connect(hall); hall.connect(hallVerb); hallVerb.connect(master);
+        decoding = fetch(reel.currentSrc || reel.src)
+          .then((r) => r.arrayBuffer())
+          .then((data) => new Promise((ok, fail) => ac.decodeAudioData(data, ok, fail)))
+          .then((b) => { abuf = b; return true; })
+          .catch(() => { decodeFailed = true; return false; });
+        return decoding;
+      }
+      function stopSrc() {
+        if (!src) return;
+        try { src.stop(); } catch (e) { /* already stopped */ }
+        src.disconnect();
+        src = null;
+      }
+      function playFrom(pos) {
+        if (!abuf || !soundOn) return;
+        stopSrc();
+        src = ac.createBufferSource();
+        src.buffer = abuf; src.loop = true;
+        src.loopStart = 0; src.loopEnd = abuf.duration;
+        src.connect(gate);
+        const p = ((pos % abuf.duration) + abuf.duration) % abuf.duration;
+        src.start(0, p);
+        srcCtx0 = ac.currentTime; srcPos0 = p;
+      }
+      function toggleSound() {
+        soundOn = !soundOn;
+        btn.setAttribute('aria-pressed', String(soundOn));
+        if (!soundOn) {
+          reel.muted = true;
+          if (ac) {
+            master.gain.cancelScheduledValues(ac.currentTime);
+            master.gain.setTargetAtTime(0, ac.currentTime, 0.06);
+            setTimeout(() => { if (!soundOn) stopSrc(); }, 400);
+          }
+          return;
+        }
+        ensureAudio().then((ok) => {
+          if (!soundOn) return;
+          if (ac && ac.state === 'suspended') ac.resume();
+          // No decoder for it: the <video>'s own sound, with nothing done to it.
+          if (!ok) { reel.muted = mode !== 'play'; return; }
+          const t = ac.currentTime;
+          master.gain.cancelScheduledValues(t);
+          master.gain.setTargetAtTime(1, t, 0.05);
+          input.gain.cancelScheduledValues(t);
+          input.gain.setValueAtTime(mode === 'rest' ? 0 : 1, t);
+          if (mode === 'play' || mode === 'rest') playFrom(reel.currentTime);
+        });
+      }
+      // How far apart two positions are on a loop of length d.
+      const wrapDiff = (a, b, d) => {
+        let x = (a - b) % d;
+        if (x > d / 2) x -= d;
+        if (x < -d / 2) x += d;
+        return x;
+      };
+
+      // --- what a hold does to it ---
+      // Pressing on the dark side does to the reel what Gross Beat does to a
+      // track: it plays at its own speed throughout -- nothing is sped up or
+      // slowed, so nothing changes pitch -- and only where it reads from
+      // moves, in time with the reel's beat (the average cut):
+      //
+      //   repeat   the slice under the playhead repeats, sound and picture,
+      //            and the repeats shorten as the charge builds -- half a
+      //            beat, a quarter, an eighth, a sixteenth -- gated so every
+      //            repeat is a chop
+      //   sweep    every beat the read point jumps two cuts on -- every half
+      //            beat once the charge is past halfway -- so a hold travels
+      //            through the reel clip by clip instead of stuttering on one
+      //            moment
+      //   the end  when the charge completes the repeats crush to a
+      //            thirty-second for one beat, then the sound cuts into the
+      //            reverb tail and the picture holds while the page turns
+      //
+      // Let go early and the reel carries on from the cut it had reached.
+      //
+      // The picture repeats by two copies of the reel taking turns: one plays
+      // the slice while the other waits parked at its start, so every repeat
+      // starts at once instead of waiting on a seek. The reel has a keyframe
+      // at every cut (scripts/build_showreel.py), so the jumps land at once
+      // too. Repeats too short to play (a sixteenth of a beat) hold the
+      // slice's first frame, which is what a stutter that fast looks like.
+      const PLAYABLE = 0.06;
+      let gb = null, gateOpen = true, shown = null;
+      function sliceFor(c) {
+        return BEAT * (c < 0.3 ? 1 / 2 : c < 0.55 ? 1 / 4 : c < 0.8 ? 1 / 8 : 1 / 16);
+      }
+      const cutStarts = () => {
+        if (CUT_STARTS) return CUT_STARTS;
+        const n = Math.max(1, Math.floor(((reel && reel.duration) || 12) / BEAT));
+        return Array.from({ length: n }, (_, i) => i * BEAT);
+      };
+      function cutAt(t) {
+        const st = cutStarts();
+        let i = 0;
+        while (i + 1 < st.length && st[i + 1] <= t) i++;
+        return i;
+      }
+      function setGate(open) {
+        gateOpen = open;
+        if (gate) gate.gain.setTargetAtTime(open ? 1 : 0, ac.currentTime, 0.004);
+      }
+      // One repeat of sound: `len` seconds from `pos`, at its own speed, faded
+      // in and out over a few milliseconds so the chop is a chop and not a
+      // click.
+      function blip(pos, len) {
+        const t = ac.currentTime;
+        const s = ac.createBufferSource(), g = ac.createGain();
+        s.buffer = abuf;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(1, t + 0.003);
+        g.gain.setValueAtTime(1, t + Math.max(0.004, len - 0.005));
+        g.gain.linearRampToValueAtTime(0, t + len);
+        s.connect(g); g.connect(gate);
+        s.start(t, pos, len + 0.01);
+        if (src) { try { src.stop(t + 0.003); } catch (e) { /* done */ } }
+        src = s;
+      }
+      function park(v, pos) {
+        if (!v.paused) v.pause();
+        if (Math.abs(v.currentTime - pos) > 0.01) v.currentTime = pos;
+      }
+      const other = (v) => (v === reel ? reelB : reel);
+      function repeat(now) {
+        const pos = cutStarts()[gb.cut] || 0;
+        gb.stepAt = now;
+        if (soundOn && abuf) blip(pos, gb.len);
+        if (gb.len >= PLAYABLE) {
+          const next = other(shown);
+          if (Math.abs(next.currentTime - pos) > 0.03) next.currentTime = pos;
+          next.play().catch(() => {});
+          const prev = shown;
+          shown = next;
+          park(prev, pos);
+        } else {
+          park(shown, pos);
+          park(other(shown), pos);
+        }
+      }
+      function startStutter(now) {
+        gb = { cut: cutAt(reel.currentTime), groupAt: now, stepAt: now, len: BEAT / 2 };
+        mode = 'stutter';
+        shown = reel;
+        park(reelB, cutStarts()[gb.cut] || 0);
+        hallTo(HALL_HOLD, 0.1);
+        repeat(now);
+      }
+      function stutterTick(now, c) {
+        gb.len = sliceFor(c);
+        if (now - gb.groupAt >= BEAT * (c < 0.55 ? 1 : 0.5) * 1000) {
+          gb.cut = (gb.cut + 2) % cutStarts().length;
+          gb.groupAt = now;
+          repeat(now);
+        } else if (now - gb.stepAt >= gb.len * 1000) {
+          repeat(now);
+        }
+        const open = (now - gb.stepAt) / 1000 / gb.len < 0.7;
+        if (open !== gateOpen) setGate(open);
+      }
+      // Back to one reel playing straight through, from wherever the copy on
+      // screen had got to.
+      function settle() {
+        if (shown && shown !== reel) reel.currentTime = shown.currentTime;
+        shown = reel;
+        park(reelB, reelB.currentTime);
+        reel.play().catch(() => {});
+      }
+      function endStutter() {
+        gb = null; mode = 'play';
+        hallTo(0, 0.05);
+        setGate(true);
+        settle();
+        if (abuf && soundOn) {
+          playFrom(reel.currentTime);
+        }
+      }
+      // The charge is complete: one beat of the shortest repeats, then the
+      // sound goes into the reverb and the picture holds.
+      function startTape(now) {
+        if (!reel || inverted || mode === 'rest') return;
+        if (mode !== 'stutter') startStutter(now);
+        mode = 'tape';
+        gb.outroAt = now;
+        gb.len = BEAT / 32;
+        repeat(now);
+        if (soundOn && abuf) {
+          const t = ac.currentTime, end = t + BEAT;
+          input.gain.cancelScheduledValues(t);
+          input.gain.setValueAtTime(1, end);
+          input.gain.setTargetAtTime(0, end, 0.03);
+          hallTo(HALL_END, 0.1);
+        }
+      }
+      function tapeTick(now) {
+        if (now - gb.outroAt < BEAT * 1000) {
+          if (now - gb.stepAt >= gb.len * 1000) repeat(now);
+          const open = (now - gb.stepAt) / 1000 / gb.len < 0.5;
+          if (open !== gateOpen) setGate(open);
+        } else if (!gateOpen) {
+          setGate(true);
+        }
+      }
+      // The page has turned to its light side. The tail rings out, and the
+      // reel carries on underneath, seen and heard only through the shapes the
+      // pointer draws (drawReelInShapes).
+      function reelRest() {
+        if (!reel) return;
+        mode = 'rest'; gb = null; gateOpen = true;
+        settle();
+        // No element sound over here: the light side is heard only through
+        // the shapes, which the decoded sound can do and the <video> cannot.
+        reel.muted = true;
+        hallTo(0, 0.05);
+        if (ac) input.gain.setTargetAtTime(0, ac.currentTime, 0.03);
+        // A fresh source once the end has gone into the reverb; silent until
+        // there is a shape to hear it through.
+        setTimeout(() => { if (mode === 'rest') { if (gate) gate.gain.value = 1; playFrom(reel.currentTime); } }, 300);
+      }
+      // Back to the dark side -- called as the turn back begins, not when it
+      // lands, so the reel and its sound open up with the dark shapes.
+      function reelWake() {
+        if (!reel) return;
+        mode = 'play'; gateOpen = true;
+        settle();
+        if (soundOn && abuf) {
+          const t = ac.currentTime;
+          gate.gain.setValueAtTime(1, t);
+          input.gain.cancelScheduledValues(t);
+          input.gain.setTargetAtTime(1, t, 0.25);
+          if (!src) playFrom(reel.currentTime);
+        } else if (soundOn && decodeFailed) {
+          reel.muted = false;
+        }
+      }
+      // Keep the sound in step with the picture; they drift, and the picture
+      // starts over whenever the reel is swapped for the other shape.
+      function keepInStep() {
+        if (!src || !abuf) return;
+        const pos = srcPos0 + (ac.currentTime - srcCtx0);
+        if (Math.abs(wrapDiff(pos, reel.currentTime, abuf.duration)) > 0.09) playFrom(reel.currentTime);
+      }
+      function reelTick(now, holding, c) {
+        if (!reel) return;
+        if (inverted) {
+          // The light side: as loud as there is shape to hear it through.
+          if (mode === 'rest' && src && soundOn) {
+            keepInStep();
+            input.gain.setTargetAtTime(0.8 * lightAmount, ac.currentTime, 0.05);
+          }
+          return;
+        }
+        if (mode === 'rest') return;
+        if (mode === 'tape') { tapeTick(now); return; }
+        if (mode === 'play') {
+          if (holding && turning === 0 && reel.readyState >= 2) startStutter(now);
+          else { keepInStep(); return; }
+        }
+        if (mode === 'stutter') {
+          if (!holding) endStutter();
+          else stutterTick(now, c);
+        }
+      }
+
+      // --- the reel on the light side ---
+      // Seen only through the dark shapes: the marks are drawn again, white,
+      // into a half-size mask, the reel is laid into them, and the result is
+      // screened onto the page like the reel on the dark side. Returns how
+      // much shape there is, which is how loud the sound is over here: no
+      // shapes, no sound, and the more the pointer is drawing the more there
+      // is of it.
+      const maskCv = document.createElement('canvas');
+      const mctx = maskCv.getContext('2d');
+      let lightAmount = 0;
+      function drawReelInShapes(W, H, discR) {
+        if (!reel || reel.readyState < 2 || !reel.videoWidth) return 0;
+        const sc = 0.5;
+        const w = Math.max(1, Math.round(W * sc)), h = Math.max(1, Math.round(H * sc));
+        if (maskCv.width !== w || maskCv.height !== h) { maskCv.width = w; maskCv.height = h; }
+        mctx.setTransform(1, 0, 0, 1, 0, 0);
+        mctx.globalCompositeOperation = 'source-over';
+        mctx.clearRect(0, 0, w, h);
+        mctx.setTransform(sc, 0, 0, sc, 0, 0);
+        let amount = 0;
+        for (let i = 0; i < marks.length; i++) {
+          const k = markScale(marks[i]);
+          if (k <= 0.001) continue;
+          drawMark(marks[i], '#ffffff', mctx);
+          amount += k * marks[i].size;
+        }
+        if (discR > 0) {
+          mctx.fillStyle = '#ffffff';
+          mctx.beginPath(); mctx.arc(turnX, turnY, discR, 0, 6.2832); mctx.fill();
+          amount += discR * 4;
+        }
+        if (amount <= 0) return 0;
+        const img = reel;
+        const vw = reel.videoWidth, vh = reel.videoHeight;
+        const s = Math.max(W / vw, H / vh);
+        mctx.globalCompositeOperation = 'source-in';
+        mctx.drawImage(img, (W - vw * s) / 2, (H - vh * s) / 2, vw * s, vh * s);
+        mctx.globalCompositeOperation = 'source-over';
+        ctx.save();
+        ctx.globalAlpha = REEL_ALPHA;
+        ctx.globalCompositeOperation = 'screen';
+        ctx.drawImage(maskCv, 0, 0, W, H);
+        ctx.restore();
+        // A few marks are a little sound; a page of them is most of it.
+        return Math.min(1, amount / (unit() * 0.5));
+      }
+
       // Cover the screen with the current frame, the way object-fit does.
       function drawReel(W, H) {
         if (!reel || reel.readyState < 2 || !reel.videoWidth) return;
+        // Shut with the sound on every chop of a hold.
+        if (!gateOpen) return;
+        // During a hold, whichever copy is playing the repeat.
+        const img = shown && shown.readyState >= 2 ? shown : reel;
         const vw = reel.videoWidth, vh = reel.videoHeight;
         const s = Math.max(W / vw, H / vh);
         const dw = vw * s, dh = vh * s;
         ctx.save();
         ctx.globalAlpha = REEL_ALPHA;
         ctx.globalCompositeOperation = 'screen';
-        ctx.drawImage(reel, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
         ctx.restore();
       }
 
@@ -510,16 +954,17 @@
       }
       resize();
 
-      function drawMark(m, colour) {
+      function drawMark(m, colour, c) {
+        c = c || ctx;
         const s = markScale(m);
         if (s <= 0.001) return;
-        ctx.save();
-        ctx.translate(m.x, m.y);
-        ctx.rotate(m.rot);
-        ctx.fillStyle = colour;
-        ctx.strokeStyle = colour;
-        BRUSHES[m.brush](ctx, m.size * s);
-        ctx.restore();
+        c.save();
+        c.translate(m.x, m.y);
+        c.rotate(m.rot);
+        c.fillStyle = colour;
+        c.strokeStyle = colour;
+        BRUSHES[m.brush](c, m.size * s);
+        c.restore();
       }
 
       function frame(now) {
@@ -582,8 +1027,12 @@
             // other mode everywhere. Adopting it changes nothing on screen.
             inverted = 1 - inverted;
             body.style.background = inverted ? LIGHT : DARK;
-            // For the cursor's hint, which takes its light-side colour off this.
+            // For the cursor's hint, which takes its light-side colour off this,
+            // and the reel's sound button, which goes with the reel.
             body.classList.toggle('inverted-theme', !!inverted);
+            // The reel is only on the dark side, so its sound is too: on the
+            // light side only the reverb tail is left, ringing out.
+            if (inverted) reelRest(); else if (mode === 'rest') reelWake();
             marks.length = 0;
           }
         } else {
@@ -599,6 +1048,9 @@
             // stop in the middle of the gesture: everything built up during the
             // hold vanished for a beat before the turn began.
             turning = TURN_SECS; turnSpawned = 0;
+            // The stutter runs down into the turn (the showreel, above); and a
+            // turn back to the dark side brings the reel in as it begins.
+            if (inverted) reelWake(); else startTape(now);
             // A key press has no position. Turning from the middle is the
             // honest answer for one -- and the pointer, when there is one, is
             // still where it started from.
@@ -615,6 +1067,7 @@
         // counts brush marks. Set outside the branch above so the turn, which
         // zeroes the charge as it begins, reports zero too.
         if (window.HOLD_STATE) window.HOLD_STATE.charge = charge;
+        reelTick(now, isHolding || !!(window.KEY_HOLD && window.KEY_HOLD.held), charge / CHARGE_LIMIT);
 
         // Read the tones only now. Taking them at the top of the frame meant
         // that on the frame the page turned over, the state had already
@@ -660,6 +1113,9 @@
             ctx.fill();
           }
         }
+        // On the light side the reel is only inside the dark shapes -- the
+        // brush marks, and on a turn back the barrage and the closing disc.
+        lightAmount = inverted ? drawReelInShapes(W, H, discR) : 0;
 
         // --- the text, last and in difference ---
         // Whatever it lands on it comes out the opposite: LIGHT over the dark

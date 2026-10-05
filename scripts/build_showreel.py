@@ -11,13 +11,16 @@ Why one pre-cut file rather than cutting live in the browser: switching a
 <video> to a new source every half second stalls on every switch while it
 seeks, and preloading twenty full clips to cut from would put most of the
 site's video on the front page. A dozen seconds already cut is one small
-download that loops on its own.
+download that loops on its own. The sound comes with each cut (silence for a
+clip that has none), faded for a few milliseconds at each end so the cuts do
+not click, and levelled across the whole reel.
 
 To change the reel, edit CUTS: the clip under assets/ (no extension), where in
 it to start as a fraction of its length, and how long the cut lasts. Keep
 every cut under a second, and alternate bright and dark, warm and cold, so
 the cuts read as cuts.
 """
+import json
 import os
 import subprocess
 import sys
@@ -75,9 +78,17 @@ def duration(src):
     return float(out)
 
 
+def has_audio(src):
+    out = subprocess.run(
+        [FFPROBE, "-v", "error", "-select_streams", "a", "-show_entries", "stream=index",
+         "-of", "csv=p=0", str(src)], capture_output=True, text=True).stdout.strip()
+    return bool(out)
+
+
 def build(name, w, h):
     args = [FFMPEG, "-v", "error", "-y"]
     filters = []
+    silent = []   # cuts with no sound of their own get silence, inputs added after
     for i, (clip, at, secs) in enumerate(CUTS):
         if secs >= 1:
             sys.exit(f"{clip}: a cut must be under a second, not {secs}")
@@ -89,12 +100,36 @@ def build(name, w, h):
         filters.append(
             f"[{i}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
             f"fps={FPS},setsar=1,format=yuv420p,trim=duration={secs:.3f},setpts=PTS-STARTPTS[v{i}]")
-    joined = "".join(f"[v{i}]" for i in range(len(CUTS)))
-    filters.append(f"{joined}concat=n={len(CUTS)}:v=1:a=0[out]")
+        # The sound cuts with the picture. A few milliseconds of fade at each
+        # end, or every cut is a click.
+        a_in = f"[{i}:a]" if has_audio(src) else None
+        if a_in is None:
+            silent.append((i, secs))
+            continue
+        filters.append(
+            f"{a_in}atrim=duration={secs:.3f},asetpts=PTS-STARTPTS,aresample=48000,"
+            f"aformat=channel_layouts=stereo,afade=t=in:d=0.015,"
+            f"afade=t=out:st={secs - 0.02:.3f}:d=0.02[a{i}]")
+    for k, (i, secs) in enumerate(silent):
+        args += ["-f", "lavfi", "-t", f"{secs:.3f}", "-i", "anullsrc=r=48000:cl=stereo"]
+        filters.append(f"[{len(CUTS) + k}:a]asetpts=PTS-STARTPTS[a{i}]")
+    joined = "".join(f"[v{i}][a{i}]" for i in range(len(CUTS)))
+    filters.append(f"{joined}concat=n={len(CUTS)}:v=1:a=1[out][aj]")
+    # One level for the whole reel, so a quiet clip and a loud one do not
+    # jump out at each other every half second.
+    filters.append("[aj]loudnorm=I=-18:TP=-1.5:LRA=11,aresample=48000[aout]")
     out = OUT / name
-    args += ["-filter_complex", ";".join(filters), "-map", "[out]", "-an",
+    # A keyframe at the start of every cut, and at least every half second:
+    # the front page's hold jumps the playhead from cut to cut, and a jump to
+    # a keyframe lands at once instead of decoding its way there.
+    starts, t = [], 0.0
+    for _, _, secs in CUTS:
+        starts.append(round(t, 3))
+        t += secs
+    args += ["-filter_complex", ";".join(filters), "-map", "[out]", "-map", "[aout]",
              "-c:v", "libx264", "-preset", "slow", "-crf", "28", "-pix_fmt", "yuv420p",
-             "-movflags", "+faststart", str(out)]
+             "-g", "15", "-force_key_frames", ",".join(str(s) for s in starts),
+             "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(out)]
     subprocess.run(args, check=True)
     total = sum(s for _, _, s in CUTS)
     print(f"  wrote {out.relative_to(ROOT)}  ({len(CUTS)} cuts, {total:.1f}s, "
@@ -105,6 +140,14 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, (w, h) in FORMATS.items():
         build(name, w, h)
+    # The reel's tempo, for the front page: its beat is the average length of
+    # a cut, so the stutter on a hold (index.html) chops at the rate the reel
+    # itself is cutting.
+    durs = [s for _, _, s in CUTS]
+    meta = {"beat": round(sum(durs) / len(durs), 4), "duration": round(sum(durs), 3),
+            "cuts": [round(s, 3) for s in durs]}
+    (OUT / "reel.json").write_text(json.dumps(meta, indent=1) + "\n", encoding="utf-8")
+    print(f"  wrote assets/showreel/reel.json  (beat {meta['beat']}s, {60 / meta['beat']:.0f} bpm)")
 
 
 if __name__ == "__main__":

@@ -39,21 +39,7 @@ html, body {
 }
 
 /* --- GETTING OUT --- */
-.project-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
-  display: flex; align-items: center; gap: 18px;
-  padding: 14px max(20px, 5vw); pointer-events: none;
-  mix-blend-mode: difference;
-}
-.project-nav > * { pointer-events: auto; }
-
-.home-mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; margin-left: -11px; color: var(--tone-swap);
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.home-mark svg { width: 20px; height: 20px; display: block; }
-.home-mark:hover { transform: rotate(180deg); }
+/* The wordmark (home) and work / play / learn come from assets/site-bar.js. */
 
 .back-btn {
   /* 44px tall with a thumb's worth of padding — it used to be a 40x22 target
@@ -532,19 +518,17 @@ blockquote cite {
 .back-btn:focus-visible {
   font-weight: 800; opacity: 1;
 }
-.home-mark:focus-visible { transform: rotate(180deg); }
 .pager-link:focus-visible .pager-name { color: var(--accent); font-weight: 700; }
 .still:focus-visible img { outline: 2px solid var(--accent); outline-offset: 3px; opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-mark, .lightbox-close, .pager-link, .still img { transition: none; }
+  .lightbox-close, .pager-link, .still img { transition: none; }
   .story h2.flash { animation: none; }
-  .home-mark:hover, .lightbox-close:hover { transform: none; }
+  .lightbox-close:hover { transform: none; }
 }
 
 @media (max-width: 768px) {
   #main-wrapper { padding: 16vh 6vw 10vh; }
-  .project-nav { gap: 6px; padding: 8px 4vw; }
   .back-btn { font-size: 16px; padding: 11px 8px; }
   .gallery { columns: 2 160px; column-gap: 10px; }
   .still, .gallery video { margin-bottom: 10px; }

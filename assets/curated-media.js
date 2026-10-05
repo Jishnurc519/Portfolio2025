@@ -641,6 +641,19 @@ const CURATED_MEDIA = {
       }
     }
   },
+  "jishnu/unconference": {
+    "items": {
+      "touch-1": {
+        "type": "video",
+        "src": "assets/jishnu/unconference/c-touch-1.mp4",
+        "poster": "assets/jishnu/unconference/c-touch-1-poster.jpg",
+        "size": [
+          1080,
+          608
+        ]
+      }
+    }
+  },
   "onebyzero/sixthsense": {
     "items": {
       "img-06": {

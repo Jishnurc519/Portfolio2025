@@ -881,18 +881,23 @@ neighbours and the remaining holes are packed with circles, coarse to fine
 
 ## 15. The site bar, project screens, the showreel
 
-**The site bar** (`assets/site-bar.js`) is a frosted plate across the top of
-every page -- Home, Work, Play, Learn -- after the one at the foot of
-dontmatter.eu. A darker fill behind the words shows how far down the page you
-are: list pages report it from `assets/scroll-nav.js` (a `navprogress` event,
-since they move by transform), everything else is read off the scroll
-position. The script brings its own styles; a page needs only
-`<script src="assets/site-bar.js" defer></script>`. It replaced the front
-page's three links and the section links on project pages, and on narrow
-screens it takes the whole top edge. It stops presses from reaching the
+**The site navigation** (`assets/site-bar.js`) on every page but the front
+one is written the way the front page writes it: the wordmark
+(jishnu**has**anart**page**) in the top-left corner, going home, and work /
+play / learn across the top, lowercase, with no plate behind them -- all in
+difference ink against the page's `--tone-swap`, like the cursor and the
+counter. Under the current section a hairline fills as you go down the page:
+list pages report it from `assets/scroll-nav.js` (a `navprogress` event, since
+they move by transform), everything else is read off the scroll position. The
+script brings its own styles; a page needs only
+`<script src="assets/site-bar.js" defer></script>`. On narrow screens the
+sections move to the right of the wordmark. The half-filled disc that was the
+project pages' home link is gone, and the tab icon is a lowercase j.
+It stops presses from reaching the
 window, so clicking it never starts a hold. The back links are gone; GMMBBQ
 is reached through the speaker, which says "click me or not, idc (pls click)"
-once the reader reaches the bottom of a page (assets/gmm-float.js).
+once the reader reaches the bottom of a page, and bounces off the pictures
+as well as the screen's edges (assets/gmm-float.js).
 
 **Highlights are a colour, not a plate**: `--hl` (and `--hl-alt` on the light
 side), the next of the three section colours along -- magenta on work,
@@ -924,7 +929,46 @@ hover, and story headings a short accent bar.
 of the best clips into one 12-second loop, every cut under a second, twice --
 `assets/showreel/reel-wide.mp4` and `reel-tall.mp4` (about 1.6 MB each), each
 cut cropped to fill, so portrait and landscape sources mix. Edit `CUTS` and
-rerun to change it. `index.html` draws the reel's frames into its canvas as
+rerun to change it. The reel carries each cut's sound, faded at the joins and
+levelled; it starts muted, and the speaker in the front page's bottom-left
+corner (the GMMBBQ mark turned to face across the page) turns it on, curls
+showing, and off. The script also writes `reel.json`: the reel's beat, the
+average length of a cut (0.566s, about 106 bpm).
+
+The sound is played through Web Audio from the reel's own decoded soundtrack,
+kept in step with the muted <video>, through two generated reverbs: a short
+room (about 2.5s) always under it, and a long hall (about 14s) fed only during
+a hold and the end of the charge, so the tail is still ringing well after the
+page has turned over. A hold on the dark side chops picture and
+sound together like Gross Beat -- at the reel's own speed throughout, so no
+pitch changes, only where it reads from: the slice under the playhead repeats,
+the repeats shortening from half a beat to a sixteenth as the charge builds and
+gated so each one is a chop, and every beat (every half beat past halfway) the
+read point jumps two cuts on, so a hold travels through the reel. The picture
+repeats by two copies of the reel taking turns (one plays the slice while the
+other waits parked at its start), and the reel has a keyframe at every cut so
+the jumps land at once. When the charge completes the repeats crush to a
+thirty-second for a beat, then the sound cuts into the reverb tail and the
+picture holds while the page turns.
+
+Testing it locally needs a server that answers Range requests, or the browser
+cannot seek in the video and every jump lands at 0:00 -- Python's
+`http.server` does not; GitHub Pages does.
+
+On the light side the reel is seen only inside the dark shapes the pointer
+draws (they are redrawn into a half-size mask and the reel laid into them),
+and heard only while there are shapes -- louder the more there are, never
+quite the dark side's level, and silent within a couple of seconds of the
+shapes going (measured: -98 dBFS five seconds after drawing stops). A turn
+back to the dark side is made of dark shapes too, so the reel and its sound
+open up with it from the moment it begins. Measured at a steady 60 fps
+through all of it, with the sound on (page script under 1 ms a frame).
+
+`build_curated_media.py` now converts HDR clips with libplacebo (as the
+remaster does) and keeps a clip whose source has gone missing instead of
+dropping it from `curated-media.js` -- which had silently taken the W.A.S.P.
+clips off Echoes of Earth. Unconference leads its work screen with
+`touch-1`, someone working the wall. `index.html` draws the reel's frames into its canvas as
 part of the ground (screened in, on the dark side only -- the light side is
 the description, on plain paper), under the brush marks and the type -- the type is painted last in difference
 against the canvas, so a video anywhere else would either be hidden or sit

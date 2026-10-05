@@ -1,10 +1,12 @@
-// The site bar: a small frosted plate across the top of every page (after the
-// one at the foot of dontmatter.eu). Where you can go, and -- in the darker
-// fill behind the words -- how far down this page you are.
+// The site's navigation on every page but the front one, written the way the
+// front page writes it: the wordmark in the top-left corner going home, and
+// work / play / learn across the top, lowercase, no plate behind them. Under
+// the section you are in, a thin line fills as you go down the page.
 //
-// It is its own plate rather than difference-blended ink like the rest of the
-// site's marks, because it sits over three different pairs of tones, a light
-// canvas and photographs, and has to read the same over all of them.
+// Ink by difference against the page's --tone-swap, like the rest of the
+// site's floating marks (the cursor, the counter): it comes out as the other
+// tone over either ground, over a light canvas and over a photograph, without
+// being told which way round the page is.
 //
 // Self-contained: it brings its own styles, so a page needs only
 //   <script src="assets/site-bar.js" defer></script>
@@ -12,10 +14,9 @@
 // from the site root there too.
 (function () {
   const LINKS = [
-    ['index.html', 'Home'],
-    ['work.html', 'Work'],
-    ['play.html', 'Play'],
-    ['facilitation.html', 'Learn']
+    ['work.html', 'work'],
+    ['play.html', 'play'],
+    ['facilitation.html', 'learn']
   ];
 
   // Which entry is "here". A project page counts as the section it belongs
@@ -29,69 +30,84 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .site-bar {
-      position: fixed; top: max(12px, env(safe-area-inset-top)); left: 50%;
-      transform: translateX(-50%); z-index: 500;
-      display: flex; align-items: center; gap: 2px;
-      padding: 4px 6px; border-radius: 3px; overflow: hidden; isolation: isolate;
-      background: rgba(11, 14, 19, 0.5);
-      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-      font-family: 'Clash Display', sans-serif; font-size: 15px; font-weight: 500;
-      line-height: 1; white-space: nowrap; mix-blend-mode: normal;
+    .site-mark, .site-nav-bar {
+      position: fixed; top: max(18px, env(safe-area-inset-top)); z-index: 500;
+      font-family: 'Clash Display', sans-serif; line-height: 1;
+      color: var(--tone-swap, #ffffff); mix-blend-mode: difference;
       -webkit-user-select: none; user-select: none; touch-action: manipulation;
     }
-    .site-bar-fill {
-      position: absolute; inset: 0; z-index: -1;
-      background: rgba(11, 14, 19, 0.82);
+    /* jishnu has an art page: jishnu, has (bold), an, art, page (bold). */
+    .site-mark {
+      left: max(20px, 5vw); padding: 8px 0;
+      font-size: clamp(16px, 1.6vw, 19px); font-weight: 400;
+      text-decoration: none; white-space: nowrap;
+      transition: transform 0.3s ease;
+    }
+    .site-mark b { font-weight: 700; }
+    .site-mark:hover, .site-mark:focus-visible { transform: translateY(-3px); }
+    .site-nav-bar {
+      left: 50%; transform: translateX(-50%);
+      display: flex; gap: clamp(20px, 4vw, 48px);
+    }
+    .site-nav-bar a {
+      position: relative; display: block; padding: 8px 0 10px;
+      font-size: clamp(15px, 1.6vw, 18px); font-weight: 500;
+      color: inherit; text-decoration: none;
+      transition: transform 0.3s ease;
+    }
+    .site-nav-bar a:hover, .site-nav-bar a:focus-visible { transform: translateY(-4px); }
+    .site-mark:focus-visible, .site-nav-bar a:focus-visible { outline: none; font-weight: 700; }
+    /* How far down this page you are: a hairline under the section's name,
+       a quarter-strength track with the travelled part solid. */
+    .site-progress {
+      position: absolute; left: 0; right: 0; bottom: 2px; height: 2px;
+      background: rgba(var(--tone-swap-rgb, 255, 255, 255), 0.28);
+    }
+    .site-progress i {
+      position: absolute; inset: 0; background: currentColor;
       transform-origin: left; transform: scaleX(0);
       transition: transform 0.3s ease;
     }
-    .site-bar a {
-      color: #f4f1ec; text-decoration: none;
-      padding: 9px 9px; border-radius: 2px; opacity: 0.72;
-      transition: opacity 0.2s ease;
-    }
-    .site-bar a:hover, .site-bar a:focus-visible, .site-bar a[aria-current] { opacity: 1; }
-    .site-bar a[aria-current] {
-      text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px;
-    }
-    .site-bar a:focus-visible { outline: 1px solid #f4f1ec; outline-offset: -2px; }
-    .site-bar .sep { width: 1px; height: 14px; margin: 0 3px; background: rgba(244, 241, 236, 0.3); }
 
-    /* Narrow screens: the bar takes the whole top edge, and what used to sit
-       in the corners up there steps down under it. */
+    /* Narrow screens: the wordmark keeps the left corner, the sections move
+       to the right, and the mobile up-chevron steps down under them both. */
     @media (max-width: 700px) {
-      .site-bar {
-        left: 8px; right: 8px; transform: none; justify-content: space-between;
-        font-size: 14px; padding: 2px 4px;
-      }
-      .site-bar a { padding: 10px 6px; }
-      .site-bar .sep { display: none; }
+      .site-mark { left: 16px; font-size: 15px; }
+      .site-nav-bar { left: auto; right: 16px; transform: none; gap: 16px; }
+      .site-nav-bar a { font-size: 14px; }
       .mobile-nav-zone.nav-top { top: 52px; }
-      .project-nav { top: 50px !important; }
     }
   `;
   document.head.appendChild(style);
 
-  const bar = document.createElement('nav');
-  bar.className = 'site-bar';
-  bar.setAttribute('aria-label', 'Site');
-  bar.innerHTML = '<span class="site-bar-fill" aria-hidden="true"></span>' + LINKS.map(([href, label], i) =>
-    (i === 1 ? '<span class="sep" aria-hidden="true"></span>' : '') +
-    `<a href="${href}"${href === here ? ' aria-current="page"' : ''}>${label}</a>`
-  ).join('');
-  document.body.appendChild(bar);
+  const mark = document.createElement('a');
+  mark.className = 'site-mark';
+  mark.href = 'index.html';
+  mark.setAttribute('aria-label', 'jishnu has an artpage, home');
+  mark.innerHTML = 'jishnu<b>has</b>anart<b>page</b>';
 
-  // Every page's hold-to-invert listens on the window. A press on the bar is
-  // a press on a link, not the start of a hold.
-  ['pointerdown', 'mousedown', 'touchstart'].forEach((t) =>
-    bar.addEventListener(t, (e) => e.stopPropagation(), { passive: true }));
+  const nav = document.createElement('nav');
+  nav.className = 'site-nav-bar';
+  nav.setAttribute('aria-label', 'Sections');
+  nav.innerHTML = LINKS.map(([href, label]) => (href === here
+    ? `<a href="${href}" aria-current="page">${label}<span class="site-progress" aria-hidden="true"><i></i></span></a>`
+    : `<a href="${href}">${label}</a>`)).join('');
+
+  document.body.appendChild(mark);
+  document.body.appendChild(nav);
+
+  // Every page's hold-to-invert listens on the window. A press on these is a
+  // press on a link, not the start of a hold.
+  [mark, nav].forEach((el) => ['pointerdown', 'mousedown', 'touchstart'].forEach((t) =>
+    el.addEventListener(t, (e) => e.stopPropagation(), { passive: true })));
 
   // --- how far down ---
   // The list pages move by a transform rather than by scrolling, so they
   // report their own progress (assets/scroll-nav.js fires 'navprogress');
-  // everything else scrolls natively and is read off the document.
-  const fill = bar.querySelector('.site-bar-fill');
+  // everything else scrolls natively and is read off the document. A page in
+  // no section (the 404) has no line to fill.
+  const fill = nav.querySelector('.site-progress i');
+  if (!fill) return;
   const show = (p) => {
     fill.style.transform = `scaleX(${Math.max(0, Math.min(1, p)).toFixed(4)})`;
   };

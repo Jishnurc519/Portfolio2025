@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- The site's one idea: a page that is two tones and turns over. Half the
-       disc is filled, half is only its edge. -->
-  <circle cx="16" cy="16" r="13" fill="none" stroke="#eab84a" stroke-width="3"/>
-  <path d="M16 3a13 13 0 0 0 0 26z" fill="#eab84a"/>
+  <!-- The tab icon: the j of jishnu, in the site's light tone on its dark. -->
+  <rect width="32" height="32" rx="7" fill="#0b0e13"/>
+  <text x="16" y="23.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="700" fill="#f4f1ec">j</text>
 </svg>

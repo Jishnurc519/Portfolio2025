@@ -306,6 +306,7 @@ const PROJECT_DETAILS = {
     ]
   },
   "jishnu/unconference": {
+    hero: "touch-1",
     year: "2025",
     role: "Design & development",
     tools: ["LIDAR", "TouchDesigner", "Interaction"],

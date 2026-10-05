@@ -177,6 +177,13 @@ CURATED = {
             "navarasa-still": "assets/Learn/JKLU/Strate_Navarasa.HEIC",
         },
     },
+    # Someone at the wall, touching it -- the clip the project's screen on
+    # work leads with. Thirty seconds in, past the walk up to it.
+    "jishnu/unconference": {
+        "items": {
+            "touch-1": ("at:30", "Jishnu/Unconference/Photos-1-001(4)/IMG_3556.MOV"),
+        },
+    },
     # NewAssets only, every file once.
     "onebyzero/sixthsense": {
         "thumbs": [
@@ -221,10 +228,20 @@ def still_from(src: Path, dst: Path, long_side: int, seek: float = 0.0) -> bool:
     return ok
 
 
+# HDR to SDR for clips, on the GPU with perceptual gamut mapping. The zscale
+# chain (TONEMAP_CHAIN) clips an iPhone's bt2020 colour into bt709, which
+# turned a red-lit room into a flat red sheet; libplacebo keeps the
+# gradations. Needs an ffmpeg with libplacebo and a Vulkan device.
+HDR_CLIP_CHAIN = ("libplacebo=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv"
+                  ":tonemapping=auto:gamut_mode=perceptual:format=yuv420p")
+
+
 def clip(src: Path, dst: Path, seek: float = 0.0, long_side: int = VIDEO_LONG_SIDE) -> bool:
-    chain = long_side_scale(long_side) + ",fps=30"
-    chain += "," + TONEMAP_CHAIN if is_hdr(src) else ",format=yuv420p"
+    hdr = is_hdr(src)
+    chain = (HDR_CLIP_CHAIN + "," if hdr else "") + long_side_scale(long_side) + ",fps=30"
+    chain += ",format=yuv420p"
     return run_ffmpeg([
+        *(["-init_hw_device", "vulkan"] if hdr else []),
         *(["-ss", str(seek)] if seek else []),
         "-i", str(src), "-t", str(MAX_VIDEO_SECONDS), "-vf", chain,
         "-c:v", "libx264", "-preset", "slow", "-crf", VIDEO_CRF,
@@ -240,12 +257,25 @@ def job(key, name, spec):
     if isinstance(spec, tuple):
         mode, spec = spec
     src = ROOT / spec
+    out_dir = ASSETS / key
+    rel = lambda p: p.relative_to(ROOT).as_posix()
     if not src.exists():
+        # The source has gone but what was made from it is still here: keep
+        # it. Dropping the record took the clip off every page that named it.
+        clip_out, poster_out = out_dir / f"c-{name}.mp4", out_dir / f"c-{name}-poster.jpg"
+        still_out = out_dir / f"c-{name}.jpg"
+        if clip_out.exists() and poster_out.exists():
+            print(f"  kept  {key} {name} (source gone: {spec})")
+            wh = image_size(poster_out)
+            return name, {"type": "video", "src": rel(clip_out), "poster": rel(poster_out),
+                          "size": list(wh) if wh else None}
+        if still_out.exists():
+            print(f"  kept  {key} {name} (source gone: {spec})")
+            wh = image_size(still_out)
+            return name, {"type": "image", "src": rel(still_out), "size": list(wh) if wh else None}
         print(f"  MISSING {key} {name}: {spec}")
         return name, None
-    out_dir = ASSETS / key
     out_dir.mkdir(parents=True, exist_ok=True)
-    rel = lambda p: p.relative_to(ROOT).as_posix()
 
     # ("at:30", path): the clip, but starting 30 seconds in -- for a second
     # stretch of a video whose first twenty seconds are already used.

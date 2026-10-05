@@ -371,7 +371,8 @@
         const wt = wrapperTop();
         const moving = lastWt !== null && Math.abs(wt - lastWt) > 2;
         lastWt = wt;
-        const hit = bounceOffWalls(ws, w, h, dt);
+        // The frame it finishes flying in has no walls gathered yet.
+        const hit = bounceOffWalls(ws || walls(W, H), w, h, dt);
         stuck = hit ? stuck + dt : 0;
         if ((hit && moving) || stuck > STUCK_SECS) fadeAway(now);
       }

@@ -858,7 +858,23 @@
       // drag lasts as long as a hold -- so a finger that moves is not holding.
       window.addEventListener('touchmove', () => { if (window.FREE_DRAG) isHolding = false; }, { passive: true });
       window.addEventListener('blur', () => { isHolding = false; });
+      // On a phone there is no cursor to carry the light -- a finger is only
+      // there while it touches, and mostly it is scrolling. So the light comes
+      // from the GMMBBQ speaker drifting over the page (assets/gmm-float.js),
+      // and the shadows swing round as it wanders; a hold turns the page over
+      // from it too. Where the speaker has faded away for want of room, the
+      // light stays where it last was.
+      const phone = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
+      function lightFromSpeaker() {
+        const sp = document.getElementById('gmm-float');
+        if (!sp || !sp.classList.contains('live') || sp.classList.contains('gone')) return;
+        const r = sp.getBoundingClientRect();
+        if (!r.width) return;
+        pointerU = (r.left + r.width / 2) / window.innerWidth;
+        pointerV = 1 - (r.top + r.height * 0.3) / window.innerHeight;
+      }
       window.addEventListener('pointermove', (e) => {
+        if (phone.matches) return;
         pointerU = e.clientX / window.innerWidth;
         pointerV = 1 - e.clientY / window.innerHeight;
       }, { passive: true });
@@ -907,6 +923,7 @@
         if (Math.abs(curY - baseY) > 0.5) occDirty = true;
         if (occDirty && stillFor > 0.1) { drawOccluders(now); occDirty = false; }
 
+        if (phone.matches) lightFromSpeaker();
         lightU += (pointerU - lightU) * Math.min(1, dt * 12);
         lightV += (pointerV - lightV) * Math.min(1, dt * 12);
 

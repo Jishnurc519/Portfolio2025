@@ -57,12 +57,28 @@ def avif(src: Path):
     return keep(src, dst)
 
 
+# Grainy night footage comes out of AV1 at AV1_CRF bigger than the H.264 it
+# sits beside -- the grain is what the bits go on -- so those clips had no
+# small copy at all, and they are the heaviest on the site. For them a second
+# pass: a higher CRF with the grain taken out and synthesised back on
+# playback. Checked by eye against the MP4 on the Rained In clip: 7.5 MB to
+# 4.0 MB with no visible difference at page size.
+AV1_CRF_GRAINY = "50"
+
+
+def av1_encode(src, dst, crf, extra=""):
+    ff(["-i", str(src), "-c:v", "libsvtav1", "-preset", "6", "-crf", crf,
+        "-pix_fmt", "yuv420p", "-svtav1-params", "enable-overlays=1" + extra,
+        "-c:a", "libopus", "-b:a", "64k", str(dst)])
+
+
 def av1(src: Path):
     dst = src.with_suffix(".webm")
     if not fresh(dst, src):
-        ff(["-i", str(src), "-c:v", "libsvtav1", "-preset", "6", "-crf", AV1_CRF,
-            "-pix_fmt", "yuv420p", "-svtav1-params", "enable-overlays=1",
-            "-c:a", "libopus", "-b:a", "64k", str(dst)])
+        av1_encode(src, dst, AV1_CRF)
+        if dst.exists() and dst.stat().st_size >= src.stat().st_size:
+            print(f"    {src.name}: grainy, second pass")
+            av1_encode(src, dst, AV1_CRF_GRAINY, ":film-grain=8")
     return keep(src, dst)
 
 

@@ -61,7 +61,7 @@
   // (the front page's canvas) or copies it (assets/cursor.js).
   const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   if (touch) {
-    document.querySelectorAll('.hint').forEach((h) => { h.textContent = 'hold anywhere to invert'; });
+    document.querySelectorAll('.hint').forEach((h) => { h.textContent = 'hold anywhere to flip the page'; });
   }
 
   // A finger held down long enough to invert the page is held long enough

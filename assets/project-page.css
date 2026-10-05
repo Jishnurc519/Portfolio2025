@@ -88,8 +88,8 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
 .meta-value { font-size: clamp(14px, 1.3vw, 17px); font-weight: 500; }
 
 .overview {
-  font-size: clamp(16px, 1.8vw, 22px); font-weight: 300; line-height: 1.6;
-  max-width: 760px; margin: 6vh 0; opacity: 0.9;
+  font-size: clamp(16px, 1.8vw, 22px); font-weight: 400; line-height: 1.6;
+  max-width: 760px; margin: 6vh 0;
 }
 .overview:empty { display: none; }
 
@@ -181,7 +181,7 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
 }
 .story h2:first-of-type { margin-top: 0; }
 .story p {
-  font-size: clamp(16px, 1.5vw, 19px); font-weight: 300; line-height: 1.65;
+  font-size: clamp(16px, 1.5vw, 19px); font-weight: 400; line-height: 1.65;
   margin: 0 0 1.4em; max-width: 62ch;
 }
 .story p strong { font-weight: 600; }
@@ -252,7 +252,7 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
   object-fit: contain;
 }
 .story-figure figcaption {
-  margin-top: 10px; font-size: 13px; font-weight: 300;
+  margin-top: 10px; font-size: 13px; font-weight: 400;
   line-height: 1.45; opacity: 0.6; max-width: 46ch;
 }
 .story-figure.side-full { margin: 5vh 0; }
@@ -436,7 +436,7 @@ body.layout-spread { overflow-x: clip; }
   color: var(--accent);
 }
 .space-label-note {
-  font-size: 12px; font-weight: 300; max-width: 28ch; white-space: normal;
+  font-size: 12px; font-weight: 400; max-width: 28ch; white-space: normal;
   text-align: center; color: var(--tone-light); opacity: 0.85;
 }
 .space-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -476,7 +476,7 @@ blockquote cite {
   letter-spacing: 0.08em; color: var(--accent); margin: 0 0 14px;
 }
 .text-section p {
-  font-size: clamp(15px, 1.5vw, 18px); font-weight: 300; line-height: 1.6; opacity: 0.9; margin: 0;
+  font-size: clamp(15px, 1.5vw, 18px); font-weight: 400; line-height: 1.6; margin: 0;
 }
 
 /* --- PREV / NEXT --- */
@@ -526,7 +526,9 @@ blockquote cite {
 /* A step of weight and a move to the accent — the same quiet language the
    list pages use, rather than a rectangle drawn around a page made of type. */
 :focus { outline: none; }
-:focus-visible { outline: none; }
+/* A keyboard always sees where it is: an outline in the current ink, round
+   whatever has focus. (A mouse click does not show it -- that is :focus.) */
+:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
 .back-btn:focus-visible {
   font-weight: 800; opacity: 1;
 }

@@ -321,12 +321,12 @@
 
   // --- THE CASE STUDY ---
   // A story is a list of blocks (see the shape documented in
-  // assets/project-details.js). Until a project has one of its own it borrows
-  // the placeholder, and says so on the page — copy that reads like the real
-  // thing but is not should never be able to pass for it quietly.
+  // assets/project-details.js). A project without one shows its gallery and
+  // nothing else: the placeholder copy it used to borrow was public, and read
+  // as lorem ipsum under his name. Those pages are also kept out of search
+  // until written (scripts/build_project_pages.py).
   const story = (details.story && details.story.length) ? details.story : null;
-  const usingPlaceholder = !story && typeof PLACEHOLDER_STORY !== 'undefined';
-  const blocks = story || (usingPlaceholder ? PLACEHOLDER_STORY : []);
+  const blocks = story || [];
 
   // Enough markup to write a paragraph with, and no more. Everything else in
   // the string is escaped first, so a stray angle bracket in the copy stays a
@@ -572,13 +572,6 @@
   if (extraEl && blocks.length) {
     const article = document.createElement('div');
     article.className = 'story';
-
-    if (usingPlaceholder) {
-      const flag = document.createElement('p');
-      flag.className = 'story-placeholder';
-      flag.textContent = 'Placeholder copy — the layout, not the words.';
-      article.appendChild(flag);
-    }
 
     blocks.forEach((b) => {
       if (b.h) {

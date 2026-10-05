@@ -14,8 +14,29 @@
   <meta property="og:title" content="Jishnu Roy Chaudhury — new media designer">
   <meta property="og:description" content="New media designer and creative technologist making interactive audio-visual work. Installations, prototypes and workshops.">
   <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/">
-  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/jishnu/fieldlinesim/vid-01-poster.jpg">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/og-wordmark.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="jishnu has an artpage">
   <meta name="twitter:card" content="summary_large_image">
+  <!-- Who this is, for search engines: one person, what he does, where. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Jishnu Roy Chaudhury",
+    "alternateName": "jishnu has an artpage",
+    "jobTitle": "New media designer and creative technologist",
+    "url": "https://jishnurc519.github.io/Portfolio2025/",
+    "email": "mailto:jishnurc519@gmail.com",
+    "address": { "@type": "PostalAddress", "addressLocality": "Bangalore", "addressCountry": "IN" },
+    "sameAs": [
+      "https://www.instagram.com/jishnuhasanartpage/",
+      "https://github.com/Jishnurc519",
+      "https://www.behance.net/jishnuroycha"
+    ]
+  }
+  </script>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
   <style>
@@ -146,7 +167,15 @@
        flattened "has" and "an" up to 700 and took the contrast out of the
        mark. The canvas reads each letter's computed weight, so this is not
        only what the DOM says, it is what gets painted. */
-    #title { font-size: clamp(32px, 6.5vw, 76px); line-height: 1.05; font-weight: 400; }
+    #title { font-size: clamp(32px, 6.5vw, 76px); line-height: 1.05; font-weight: 400; margin: 0; }
+    /* The wordmark and, under it, who this is in plain words: the first
+       thing a visitor reads should say who and what, without a gesture. Both
+       are the dark side, and trade places with the bio on the turn. */
+    #name-side { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 1.6vw, 20px); }
+    #tagline {
+      margin: 0; font-size: clamp(13px, 1.4vw, 16px); font-weight: 500;
+      letter-spacing: 0.02em; text-align: center; line-height: 1.4;
+    }
     #bio-text { font-size: clamp(16px, 2vw, 22px); max-width: 620px; line-height: 1.5; font-weight: 300; }
 
     .bold { font-weight: 700; }
@@ -222,10 +251,13 @@
 
     <div id="hero">
       <div id="stack">
-        <h1 id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></h1>
+        <div id="name-side">
+          <h1 id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></h1>
+          <p id="tagline">Jishnu Roy Chaudhury &middot; new media designer &middot; Bangalore</p>
+        </div>
         <p id="bio-text">I am a <span class="bold">new media designer</span> and <span class="bold">creative technologist</span> who focuses on creating fun interactive audio visual experiences to tell stories. Like the collaboration between <span class="bold">tech and art</span>, my work is at the interaction of several different fields.</p>
       </div>
-      <p id="hint" class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</p>
+      <p id="hint" class="hint">hold anywhere or space to flip the page &middot; 1 2 3 for work play learn</p>
     </div>
   </div>
 
@@ -242,11 +274,10 @@
     <a href="https://www.behance.net/jishnuroycha" target="_blank" rel="noopener" aria-label="Behance">
       <img src="https://cdn.simpleicons.org/behance/ffffff" alt="Behance">
     </a>
-    <!-- TODO: replace the address before this goes live. The mark is local
-         rather than fetched from simpleicons because email is not a brand,
-         and it is the same solid #ffffff as the three above it so the canvas
-         can paint it in difference along with them. -->
-    <a href="mailto:hello@example.com" aria-label="Email">
+    <!-- The mark is local rather than fetched from simpleicons because email
+         is not a brand, and it is the same solid #ffffff as the three above
+         it so the canvas can paint it in difference along with them. -->
+    <a href="mailto:jishnurc519@gmail.com" aria-label="Email jishnurc519@gmail.com">
       <img src="assets/mail.svg" alt="Email">
     </a>
   </div>
@@ -829,7 +860,7 @@
         const set = new Set(el ? el.querySelectorAll('.ch') : []);
         return (ch) => (set.has(ch) ? side : null);
       };
-      const nameSide = sideOf('title', 0), bioSide = sideOf('bio-text', 1);
+      const nameSide = sideOf('name-side', 0), bioSide = sideOf('bio-text', 1);
       // 0 = only on the dark page, 1 = only on the light one, null = on both.
       const sides = chars.map((ch) => {
         const s = nameSide(ch);

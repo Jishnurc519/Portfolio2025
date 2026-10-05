@@ -17,8 +17,6 @@
   const entries = (typeof PAGE_CONFIG !== 'undefined' ? PAGE_CONFIG[pageKey] : null) || [];
   if (!entries.length) console.warn('render-projects.js: no PAGE_CONFIG entries for page key:', pageKey);
 
-  const pad = (n) => String(n).padStart(2, '0');
-  const total = entries.filter(({ key }) => typeof SITE_MANIFEST !== 'undefined' && SITE_MANIFEST[key]).length;
   let n = 0;
 
   entries.forEach(({ key, displayName }) => {
@@ -58,7 +56,6 @@
     item.innerHTML = `
       <div class="screen-media">${media}</div>
       <div class="screen-text">
-        <span class="screen-count">${pad(n)} / ${pad(total)}</span>
         <h2 class="project-title">${displayName || data.name}</h2>
         ${info.year || (info.tools && info.tools.length)
           ? `<span class="project-tags">${[info.year, ...(info.tools || [])].filter(Boolean).join(' • ')}</span>` : ''}
@@ -71,15 +68,20 @@
 
   // Clips load the first time their screen comes near and play only while
   // it is the one on screen, so a page of seven costs one decoder at a time.
+  // The smaller AV1 copy first where there is one (assets/clip-source.js).
+  const load = (v) => {
+    if (window.setClipSource) window.setClipSource(v, v.dataset.src);
+    else if (!v.src) v.src = v.dataset.src;
+  };
   const clips = mount.querySelectorAll('video[data-src]');
   if (!('IntersectionObserver' in window)) {
-    clips.forEach((v) => { v.src = v.dataset.src; v.play().catch(() => {}); });
+    clips.forEach((v) => { load(v); v.play().catch(() => {}); });
     return;
   }
   const io = new IntersectionObserver((list) => {
     list.forEach(({ target: v, isIntersecting }) => {
       if (isIntersecting) {
-        if (!v.src) v.src = v.dataset.src;
+        load(v);
         v.play().catch(() => {});
       } else if (!v.paused) {
         v.pause();

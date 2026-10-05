@@ -975,3 +975,36 @@ against the canvas, so a video anywhere else would either be hidden or sit
 outside the difference. `REEL_ALPHA` is the strength. Skipped under reduced
 motion and Save-Data.
 
+---
+
+## 16. After the review
+
+From a multi-perspective review (design, UX, new media, architecture,
+business, front-end, accessibility, visitors):
+
+- **Contact**: jishnurc519@gmail.com on the front page and a `contact` link in
+  the navigation on every inner page (site-bar.js, hidden under 360px).
+- **Who and what, without a gesture**: the front page shows "Jishnu Roy
+  Chaudhury · new media designer · Bangalore" under the wordmark (the dark
+  side, `#name-side`); the hint says "flip the page", not "invert"; Person
+  JSON-LD in its head.
+- **Link previews**: `assets/og-wordmark.png`, the front page's wordmark, on
+  the site's own pages; each project page uses its lead clip's poster.
+- **Unwritten projects**: no placeholder copy any more. build_project_pages.py
+  marks projects with no `story` `noindex`, writes each project's overview
+  into its meta description and the static HTML, and now writes sitemap.xml.
+- **Navigation**: a band of the page's own ground fades in behind it once the
+  page has moved; it is first in the document, after a skip link; every page
+  has a main landmark; `:focus-visible` draws a 2px outline everywhere.
+- **Work's bars** stay off text at rest -- text blocks are cut out of the
+  layer, the holes closing over the first third of a hold. **Learn's light**
+  starts high and right, not level with the headline.
+- **Video weight**: work, play and learn load AV1 first via
+  `assets/clip-source.js`; build_web_formats.py retries grainy clips at CRF 50
+  with film-grain synthesis when the normal pass is not smaller, so every clip
+  now has an AV1 copy (206 MB of MP4 to 133 MB).
+- **Type**: running text at weight 400; project text always left-aligned; the
+  per-screen "01 / 07" counter is gone (the side rail stays).
+- **Learn**: student credits always visible; JKLU written out.
+- The Behance embed (which returned an error) is now a plain link.
+

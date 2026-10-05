@@ -48,34 +48,9 @@
 // and it wraps, so the same story works for a project with two images and one
 // with nine. `side` is "left", "right" or "full" and defaults to "full".
 //
-// Until a project has its own, every page falls back to PLACEHOLDER_STORY
-// below and is labelled as such on screen, so unfinished copy cannot be
-// mistaken for the real thing.
+// A project without a story shows its gallery alone, and its page is kept
+// out of search until it has one (scripts/build_project_pages.py).
 
-// Deliberately Latin. Prose that reads like a real account of the work would
-// be indistinguishable from the finished thing at a glance, and this is going
-// on a portfolio -- placeholder that cannot be mistaken for a claim is worth
-// more here than placeholder that flows nicely.
-const PLACEHOLDER_STORY = [
-  { h: "The brief" },
-  { p: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. **Ut enim ad minim veniam**, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    figure: 0, side: "right" },
-  { p: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." },
-
-  { h: "Making it" },
-  { p: "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, *eaque ipsa quae ab illo inventore* veritatis et quasi architecto beatae vitae dicta sunt explicabo.",
-    figure: 1, side: "left" },
-  { p: "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. **Neque porro quisquam est**, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit." },
-
-  { quote: "Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam.", cite: "Placeholder attribution" },
-
-  { figure: 2, side: "full", caption: "Placeholder caption — replace with a real note about this image." },
-
-  { h: "What came out of it" },
-  { p: "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident." },
-  { p: "Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et *expedita distinctio*. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus.",
-    figure: 3, side: "right" }
-];
 
 const PROJECT_DETAILS = {
   // --- work ---

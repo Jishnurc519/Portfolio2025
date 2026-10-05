@@ -52,7 +52,11 @@ RETIRED = {
 # Absolute, because a link scraper has no base to resolve a relative URL
 # against. One constant to change if the site ever gets its own domain.
 SITE_URL = "https://jishnurc519.github.io/Portfolio2025"
-SHARE_IMAGE = SITE_URL + "/assets/jishnu/fieldlinesim/vid-01-poster.jpg"
+# The link preview for anything without a picture of its own: the wordmark.
+SHARE_IMAGE = SITE_URL + "/assets/og-wordmark.png"
+
+# Pages that are not project pages, for sitemap.xml.
+SITE_PAGES = ["", "work.html", "play.html", "facilitation.html", "gmmbbq.html"]
 
 TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -64,7 +68,7 @@ TEMPLATE = """<!DOCTYPE html>
   <base href="../">
   <title>Jishnu Roy Chaudhury — {title}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="{description}" />
+  <meta name="description" content="{description}" />{robots}
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="jishnu has an artpage">
@@ -84,14 +88,14 @@ TEMPLATE = """<!DOCTYPE html>
        learn across the top, both from assets/site-bar.js; the keys 1 2 3 do
        the same without the mouse. -->
 
-  <div id="main-wrapper">
+  <div id="main-wrapper" role="main">
     <div id="header-section">
       <span class="category-tag">{category}</span>
       <h1>{title}</h1>
       <div class="meta-row" id="meta-row"></div>
     </div>
 
-    <p class="overview" id="project-overview"></p>
+    <p class="overview" id="project-overview">{overview}</p>
     <!-- The finished film, where there is one, and then the write-up, and
          only then the stills. The gallery used to sit directly under the
          overview, so a reader met eight photographs of how a thing was made
@@ -161,6 +165,48 @@ def load_page_config() -> dict:
     return sections
 
 
+def load_details() -> dict:
+    """What each project's entry in assets/project-details.js says about it,
+    read with regexes rather than a JS engine, like load_page_config: its
+    overview, the clip it leads with (`hero`), and whether it has a write-up
+    of its own (`story`)."""
+    text = (ASSETS_DIR / "project-details.js").read_text(encoding="utf-8")
+    starts = [(m.start(), m.group(1)) for m in re.finditer(r'^  "([a-z0-9]+/[a-z0-9]+)": \{', text, re.M)]
+    out = {}
+    for i, (pos, key) in enumerate(starts):
+        block = text[pos: starts[i + 1][0] if i + 1 < len(starts) else len(text)]
+        ov = re.search(r'\boverview:\s*"((?:[^"\\]|\\.)*)"', block)
+        hero = re.search(r'\bhero:\s*"([^"]+)"', block)
+        out[key] = {
+            "overview": ov.group(1).replace('\\"', '"') if ov else "",
+            "hero": hero.group(1) if hero else None,
+            "story": bool(re.search(r'\bstory:\s*\[', block)),
+        }
+    return out
+
+
+def load_curated() -> dict:
+    text = (ASSETS_DIR / "curated-media.js").read_text(encoding="utf-8")
+    return json.loads(text[text.index("{"): text.rindex("}") + 1])
+
+
+def share_image_for(key, data, details, curated) -> str:
+    """The project's own picture for a link preview: the poster of the clip it
+    leads with, else its hand-picked plate, else its thumbnail."""
+    c = curated.get(key, {})
+    hero = details.get("hero")
+    if hero and hero in c.get("items", {}):
+        item = c["items"][hero]
+        path = item.get("poster") or item.get("src")
+        if path and not path.endswith(".mp4"):
+            return f"{SITE_URL}/{path}"
+    if c.get("thumbs"):
+        return f"{SITE_URL}/{c['thumbs'][0]}"
+    if data.get("thumb"):
+        return f"{SITE_URL}/{data['thumb']}"
+    return SHARE_IMAGE
+
+
 def escape(text: str) -> str:
     return (str(text).replace("&", "&amp;").replace("<", "&lt;")
             .replace(">", "&gt;").replace('"', "&quot;"))
@@ -169,6 +215,9 @@ def escape(text: str) -> str:
 def main() -> int:
     manifest = load_manifest()
     page_config = load_page_config()
+    all_details = load_details()
+    curated = load_curated()
+    indexed = []
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     seen_slugs = {}
@@ -199,17 +248,25 @@ def main() -> int:
         category = data.get("category") or ""
         if category.lower() == "jishnu":
             category = ""
+        # A project with no write-up of its own yet stays reachable but is kept
+        # out of search and out of the sitemap until it has one.
+        details = all_details.get(key, {"overview": "", "hero": None, "story": False})
+        robots = "" if details["story"] else '\n  <meta name="robots" content="noindex">'
+        if details["story"]:
+            indexed.append(f"projects/{slug}.html")
         page = TEMPLATE.format(
             marker=MARKER,
             key=escape(key),
             slug=slug,
             title=escape(title),
             category=escape(category),
-            description=escape(f"{title} — project by Jishnu Roy Chaudhury."),
+            description=escape(details["overview"] or f"{title} — a project by Jishnu Roy Chaudhury."),
+            overview=escape(details["overview"]),
+            robots=robots,
             back_href=back_href,
             back_label=back_label,
             site_url=SITE_URL,
-            share_image=SHARE_IMAGE,
+            share_image=share_image_for(key, data, details, curated),
         )
 
         out_path = OUT_DIR / f"{slug}.html"
@@ -226,6 +283,15 @@ def main() -> int:
             print(f"  removed stale projects/{stale.name}")
         else:
             print(f"  skipped projects/{stale.name} (not generated by this script)")
+
+    # sitemap.xml: the site's own pages and every project page with a write-up.
+    urls = [f"{SITE_URL}/{p}" for p in SITE_PAGES] + [f"{SITE_URL}/{p}" for p in sorted(indexed)]
+    sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+               + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls)
+               + "</urlset>\n")
+    (ROOT / "sitemap.xml").write_text(sitemap, encoding="utf-8")
+    print(f"Wrote sitemap.xml ({len(urls)} URLs; {len(written) - len(indexed)} unwritten projects left out)")
 
     print(f"\nWrote {len(written)} project pages to {OUT_DIR}")
     return 0

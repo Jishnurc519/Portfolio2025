@@ -14,7 +14,9 @@
   <meta property="og:title" content="Facilitation & learning — Jishnu Roy Chaudhury">
   <meta property="og:description" content="Workshops and teaching: fostering independence, and breaking things on purpose so there is something to fix.">
   <meta property="og:url" content="https://jishnurc519.github.io/Portfolio2025/facilitation.html">
-  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/jishnu/fieldlinesim/vid-01-poster.jpg">
+  <meta property="og:image" content="https://jishnurc519.github.io/Portfolio2025/assets/og-wordmark.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
@@ -123,8 +125,9 @@
       display: block; width: 100%; height: auto; border-radius: 6px;
       background: rgba(234, 184, 74, 0.08);
     }
-    /* Names stay out of the way until a piece is pointed at: laid over the
-       foot of the footage on a scrim, and only while hovered. */
+    /* Who made each piece, laid over the foot of the footage on a scrim --
+       always, not only on hover: a phone has no hover, and the students'
+       names are the point of the credit. */
     .frames figure, .bleed { position: relative; }
 
     /* Now and then a single photograph takes the whole width. The grid's
@@ -139,9 +142,8 @@
       background: linear-gradient(to top, rgba(11, 14, 19, 0.85), transparent);
       color: #eab84a !important;
       font-size: clamp(11px, 1vw, 13px); letter-spacing: 0.03em;
-      opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
+      pointer-events: none;
     }
-    .frames figure:hover figcaption, .bleed:hover figcaption { opacity: 1; }
 
     /* Sound, offered only on hover. Everything plays muted -- a browser will
        not autoplay anything that is not -- and one tap here unmutes that piece
@@ -209,11 +211,11 @@
 <body data-scroll="free">
   <div id="stage-container"></div>
 
-  <div id="main-wrapper">
+  <div id="main-wrapper" role="main">
     <div id="header-section" class="scroll-target">
       <h1>facilitation<br>& learning</h1>
       <span class="subtitle" id="dynamic-subtitle">fostering independence and breaking things</span>
-      <span class="hint">hold anywhere or space to invert &middot; 1 2 3 for work play learn</span>
+      <span class="hint">hold anywhere or space to flip the page &middot; 1 2 3 for work play learn</span>
     </div>
 
     <!-- One continuous flow, in the order it happened: JKLU, then Somaiya,
@@ -232,8 +234,8 @@
       </section>
 
       <section class="stop scroll-target">
-        <span class="place">JKLU</span>
-        <p>At JKLU, the course opens with a single exercise: design an <strong>interactive poster</strong>. A poster is a rectangular, portrait, one-to-many communication format; interaction implies a dialogue between the poster and its viewer.</p>
+        <span class="place">JK Lakshmipat University</span>
+        <p>At JK Lakshmipat University (JKLU), Jaipur, the course opens with a single exercise: design an <strong>interactive poster</strong>. A poster is a rectangular, portrait, one-to-many communication format; interaction implies a dialogue between the poster and its viewer.</p>
         <p>There are two rules. The poster has to remain a poster. And if the interaction can be taken away and the poster still tells its story, the poster fails.</p>
 
         <h3>Student work from the exercise</h3>
@@ -327,6 +329,8 @@
 
   <script src="assets/keys.js"></script>
   <script src="assets/cursor.js"></script>
+  <script src="assets/media-formats.js"></script>
+  <script src="assets/clip-source.js"></script>
   <script src="assets/scroll-nav.js"></script>
   <script src="assets/hold-hint.js"></script>
   <script src="assets/gmm-float.js"></script>
@@ -337,6 +341,11 @@
     // decoders at a time rather than all of them at once.
     (function () {
       const vids = document.querySelectorAll('.frames video[data-src], .bleed video[data-src]');
+      // The smaller AV1 copy first where there is one (assets/clip-source.js).
+      const load = (v) => {
+        if (window.setClipSource) window.setClipSource(v, v.dataset.src);
+        else if (!v.src) v.src = v.dataset.src;
+      };
 
       const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
         + '<path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/>';
@@ -364,7 +373,7 @@
         v.parentNode.appendChild(b);
       });
       if (!('IntersectionObserver' in window)) {
-        vids.forEach((v) => { v.src = v.dataset.src; v.play().catch(() => {}); });
+        vids.forEach((v) => { load(v); v.play().catch(() => {}); });
         return;
       }
       const inView = new Set();
@@ -372,7 +381,7 @@
         entries.forEach(({ target: v, isIntersecting }) => {
           if (isIntersecting) inView.add(v); else inView.delete(v);
           if (isIntersecting) {
-            if (!v.src) v.src = v.dataset.src;
+            load(v);
             v.play().catch(() => {});
           } else if (!v.paused) {
             v.pause();
@@ -840,7 +849,11 @@
       let isHolding = false, charge = 0, settling = 0;
       let wiping = 0, wipeU = 0.5, wipeV = 0.5;
       let inverted = 0;
-      let pointerU = 0.5, pointerV = 0.5, lightU = 0.5, lightV = 0.5;
+      // Where the light sits before the pointer has moved: high and to the
+      // right, clear of the headline. At the centre of the screen it was level
+      // with the gap between the headline's two lines, and a light level with
+      // a line of type throws a thin shadow straight through it.
+      let pointerU = 0.78, pointerV = 0.86, lightU = 0.78, lightV = 0.86;
       let last = performance.now(), occDirty = true;
 
       const startHold = (e) => {

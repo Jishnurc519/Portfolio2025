@@ -20,7 +20,11 @@
 //                on, the circle appears, waiting.
 //   the label    the hold hint, moved off the page and onto the pointer, which
 //                is where the gesture is. The in-page .hint line stays for
-//                touch, where there is no cursor to put it on.
+//                touch, where there is no cursor to put it on. It is set in
+//                the page's highlight colour (--hl), so it is the one part
+//                that is NOT in the blend group below: differenced, that
+//                colour would come out as whatever its backdrop is not. It is
+//                its own fixed element, moved with the ring.
 //
 // ONE blend group. Everything is painted inside a single element carrying the
 // difference blend, never one blend per part: two difference layers stacked
@@ -89,12 +93,16 @@
     '.cursor-ring-meter .m-track { stroke-width: 1; opacity: 0.38; }',
     '.cursor-ring-meter .m-arc { stroke-width: 2.5; }',
     '.cursor-ring-meter .m-fill { fill: var(--tone-swap, #ffffff); stroke: none; }',
+    // The hint, in the page's highlight colour (--hl, and --hl-alt once the
+    // page has turned to its light side). Plain text, no plate.
     '.cursor-ring-hint {',
+    '  position: fixed; left: 0; top: 0; z-index: 9000; pointer-events: none;',
     "  font-family: 'Clash Display', sans-serif;",
-    '  font-size: 15px; font-weight: 500; line-height: 1.35;',
+    '  font-size: 15px; font-weight: 600; line-height: 1.35;',
     '  letter-spacing: 0.01em; white-space: nowrap;',
-    '  color: var(--tone-swap, #ffffff); opacity: 0;',
+    '  color: var(--hl, var(--tone-swap, #ffffff)); opacity: 0;',
     '}',
+    'body.inverted-theme .cursor-ring-hint { color: var(--hl-alt, var(--hl, #0b0e13)); }',
     '.cursor-ring-hint span { display: block; }',
     // The second line is smaller and that is all. No opacity on it: the label
     // is already being drawn at the hint keyframes' own peak (0.55 on the front
@@ -128,14 +136,15 @@
     + '<circle class="m-arc" cx="' + MID + '" cy="' + MID + '" r="' + METER_R + '"'
     + ' transform="rotate(-90 ' + MID + ' ' + MID + ')"/>'
     + '<circle class="m-fill" cx="' + MID + '" cy="' + MID + '" r="0"/>'
-    + '</svg>'
-    + '<div class="cursor-ring-hint"></div>';
+    + '</svg>';
+  const label = document.createElement('div');
+  label.className = 'cursor-ring-hint';
+  label.setAttribute('aria-hidden', 'true');
 
   const outline = ring.querySelector('.cursor-ring-o');
   const meter = ring.querySelector('.cursor-ring-meter');
   const arc = ring.querySelector('.m-arc');
   const fill = ring.querySelector('.m-fill');
-  const label = ring.querySelector('.cursor-ring-hint');
 
   // The arc is one dash as long as the circle, pulled right back out of view.
   // At rest the whole circumference is offset, so nothing is drawn at all.
@@ -158,7 +167,7 @@
   }
 
   document.documentElement.classList.add('has-ring');
-  const attach = function () { document.body.appendChild(ring); };
+  const attach = function () { document.body.appendChild(ring); document.body.appendChild(label); };
   if (document.body) attach(); else document.addEventListener('DOMContentLoaded', attach);
 
   // Where the pointer is, where the ring is, and how fast the ring is going.
@@ -293,7 +302,9 @@
     // Not while the page's own first showing is pinned in place
     // (assets/hold-hint.js): the line is on the page then, and saying it
     // twice at once is noise.
-    if (hintSrc && !document.documentElement.classList.contains('hint-pinned')) {
+    // And not while the pointer is off the page: the chip is outside the
+    // ring's group, so the ring fading out no longer takes it along.
+    if (live && hintSrc && !document.documentElement.classList.contains('hint-pinned')) {
       alpha = (parseFloat(getComputedStyle(hintSrc).opacity) || 0)
         * (1 - Math.min(1, shown * 1.6));
     }
@@ -305,7 +316,7 @@
       const gap = RING / 2 + 8;
       const x = rx + gap + labelW < window.innerWidth - 8 ? gap : -gap - labelW;
       const y = ry + gap + labelH < window.innerHeight - 8 ? gap : -gap - labelH;
-      label.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+      label.style.transform = 'translate(' + (rx + x) + 'px, ' + (ry + y) + 'px)';
     }
   }
   requestAnimationFrame(frame);

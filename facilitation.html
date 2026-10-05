@@ -21,6 +21,7 @@
   <!-- Layout, snap-scroll shell and all theme/inversion rules are shared by
        work / play / facilitation. Anything page-specific goes below it. -->
   <link rel="stylesheet" href="assets/page.css">
+  <script src="assets/site-bar.js" defer></script>
   <style>
     /* This page runs on two tones. Text sits in whichever one the ground is
        not, and the shadow overlay flips it wherever a shadow crosses it.
@@ -40,7 +41,10 @@
        came out *blue* over the gold: |eab84a - ffffff| is rgb(21, 71, 181).
        Same arithmetic as the overlay's own SWAP in the script below, and it
        has to move with it. */
-    :root { --tone-swap: #f5c65d; --tone-swap-rgb: 245, 198, 93; }
+    :root { --tone-swap: #f5c65d; --tone-swap-rgb: 245, 198, 93;
+      /* Highlights (the hold hint, the speaker's line) in the next section
+         colour along: work's cyan, and its dark half on the light side. */
+      --hl: #a3e9e6; --hl-alt: #185249; }
 
     body { color: #eab84a; }
     body.inverted-theme { color: var(--tone-dark); }
@@ -56,9 +60,9 @@
        with either gold or black lands under 2:1 contrast even with the
        muted colours above -- illegible for the one moment it's on screen.
        This page needs it to actually reach a readable peak. */
-    .hint { color: #b8923f; }
+    /* The hint is in --hl above (assets/page.css); it only needs the
+       readable peak below. */
     .hint.hint-show { animation-name: hint-flash-readable; }
-    body.inverted-theme .hint { color: #5a4419; }
     @keyframes hint-flash-readable {
       0%   { opacity: 0; }
       12%  { opacity: 0.9; }
@@ -206,7 +210,6 @@
   <div class="mobile-nav-zone nav-top" onclick="handleNav(-1)"><div class="chevron up" id="nav-up"></div></div>
   <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
   <div id="stage-container"></div>
-  <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
 
   <div id="main-wrapper">
     <div id="header-section" class="scroll-target">
@@ -221,9 +224,9 @@
          the page itself scrolls freely through them. -->
     <article class="flow">
       <section class="stop scroll-target">
-        <h2>Being a good designer does not automatically make a good teacher. And vice versa.</h2>
-        <p>The teaching covers the same ground as the work and play sections, but it is a practice of its own, with its own aims: the point is what students leave able to do, not the work that comes out of it.</p>
-        <p>The approach is shaped as much by poor teaching as by good. Classrooms that served the teacher rather than the student on one side; on the other, the ones that asked what each learner needed and treated every student as bringing a perspective of their own.</p>
+        <h2>It is really, really fun getting other people excited about the things I am excited about.</h2>
+        <p>That is most of what teaching is for me. The same toys from the work and play sections, sensors, projectors, TouchDesigner, a lot of cables, handed over to a room full of people who have not broken them yet. The best part is watching what they do next, because the point is what students leave able to do, not the work that comes out of it.</p>
+        <p>I have sat through enough classrooms to know which ones to steal from. The ones run for the teacher, I try not to repeat. The ones that asked what each learner needed, and treated every student as bringing something of their own to the room, I borrow from shamelessly.</p>
 
         <h3>Making sense of our senses</h3>
         <p>Five senses are all anyone can reliably depend on to perceive the world: sight, sound, touch, taste and smell.</p>

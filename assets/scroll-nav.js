@@ -83,6 +83,17 @@
     counterAll.textContent = pad(targets.length);
     counterFill.style.transform =
       `scaleY(${targets.length < 2 ? 1 : (currentIndex + 1) / targets.length})`;
+    reportProgress(targets.length < 2 ? 1 : currentIndex / (targets.length - 1));
+  }
+
+  // How far down the page the reader is, 0 to 1, for the fill behind the
+  // site bar (assets/site-bar.js). This page has no scroll position of its
+  // own to read that from.
+  let lastProgress = -1;
+  function reportProgress(p) {
+    if (Math.abs(p - lastProgress) < 0.002) return;
+    lastProgress = p;
+    window.dispatchEvent(new CustomEvent('navprogress', { detail: p }));
   }
 
   // The wrapper used to be slid with a CSS transition. That runs on the
@@ -166,6 +177,7 @@
     const min = freeMin();
     const p = min < 0 ? freeY / min : 1;
     counterFill.style.transform = `scaleY(${Math.max(0.02, Math.min(1, p))})`;
+    reportProgress(Math.max(0, Math.min(1, p)));
     const up = document.getElementById('nav-up');
     const down = document.getElementById('nav-down');
     if (up) up.style.opacity = freeY >= -1 ? '0.2' : '1';

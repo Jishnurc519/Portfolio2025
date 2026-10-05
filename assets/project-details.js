@@ -18,6 +18,8 @@
 //     credits: "Collaborators, commissioners, etc.",
 //     youtube: "8thJDYB_lSU",   // the id only, not the whole watch URL
 //                               // — plays above the gallery, see render-project.js
+//     hero: "neel-1",           // the clip on the project's screen on work /
+//                               // play: a name in assets/curated-media.js
 //     story: [ ...blocks... ]   // the long form, see below
 //   }
 //
@@ -109,6 +111,7 @@ const PROJECT_DETAILS = {
     gallery: [0, 1, "vid:1"]
   },
   "onebyzero/echoesofearth": {
+    hero: "neel-1",
     year: "2024",
     role: "Concept, design & development",
     tools: ["Installation", "TouchDesigner", "LED", "Sensing"],
@@ -154,6 +157,7 @@ const PROJECT_DETAILS = {
     ]
   },
   "onebyzero/nodeshed": {
+    hero: "painting-2",
     year: "2025",
     role: "Concept, design & development",
     tools: ["TouchDesigner", "VCV Rack", "Kinetic LED", "Gesture Control"],
@@ -201,6 +205,7 @@ const PROJECT_DETAILS = {
     gallery: [0, "g-3063", "onlyfans-2", "g-3026", "painting-2", "g-3031", "g-3074"]
   },
   "jishnu/sobha": {
+    hero: "set-3",
     year: "2025",
     role: "Volumetric lighting design",
     tools: ["Volumetric Lighting", "Exhibition"],
@@ -268,6 +273,7 @@ const PROJECT_DETAILS = {
   // appears twice -- between the story and the gallery, nothing repeats. (The card's two plates are made from img-08 and IMG_4241, which
   // also appear once each below.)
   "onebyzero/sixthsense": {
+    hero: "v-4241",
     year: "2025",
     role: "Concept, design & development",
     tools: ["TouchDesigner", "Ableton Live", "FL Studio", "Procreate"],

@@ -23,6 +23,9 @@
      each side clearing 4.5:1 on the ground it sits on. */
   --accent:     #6fd9c8;
   --accent-alt: #207a6b;
+  /* The highlight colour: bold phrases, the category tag. Set per section
+     below; a page in no section takes cyan. */
+  --hl: #a3e9e6;
 }
 
 ::selection { background: var(--accent); color: var(--tone-dark); }
@@ -61,14 +64,6 @@ html, body {
 }
 .back-btn:hover { opacity: 0.7; }
 
-.section-nav { margin-left: auto; display: flex; gap: 4px; }
-.section-nav a {
-  display: inline-flex; align-items: center; min-height: 44px; padding: 11px 12px;
-  color: var(--tone-swap); text-decoration: none; font-size: 15px; font-weight: 500;
-  opacity: 0.75; transition: opacity 0.2s ease, font-weight 0.1s linear;
-}
-.section-nav a:hover { opacity: 1; }
-
 #main-wrapper {
   max-width: 1200px; margin: 0 auto;
   padding: 20vh 5vw 10vh;
@@ -78,9 +73,10 @@ body.lightbox-open { overflow: hidden; }
 
 #header-section { margin-bottom: 6vh; }
 .category-tag {
-  font-size: clamp(12px, 1.2vw, 16px); font-weight: 400;
-  text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent);
+  font-size: clamp(12px, 1.2vw, 15px); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--hl);
 }
+.category-tag:empty { display: none; }
 h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line-height: 0.95; }
 
 .meta-row {
@@ -90,7 +86,7 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
 }
 .meta-row:empty { display: none; }
 .meta-item { display: flex; flex-direction: column; gap: 4px; }
-.meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
 .meta-value { font-size: clamp(14px, 1.3vw, 17px); font-weight: 500; }
 
 .overview {
@@ -191,6 +187,44 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
   margin: 0 0 1.4em; max-width: 62ch;
 }
 .story p strong { font-weight: 600; }
+
+/* --- HIGHLIGHTS ---
+   The bold phrases in a write-up are the ones it wants remembered, so they
+   are set in a colour of their own: --hl, the next of the three section
+   colours along (see SECTION PALETTES) -- magenta on a work page, yellow on a
+   play page, cyan on a learn page -- so it stands apart from the page's own
+   ink. Colour only, no plate behind it. Links keep a thick underline in the
+   accent and turn the highlight colour on hover. */
+.story p strong, .overview strong, .text-section strong, .spread-item p strong {
+  color: var(--hl);
+}
+.story p a, .overview a, .text-section a, .spread-item p a, .embed-figure figcaption a {
+  color: var(--tone-light);
+  text-decoration: underline; text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px; text-underline-offset: 4px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.story p a:hover, .overview a:hover, .text-section a:hover, .spread-item p a:hover,
+.embed-figure figcaption a:hover, .story p a:focus-visible {
+  color: var(--hl); text-decoration-color: var(--hl);
+}
+/* Each heading in the write-up carries a short bar of the accent under it. */
+.story h2::after {
+  content: ''; display: block; width: 1.6em; height: 0.12em; margin-top: 0.32em;
+  background: var(--accent); border-radius: 1px;
+}
+
+/* A clip plays muted on its own; this is the one mark on it, in the corner,
+   and it turns the sound on. */
+.clip-sound {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  background: rgba(var(--tone-dark-rgb), 0.7); color: var(--tone-light);
+  opacity: 0.85; transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.clip-sound svg { width: 18px; height: 18px; }
+.clip-sound:hover, .clip-sound:focus-visible { opacity: 1; transform: scale(1.08); }
 .story p em { font-style: italic; opacity: 0.95; }
 
 .story-row { margin-bottom: 3vh; }
@@ -269,8 +303,6 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
   display: block; width: 100%; height: 680px; border: 0; border-radius: 8px;
   background: rgba(var(--tone-light-rgb), 0.05);
 }
-.embed-figure figcaption a, .story p a { color: var(--accent); text-underline-offset: 3px; }
-.embed-figure figcaption a:hover, .story p a:hover { color: var(--tone-light); }
 
 /* --- THE FILM, BEFORE IT IS ASKED FOR ---
    The video's own thumbnail and the site's play mark (render-project.js
@@ -497,7 +529,7 @@ blockquote cite {
    list pages use, rather than a rectangle drawn around a page made of type. */
 :focus { outline: none; }
 :focus-visible { outline: none; }
-.back-btn:focus-visible, .section-nav a:focus-visible {
+.back-btn:focus-visible {
   font-weight: 800; opacity: 1;
 }
 .home-mark:focus-visible { transform: rotate(180deg); }
@@ -514,7 +546,6 @@ blockquote cite {
   #main-wrapper { padding: 16vh 6vw 10vh; }
   .project-nav { gap: 6px; padding: 8px 4vw; }
   .back-btn { font-size: 16px; padding: 11px 8px; }
-  .section-nav a { font-size: 14px; padding: 11px 8px; }
   .gallery { columns: 2 160px; column-gap: 10px; }
   .still, .gallery video { margin-bottom: 10px; }
   .pager-name { font-size: 18px; }
@@ -561,6 +592,7 @@ body.sec-work {
       --accent-alt: #185249;
       --card-accent: #185249;
       --card-accent-alt: #7cc9c5;
+  --hl: #eeaae8;
 }
 /* GMMBBQ is not a fourth section: it sits under play and runs on play's
    magenta, so the CMY set stays closed at three and a gig page and the page
@@ -575,6 +607,7 @@ body.sec-gmmbbq {
       --accent-alt: #5d1f5e;
       --card-accent: #5d1f5e;
       --card-accent-alt: #e3a3de;
+  --hl: #eab84a;
 }
 body.sec-facilitation {
   --tone-light: #eab84a;
@@ -585,4 +618,5 @@ body.sec-facilitation {
   --accent-alt: #5a3f0c;
   --card-accent: #5a3f0c;
   --card-accent-alt: #e0b558;
+  --hl: #a3e9e6;
 }

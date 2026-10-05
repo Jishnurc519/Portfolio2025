@@ -214,7 +214,11 @@ def is_hdr(src: Path) -> bool:
          "-show_entries", "stream=color_transfer", "-of", "csv=p=0", str(src)],
         capture_output=True, text=True,
     )
-    return result.stdout.strip().lower() in HDR_TRANSFERS
+    # Side data on the stream (an iPhone's rotation matrix) puts a trailing
+    # comma on the csv line -- "arib-std-b67," -- so take the first field,
+    # not the whole line, or no iPhone HDR clip is ever recognised.
+    first = (result.stdout.strip().splitlines() or [""])[0].split(",")[0]
+    return first.strip().lower() in HDR_TRANSFERS
 
 
 def video_filter(src: Path) -> str:

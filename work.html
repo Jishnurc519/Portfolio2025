@@ -21,6 +21,7 @@
   <!-- Layout, snap-scroll shell and all theme/inversion rules are shared by
        work / play / facilitation. Anything page-specific goes below it. -->
   <link rel="stylesheet" href="assets/page.css">
+  <script src="assets/site-bar.js" defer></script>
   <style>
     /* THE PAIR, restated for this section. The three sections take the three
        subtractive primaries -- work cyan, play magenta, facilitation yellow --
@@ -55,6 +56,10 @@
       --accent-alt: #185249;
       --card-accent: #185249;
       --card-accent-alt: #7cc9c5;
+      /* Highlights (the hold hint, the speaker's line) in the next section
+         colour along: play's magenta, and its dark half on the light side. */
+      --hl: #eeaae8;
+      --hl-alt: #5d1f5e;
     }
 
     /* Above the copy, not behind it. The bars are painted in --tone-swap and
@@ -82,7 +87,6 @@
 
   <div id="stage-container"></div>
 
-  <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
 
   <div id="main-wrapper">
     <div id="header-section" class="scroll-target">
@@ -240,31 +244,22 @@
         }
       }
 
-      // --- the cards, which the bars leave alone ---
+      // --- the pictures, which the bars leave alone ---
       // Punched straight out of the inversion layer rather than protected in
       // CSS: this canvas is what does the inverting, so a hole in it is a piece
       // of page the bars cannot reach.
       //
-      // The whole card comes out, not just the picture in it. A project card is
-      // one object — plate, photo, year, title, tags, description — and a bar
-      // slicing through the middle of it, flipping half a title and a corner of
-      // a photograph, reads as damage rather than as an effect. It is left to
-      // turn over with the page, once, when the theme does.
+      // Only the pictures come out -- each project's clip or still, and the
+      // Behance frame. A photograph with a bar across it is a photograph
+      // damaged; a project's name with a bar across it is the effect. So the
+      // titles, tags and copy beside each picture invert with the ground.
       //
-      // The heading and the ground still invert under every bar. That is the
-      // whole point of the layer being up here; it is only the cards that are
-      // held out of it.
-      //
-      // The stacked layers sit at opacity 0 until their card is live and fade
-      // in and out on a transition, and a hole cut for something that is not
-      // being painted is just an un-inverted rectangle. Their painted opacity
-      // is the only thing that actually answers that, so it is what gets asked;
-      // a class test would open the hole a fifth of a second before the layer
-      // it is meant to be protecting arrives.
+      // Painted opacity is checked before cutting, because a hole cut for
+      // something that is not being painted is just an un-inverted rectangle.
       let media = [];
       function findMedia() {
         media = [].slice.call(document.querySelectorAll(
-          '#main-wrapper .project-item, #main-wrapper .behance-frame'));
+          '#main-wrapper .screen-media, #main-wrapper .behance-frame'));
       }
 
       function resize() {

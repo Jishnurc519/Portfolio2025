@@ -26,6 +26,10 @@
       --tone-dark:  #0b0e13;   /* rgb( 11,  14,  19) */
       --tone-light: #f4f1ec;   /* rgb(244, 241, 236) */
       --tone-swap:  #ffffff;   /* dark + light, channel by channel */
+      /* The highlight colour (the hold hint, here and on the cursor): work's
+         cyan, and its dark half on the light side. */
+      --hl: #a3e9e6;
+      --hl-alt: #185249;
     }
 
     html, body {
@@ -39,6 +43,9 @@
       width: 100vw; height: 100dvh; z-index: 1;
     }
     #brush-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    /* Under the canvas, which paints its frames (see the showreel in the
+       script below). */
+    #stage-container .reel { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     canvas { display: block; }
 
     /* The canvas draws every glyph itself, so the real text is laid out here
@@ -116,9 +123,10 @@
        unused (assets/hold-hint.js). Like the rest of the overlay it is only a
        position: the canvas paints it, reading this element's animated opacity
        so the fade carries through to what is drawn. */
+    /* In the highlight colour, like the hint on every other page. */
     #hint {
-      font-size: clamp(11px, 1vw, 13px); font-weight: 400;
-      letter-spacing: 0.03em; opacity: 0;
+      font-size: clamp(11px, 1vw, 13px); font-weight: 500;
+      letter-spacing: 0.03em; opacity: 0; color: var(--hl);
     }
     #hint.hint-show { animation: hint-flash 4.5s ease-in-out forwards; }
     @keyframes hint-flash {
@@ -167,18 +175,13 @@
       .social-links img { width: 20px; height: 20px; }
     }
   </style>
+  <script src="assets/site-bar.js" defer></script>
 </head>
 <body>
 
   <div id="stage-container"></div>
 
   <div class="content-overlay" id="content-overlay">
-    <nav class="site-nav">
-      <a href="work.html" class="nav-link">work</a>
-      <a href="play.html" class="nav-link">play</a>
-      <a href="facilitation.html" class="nav-link">learn</a>
-    </nav>
-
     <div id="hero">
       <div id="stack">
         <h1 id="title"><span style="display:block"><span class="bold">jishnu</span>has</span><span style="display:block">an<span class="bold">artpage</span></span></h1>
@@ -239,6 +242,8 @@
       const DARK = '#0b0e13';
       const LIGHT = '#f4f1ec';
       const SWAP = '#ffffff';
+      // The hint's highlight colour, both sides; the same pair as --hl.
+      const HL = '#a3e9e6', HL_ALT = '#185249';
 
       const stage = document.getElementById('stage-container');
       const body = document.body;
@@ -252,6 +257,61 @@
       document.documentElement.classList.add('js-canvas');
 
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // --- the showreel ---
+      // The best clips on the site, each on screen for under a second, cut
+      // into one short loop by scripts/build_showreel.py -- a wide cut and a
+      // tall one, so a phone held upright is not looking at a sliver of a
+      // landscape frame. It is not shown as a video. Its frames are drawn into
+      // this canvas as part of the ground, under the brush marks and under the
+      // type, because the type is painted last in difference against whatever
+      // the canvas holds: a video behind the canvas would be invisible, and
+      // one in front would sit outside the difference and swallow the words.
+      //
+      // Held well back -- screened up out of the dark ground -- so it reads as
+      // light moving behind the page and the name over it stays a name.
+      // REEL_ALPHA is the dial. Only on the dark side: the light side carries
+      // the description, which is read on plain paper.
+      //
+      // The element itself sits behind the canvas rather than off the page:
+      // a browser pauses a muted autoplaying video it decides nobody can see,
+      // and covered is not the same as off screen.
+      const REEL_ALPHA = 0.42;
+      const saveData = navigator.connection && navigator.connection.saveData;
+      let reel = null;
+      if (!reduceMotion && !saveData) {
+        reel = document.createElement('video');
+        reel.className = 'reel';
+        reel.muted = true; reel.loop = true; reel.autoplay = true; reel.playsInline = true;
+        reel.setAttribute('muted', ''); reel.setAttribute('playsinline', '');
+        reel.setAttribute('aria-hidden', 'true');
+        reel.preload = 'auto';
+        stage.insertBefore(reel, stage.firstChild);
+        const pickReel = () => {
+          const want = 'assets/showreel/reel-' + (window.innerWidth / window.innerHeight < 0.9 ? 'tall' : 'wide') + '.mp4';
+          if (reel.getAttribute('src') !== want) {
+            reel.src = want;
+            reel.play().catch(() => {});
+          }
+        };
+        pickReel();
+        window.addEventListener('resize', pickReel);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reel.play().catch(() => {});
+        });
+      }
+      // Cover the screen with the current frame, the way object-fit does.
+      function drawReel(W, H) {
+        if (!reel || reel.readyState < 2 || !reel.videoWidth) return;
+        const vw = reel.videoWidth, vh = reel.videoHeight;
+        const s = Math.max(W / vw, H / vh);
+        const dw = vw * s, dh = vh * s;
+        ctx.save();
+        ctx.globalAlpha = REEL_ALPHA;
+        ctx.globalCompositeOperation = 'screen';
+        ctx.drawImage(reel, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        ctx.restore();
+      }
 
       // --- the text, split so each letter can be measured ---
       const chars = [];
@@ -522,6 +582,8 @@
             // other mode everywhere. Adopting it changes nothing on screen.
             inverted = 1 - inverted;
             body.style.background = inverted ? LIGHT : DARK;
+            // For the cursor's hint, which takes its light-side colour off this.
+            body.classList.toggle('inverted-theme', !!inverted);
             marks.length = 0;
           }
         } else {
@@ -573,6 +635,9 @@
         ctx.globalCompositeOperation = 'source-over';
         ctx.fillStyle = ground;
         ctx.fillRect(0, 0, W, H);
+        // Only on the dark side, under the name. The light side is the
+        // description, and it is read on plain paper.
+        if (!inverted) drawReel(W, H);
 
         for (let i = 0; i < marks.length; i++) {
           drawMark(marks[i], marks[i].turning ? turnTone : ink);
@@ -613,18 +678,14 @@
           for (let i = 0; i < chars.length; i++) {
             if (sides[i] !== null && sides[i] !== side) continue;
             const el = chars[i];
-            const faded = hintChars.has(el);
-            if (faded && (hintOnCursor() || hintAlpha < 0.01)) continue;
+            // The hint is painted on its own, as a chip, below.
+            if (hintChars.has(el)) continue;
             const r = el.getBoundingClientRect();
             if (r.width === 0 || r.bottom < 0 || r.top > H) continue;
             const cs = getComputedStyle(el);
             ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-            // A partial alpha under difference lands the letter part-way
-            // between the ground and its opposite, which is the fade.
-            ctx.globalAlpha = faded ? hintAlpha : 1;
             ctx.fillText(el.textContent, r.left + r.width / 2, r.top + r.height / 2);
           }
-          ctx.globalAlpha = 1;
         };
 
         if (discR <= 0) {
@@ -659,6 +720,24 @@
           }
         }
         ctx.globalCompositeOperation = 'source-over';
+
+        // --- the hint, in the highlight colour ---
+        // Painted plainly, not in difference: a colour of its own, as the
+        // hint is on every other page -- cyan on the dark side, its dark half
+        // on the light one. Faded by the element's own animated opacity
+        // (assets/hold-hint.js), and left off while the cursor carries it.
+        if (hintEl && hintAlpha >= 0.01 && !hintOnCursor()) {
+          ctx.globalAlpha = hintAlpha;
+          ctx.fillStyle = inverted ? HL_ALT : HL;
+          hintChars.forEach((el) => {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0) return;
+            const cs = getComputedStyle(el);
+            ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+            ctx.fillText(el.textContent, r.left + r.width / 2, r.top + r.height / 2);
+          });
+          ctx.globalAlpha = 1;
+        }
       }
       requestAnimationFrame(frame);
 

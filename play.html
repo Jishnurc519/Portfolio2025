@@ -21,6 +21,7 @@
   <!-- Layout, snap-scroll shell and all theme/inversion rules are shared by
        work / play / facilitation. Anything page-specific goes below it. -->
   <link rel="stylesheet" href="assets/page.css">
+  <script src="assets/site-bar.js" defer></script>
   <style>
     /* This page's header is the only one that hangs off the right edge. */
     #header-section { text-align: right; }
@@ -47,6 +48,10 @@
       --accent-alt: #5d1f5e;
       --card-accent: #5d1f5e;
       --card-accent-alt: #e3a3de;
+      /* Highlights (the hold hint, the speaker's line) in the next section
+         colour along: learn's yellow, and its dark half on the light side. */
+      --hl: #eab84a;
+      --hl-alt: #5a3f0c;
     }
 
     /* Above the copy, not behind it. The pack is painted a channel at a
@@ -144,7 +149,6 @@
   <div class="mobile-nav-zone nav-bottom" onclick="handleNav(1)"><div class="chevron down" id="nav-down"></div></div>
 
   <div id="stage-container"></div>
-  <a href="index.html" class="back-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">← Back</a>
 
   <div id="main-wrapper">
     <div id="header-section" class="scroll-target">
@@ -344,17 +348,16 @@
       const unit = () => Math.min(W, H);
       let maxR = 80;
 
-      // --- the cards, which none of this reaches ---
+      // --- the pictures, which none of this reaches ---
       // Punched straight out of the inversion layer: this canvas is what does
       // the inverting, so a hole in it is a piece of page the circles cannot
-      // touch. The whole card comes out, not just the picture in it — plate,
-      // photo, year, title, tags, description are one object, and a circle
-      // flipping a corner of one reads as damage rather than as an effect. A
-      // card turns over with the page, once, when the theme does.
+      // touch. Only each project's clip or still comes out; a circle across a
+      // photograph is damage, a circle across a project's name is the effect,
+      // so the type beside the picture turns over with the ground.
       let media = [];
       function findMedia() {
         media = [].slice.call(document.querySelectorAll(
-          '#main-wrapper .project-item, #main-wrapper .behance-frame'));
+          '#main-wrapper .screen-media, #main-wrapper .behance-frame'));
       }
 
       // --- where everything is ---

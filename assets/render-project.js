@@ -113,15 +113,14 @@
   // making of a thing, and the thing itself should not have to be scrolled
   // past eight photographs to be found.
   //
-  // The player is not loaded until it is asked for. An embed pulls the whole
-  // player, its fonts and its telemetry, on a page whose actual content is a
-  // handful of jpegs, and youtube-nocookie keeps the visit off the viewer's
-  // watch history even then. What stands in for it is
-  // the video's own thumbnail and one play mark: YouTube refuses to play in a
-  // frame that sends no Referer, which is every page opened straight from
-  // disk, and there the player was a grey box with an error code in it. On
-  // file:// the press opens the video on YouTube instead; everywhere else it
-  // swaps the thumbnail for the player and starts it.
+  // Every video on the site plays on its own, films included: the player is
+  // swapped in, muted, the first time the film comes into view (a browser
+  // will only start a video by itself with the sound off), and the reader
+  // turns the sound up in YouTube's own controls. youtube-nocookie keeps the
+  // visit off the viewer's watch history. Until then the film's own thumbnail
+  // and a play mark stand in for it -- and on file:// they stay, because
+  // YouTube refuses to play in a frame that sends no Referer, which is every
+  // page opened straight from disk; there the press opens it on YouTube.
   function youtubeFrame(id, title) {
     const wrap = document.createElement('div');
     wrap.className = 'video-embed yt-facade';
@@ -139,17 +138,29 @@
     btn.type = 'button';
     btn.className = 'video-play';
     btn.setAttribute('aria-label', 'Play ' + (title || 'video'));
-    btn.addEventListener('click', () => {
-      if (location.protocol === 'file:') { window.open(watch, '_blank', 'noopener'); return; }
+    const start = (muted) => {
       const frame = document.createElement('iframe');
-      frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0';
+      frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id)
+        + '?autoplay=1&rel=0&playsinline=1' + (muted ? '&mute=1' : '');
       frame.title = title || 'Video';
       frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen';
       frame.allowFullscreen = true;
       frame.referrerPolicy = 'strict-origin-when-cross-origin';
       frame.setAttribute('frameborder', '0');
       wrap.replaceChildren(frame);
+    };
+    btn.addEventListener('click', () => {
+      if (location.protocol === 'file:') { window.open(watch, '_blank', 'noopener'); return; }
+      start(false);
     });
+    if (location.protocol !== 'file:' && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        if (wrap.contains(btn)) start(true);
+      }, { threshold: 0.35 });
+      io.observe(wrap);
+    }
     const link = document.createElement('a');
     link.className = 'yt-link';
     link.href = watch; link.target = '_blank'; link.rel = 'noopener';
@@ -158,14 +169,12 @@
     return wrap;
   }
 
-  // A documentation clip is a still until it is asked for. `controls` draws
-  // the browser's own play bar, timecode and overflow menu inline, and
-  // `preload: none` does nothing about that, because the chrome is painted
-  // whether or not the bytes have arrived -- so a designed page carried a
-  // strip of Chrome's furniture across the middle of it. The poster stands on
-  // its own behind one button instead, and the controls arrive on the same
-  // press that starts the video, by which point they are what the reader
-  // asked for rather than something they have to look past.
+  // A documentation clip plays on its own, muted and looping, whenever it is
+  // on screen -- every video on the site does. It has no controls until it
+  // is asked for: `controls` draws the browser's own play bar, timecode and
+  // overflow menu across a designed page. One small mark in the corner turns
+  // the sound on, and brings the controls with it, by which point they are
+  // what the reader asked for.
   function videoStill(v) {
     const wrap = document.createElement('div');
     wrap.className = 'video-still';
@@ -188,22 +197,28 @@
       });
     }
     video.playsInline = true;
+    video.muted = true; video.loop = true;
+    video.setAttribute('muted', '');
     video.preload = 'none';
     video.controls = false;
     const dim = v.size || (project.sizes || {})[v.poster];
     if (dim) { video.width = dim[0]; video.height = dim[1]; }
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'video-play';
-    btn.setAttribute('aria-label', 'Play clip');
+    btn.className = 'clip-sound';
+    btn.setAttribute('aria-label', 'Sound on');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
     btn.addEventListener('click', function () {
+      video.muted = false;
       video.controls = true;
       wrap.classList.add('playing');
       btn.remove();
-      video.play();
+      video.play().catch(() => {});
     });
     wrap.appendChild(video);
     wrap.appendChild(btn);
+    playInView(video);
     return wrap;
   }
 
@@ -530,6 +545,15 @@
     return el;
   }
 
+  // Plays while on screen and pauses off it, so a page of clips costs one or
+  // two decoders at a time rather than all of them.
+  function playInView(v) {
+    if (!('IntersectionObserver' in window)) { v.play().catch(() => {}); return; }
+    new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); });
+    }, { threshold: 0.25 }).observe(v);
+  }
+
   // A clip that plays like the animated image it replaces: muted, looping,
   // no controls, and only while it is on screen.
   function loopClip(m) {
@@ -541,9 +565,7 @@
     v.setAttribute('muted', '');
     if (m.poster) v.poster = m.poster;
     v.src = m.src;
-    new IntersectionObserver((entries) => {
-      entries.forEach((e) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); });
-    }).observe(v);
+    playInView(v);
     return v;
   }
 

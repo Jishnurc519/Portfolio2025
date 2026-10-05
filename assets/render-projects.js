@@ -1,13 +1,15 @@
-// Builds a page's project cards from PAGE_CONFIG + SITE_MANIFEST +
-// PROJECT_DETAILS. Shared by work.html / play.html / facilitation.html —
-// the page key is taken from the filename, so work.html renders
-// PAGE_CONFIG.work and so on. To rearrange projects, edit
-// assets/page-config.js; the pages themselves never need to change.
+// Builds a page's projects from PAGE_CONFIG + SITE_MANIFEST + PROJECT_DETAILS,
+// one project to a screen: a large picture -- the project's own clip,
+// looping, where it has one -- beside its name, year, tools and a line on
+// what it is. Each section only has a handful of projects, so each one can
+// have the whole screen. Shared by work.html and play.html; the page key is
+// taken from the filename, so work.html renders PAGE_CONFIG.work. To
+// rearrange projects, edit assets/page-config.js; the pages never change.
 //
-// Load order matters: manifest.js, project-details.js and page-config.js
-// must come first, and scroll-nav.js must come after, because it measures
-// the cards this script appends.
-(function renderProjectList() {
+// Load order matters: manifest.js, curated-media.js, project-details.js and
+// page-config.js must come first, and scroll-nav.js after, because it
+// measures the screens this script appends.
+(function renderProjectScreens() {
   const mount = document.getElementById('project-list');
   if (!mount) return;
 
@@ -15,64 +17,83 @@
   const entries = (typeof PAGE_CONFIG !== 'undefined' ? PAGE_CONFIG[pageKey] : null) || [];
   if (!entries.length) console.warn('render-projects.js: no PAGE_CONFIG entries for page key:', pageKey);
 
-  entries.forEach(({ key, group, displayName }) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  const total = entries.filter(({ key }) => typeof SITE_MANIFEST !== 'undefined' && SITE_MANIFEST[key]).length;
+  let n = 0;
+
+  entries.forEach(({ key, displayName }) => {
     const data = (typeof SITE_MANIFEST !== 'undefined') ? SITE_MANIFEST[key] : null;
     if (!data) { console.warn('page-config.js references unknown project key:', key); return; }
     const info = (typeof PROJECT_DETAILS !== 'undefined' && PROJECT_DETAILS[key]) || {};
+    n++;
 
-    // A project can exist before its media does (a folder with nothing in it
-    // yet), in which case the stack is a single empty plate rather than an
-    // <img> pointing at nothing.
-    // Card plates picked by hand (a Thumbnails folder under NewAssets, turned
-    // into jpgs by scripts/build_curated_media.py) lead when there are any.
-    const picked = (typeof CURATED_MEDIA !== 'undefined' && CURATED_MEDIA[key] && CURATED_MEDIA[key].thumbs) || [];
-    const mainSrc = picked[0] || data.thumb || '';
-    const pool = [...picked.slice(1), ...(data.images || []), ...(data.videos || []).map(v => v.poster)]
-      .filter((src) => src !== mainSrc);
-    const bgLayers = mainSrc ? pool.slice(0, 2).map((src, i) =>
-      `<img class="project-thumb thumb-bg-${i + 1}" src="${src}" alt="" loading="lazy">`
-    ).join('') : '';
-    const mainLayer = mainSrc
-      ? `<img class="project-thumb thumb-main" src="${mainSrc}" alt="" loading="lazy">`
-      : `<div class="project-thumb thumb-main thumb-empty"><span>soon</span></div>`;
+    // The picture: a clip where there is one, because these are moving
+    // pieces and a still undersells them -- the one named by `hero` in
+    // assets/project-details.js, else the project's first clip. Otherwise the
+    // plate picked by hand for it (assets/curated-media.js), else its
+    // thumbnail. `hero` is there because the first clip in the manifest is
+    // not always the one to lead with, and is not always still on disk.
+    const curated = (typeof CURATED_MEDIA !== 'undefined' && CURATED_MEDIA[key]) || {};
+    const picked = curated.thumbs || [];
+    const named = info.hero && curated.items && curated.items[info.hero];
+    const clip = (named && named.type === 'video') ? named : (data.videos || [])[0];
+    const still = picked[0] || data.thumb || '';
+    let media;
+    if (clip) {
+      media = `<video data-src="${clip.src}" poster="${clip.poster || still}" muted loop playsinline preload="none"></video>`;
+    } else if (still) {
+      media = `<img src="${still}" alt="" loading="lazy" decoding="async">`;
+    } else {
+      media = '<span class="screen-empty">soon</span>';
+    }
 
-    // A real link, not a div that listens for clicks. That is what makes the
-    // list reachable by keyboard at all, and it is also what gives back
-    // open-in-new-tab, middle click, copy-link and the URL preview in the
-    // status bar — none of which a click handler can offer. onclick stays on
-    // as a guard only: it cancels the navigation when the pointer was
-    // mid-hold-to-invert and happened to come up over a card.
+    // A real link, so it is reachable by keyboard and keeps open-in-new-tab,
+    // middle click and copy-link. onclick only guards against a hold to
+    // invert that happened to end over it.
     const item = document.createElement('a');
-    item.className = 'project-item scroll-target' + (group ? ` ${group}-only` : '');
+    item.className = 'project-screen scroll-target' + (n % 2 === 0 ? ' flip' : '');
     item.href = `projects/${key.split('/')[1]}.html`;
     item.dataset.project = key;
-    item.dataset.top = '0';
     item.setAttribute('onclick', 'return handleProjectClick(event)');
     item.innerHTML = `
-      <div class="thumb-stack">
-        ${bgLayers}
-        ${mainLayer}
-      </div>
-      <div class="project-details">
-        ${info.year ? `<span class="project-year">${info.year}</span>` : ''}
+      <div class="screen-media">${media}</div>
+      <div class="screen-text">
+        <span class="screen-count">${pad(n)} / ${pad(total)}</span>
         <h2 class="project-title">${displayName || data.name}</h2>
-        ${info.tools && info.tools.length ? `<span class="project-tags">${info.tools.join(' • ')}</span>` : ''}
+        ${info.year || (info.tools && info.tools.length)
+          ? `<span class="project-tags">${[info.year, ...(info.tools || [])].filter(Boolean).join(' • ')}</span>` : ''}
         ${info.overview ? `<p class="project-desc">${info.overview}</p>` : ''}
+        <span class="screen-open">View project <span aria-hidden="true">→</span></span>
       </div>
     `;
     mount.appendChild(item);
   });
 
-  // The stack fanning apart was a :hover effect, so a phone never saw the
-  // second and third images at all. The same fan now happens on whichever card
-  // is .active — which is how the list is navigated on a phone — and the
-  // layers take turns in front, so all three get their moment rather than the
-  // top one holding the card forever.
-  if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    setInterval(() => {
-      const card = document.querySelector('.project-item.active');
-      if (!card || !card.querySelector('.thumb-bg-1')) return;
-      card.dataset.top = String((Number(card.dataset.top || 0) + 1) % 3);
-    }, 2200);
+  // Clips load the first time their screen comes near and play only while
+  // it is the one on screen, so a page of seven costs one decoder at a time.
+  const clips = mount.querySelectorAll('video[data-src]');
+  if (!('IntersectionObserver' in window)) {
+    clips.forEach((v) => { v.src = v.dataset.src; v.play().catch(() => {}); });
+    return;
   }
+  const io = new IntersectionObserver((list) => {
+    list.forEach(({ target: v, isIntersecting }) => {
+      if (isIntersecting) {
+        if (!v.src) v.src = v.dataset.src;
+        v.play().catch(() => {});
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+  }, { threshold: 0.4 });
+  clips.forEach((v) => io.observe(v));
+  // The browser pauses footage in a tab that goes out of sight, and nothing
+  // above fires again when it comes back.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    clips.forEach((v) => {
+      const r = v.getBoundingClientRect();
+      if (v.src && r.bottom > 0 && r.top < window.innerHeight) v.play().catch(() => {});
+    });
+  });
 })();

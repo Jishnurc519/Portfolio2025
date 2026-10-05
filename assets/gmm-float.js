@@ -1,7 +1,7 @@
 // The floating speaker: the Gamma Barbecue mark, drifting over the whole page
 // and inverting whatever it passes over -- type, cards, the pack -- by
 // difference against the page's --tone-swap, the way the pack itself does.
-// Above the pack, below the back link and the cursor. Clicking it goes to
+// Above the pack, below the cursor. Clicking it goes to
 // GMMBBQ. Shared by work, play and learn; index doesn't load it.
 //
 // It is drawn a channel at a time -- red, green and blue of the swap tone,
@@ -59,6 +59,18 @@
     @media (prefers-reduced-motion: reduce) {
       #gmm-float:hover .inner, #gmm-float .inner::before, #gmm-float .inner::after { animation: none; }
     }
+    /* What it says once the reader has reached the bottom of the page, in
+       the page's highlight colour like the hold hint. Plain paint, not
+       difference, so it is the same colour over anything. */
+    #gmm-say {
+      position: fixed; left: 0; top: 0; z-index: 151;
+      font-family: 'Clash Display', sans-serif; font-size: 15px; font-weight: 600;
+      white-space: nowrap; text-decoration: none;
+      color: var(--hl, var(--tone-light, #f4f1ec));
+      opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
+    }
+    #gmm-say.on { opacity: 1; pointer-events: auto; }
+    body.inverted-theme #gmm-say { color: var(--hl-alt, var(--hl, #0b0e13)); }
   `;
   const style = document.createElement('style');
   style.textContent = css;
@@ -89,10 +101,33 @@
   el.querySelector('.fc-g').style.color = 'rgb(0,' + g + ',0)';
   el.querySelector('.fc-b').style.color = 'rgb(0,0,' + b + ')';
 
-  // Just under the back link, so it paints beneath it.
-  const back = document.querySelector('.back-btn');
-  if (back) back.parentNode.insertBefore(el, back);
-  else document.body.appendChild(el);
+  document.body.appendChild(el);
+
+  // --- "click me or not, idc (pls click)" ---
+  // Says it only at the bottom of the page, where the reader has seen
+  // everything else and the speaker is the one thing left to do. The list
+  // pages move by transform, so the bottom is read off the progress
+  // assets/scroll-nav.js reports; a page that scrolls natively, off the
+  // scroll position. It goes again if they head back up.
+  const say = document.createElement('a');
+  say.id = 'gmm-say';
+  say.href = 'gmmbbq.html';
+  say.textContent = 'click me or not, idc (pls click)';
+  say.tabIndex = -1;
+  ['pointerdown', 'mousedown', 'touchstart'].forEach((t) =>
+    say.addEventListener(t, (e) => e.stopPropagation(), { passive: true }));
+  document.body.appendChild(say);
+  let atBottom = false;
+  const bottom = (p) => {
+    if (!atBottom && p >= 0.97) atBottom = true;
+    else if (atBottom && p < 0.85) atBottom = false;
+    say.classList.toggle('on', atBottom && el.classList.contains('live'));
+  };
+  window.addEventListener('navprogress', (e) => bottom(e.detail));
+  window.addEventListener('scroll', () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (max > 4) bottom(window.scrollY / max);
+  }, { passive: true });
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SPEED = 38;          // px per second, wandering
@@ -170,5 +205,12 @@
     }
     el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' +
       (reduce ? 0 : Math.sin(now / 1700) * 8).toFixed(2) + 'deg)';
+    // The chip rides beside it, on whichever side has room.
+    if (atBottom) {
+      const sw = say.offsetWidth, sh = say.offsetHeight;
+      const sx = x + w + 10 + sw < W - 8 ? x + w + 10 : Math.max(8, x - sw - 10);
+      const sy = Math.min(H - sh - 8, Math.max(8, y + h * 0.38 - sh / 2));
+      say.style.transform = 'translate(' + sx.toFixed(1) + 'px,' + sy.toFixed(1) + 'px)';
+    }
   })(last);
 })();

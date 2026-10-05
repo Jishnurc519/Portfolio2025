@@ -876,3 +876,58 @@ wanders, its RGB channels split from each page's `--tone-swap-rgb`.
 **play.html's turn** no longer squares off. The pack swells into its
 neighbours and the remaining holes are packed with circles, coarse to fine
 (`FILL_LEVELS`), found once at firing by reading back a quarter-scale raster.
+
+---
+
+## 15. The site bar, project screens, the showreel
+
+**The site bar** (`assets/site-bar.js`) is a frosted plate across the top of
+every page -- Home, Work, Play, Learn -- after the one at the foot of
+dontmatter.eu. A darker fill behind the words shows how far down the page you
+are: list pages report it from `assets/scroll-nav.js` (a `navprogress` event,
+since they move by transform), everything else is read off the scroll
+position. The script brings its own styles; a page needs only
+`<script src="assets/site-bar.js" defer></script>`. It replaced the front
+page's three links and the section links on project pages, and on narrow
+screens it takes the whole top edge. It stops presses from reaching the
+window, so clicking it never starts a hold. The back links are gone; GMMBBQ
+is reached through the speaker, which says "click me or not, idc (pls click)"
+once the reader reaches the bottom of a page (assets/gmm-float.js).
+
+**Highlights are a colour, not a plate**: `--hl` (and `--hl-alt` on the light
+side), the next of the three section colours along -- magenta on work,
+yellow on play, cyan on learn and the front page. It colours the hold hint
+(the in-page line, the label on the cursor -- now outside the cursor's
+difference group, which would otherwise invert it -- and the front page's
+canvas), the speaker's line, and on project pages the bold phrases and the
+category tag.
+
+**One project to a screen** on work and play (`assets/render-projects.js`,
+`.project-screen` in `assets/page.css`): the project's first clip, looping, or
+its best still, beside the name, year and tools, the overview and a "View
+project" link. Every other screen swaps sides. The cards, the thumbnail fan
+and the dark-only / bright-only groups are gone. On work and play only the
+pictures (`.screen-media`) are punched out of the inversion layer, so the type
+beside them inverts with the ground.
+
+**Every video autoplays**, muted, while it is on screen: project screens,
+learn's student work, GMMBBQ, and on project pages the documentation clips
+(a corner button turns the sound on and brings the controls) and the YouTube
+films (swapped in muted the first time they scroll into view; on `file://`
+they stay a thumbnail, since YouTube will not play without a Referer).
+
+**Project page highlights** (`assets/project-page.css`): bold phrases and the
+category tag in `--hl`, links a thick accent underline that turns `--hl` on
+hover, and story headings a short accent bar.
+
+**The showreel** behind the front page. `scripts/build_showreel.py` cuts 22
+of the best clips into one 12-second loop, every cut under a second, twice --
+`assets/showreel/reel-wide.mp4` and `reel-tall.mp4` (about 1.6 MB each), each
+cut cropped to fill, so portrait and landscape sources mix. Edit `CUTS` and
+rerun to change it. `index.html` draws the reel's frames into its canvas as
+part of the ground (screened in, on the dark side only -- the light side is
+the description, on plain paper), under the brush marks and the type -- the type is painted last in difference
+against the canvas, so a video anywhere else would either be hidden or sit
+outside the difference. `REEL_ALPHA` is the strength. Skipped under reduced
+motion and Save-Data.
+

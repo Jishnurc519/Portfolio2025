@@ -108,11 +108,17 @@ canvas { display: block; }
 
 h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-height: 0.9; }
 .subtitle { font-size: clamp(16px, 2vw, 24px); font-weight: 400; opacity: 0.8; margin-top: 10px; display: block; }
+/* Set in the page's highlight colour (--hl, and --hl-alt once the page has
+   turned to its light side): the next of the three section colours along,
+   so it stands apart from the page's own ink -- magenta on work, yellow on
+   play, cyan on learn. No plate behind it; the colour is the highlight. The
+   same colour is used for it on the cursor (assets/cursor.js). */
 .hint {
-  font-size: clamp(11px, 1vw, 13px); font-weight: 400; margin-top: 14px;
+  font-size: clamp(11px, 1vw, 13px); font-weight: 500; margin-top: 14px;
   display: block; letter-spacing: 0.03em;
-  opacity: 0;
+  color: var(--hl, var(--accent)); opacity: 0;
 }
+body.inverted-theme .hint { color: var(--hl-alt, var(--accent-alt)); }
 /* Played on load and replayed by assets/hold-hint.js every twenty seconds the
    invert gesture goes unused — the class comes off and goes back on to restart
    it, so the animation must hang off the class rather than off .hint. */
@@ -155,63 +161,56 @@ h1 { font-size: clamp(40px, 8vw, 100px); font-weight: 700; margin: 0; line-heigh
   .hint.hint-urge { animation: hint-intro 6.5s ease-in-out forwards; }
 }
 
-.project-list { display: flex; flex-direction: column; gap: 0; pointer-events: auto; min-height: 100vh; }
+.project-list { display: flex; flex-direction: column; gap: 0; pointer-events: auto; }
 
-.project-item {
-  /* An <a>, so it needs the link defaults taken back off. */
-  text-decoration: none; color: inherit;
-  border-top: 1px solid rgba(var(--tone-light-rgb), 0.4);
-  padding: 20px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-  cursor: pointer; display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 20px;
-  background: transparent; border-radius: 8px;
-  margin-top: 10vh; margin-bottom: 10vh;
+/* --- ONE PROJECT TO A SCREEN (work, play) ---
+   Built by assets/render-projects.js. Each section has only a handful of
+   projects, so each one takes the whole screen: the picture large, and beside
+   it the name, the year and tools, a line on what it is. Every other screen
+   swaps sides (.flip) so the run of them has a rhythm rather than a column.
+   The type is in currentColor and turns over with the page; the picture is
+   held out of each page's inversion layer (see findMedia on work and play),
+   because a photograph differenced is not the photograph any more. */
+.project-screen {
+  display: grid; align-items: center; box-sizing: border-box;
+  grid-template-columns: minmax(0, 1.65fr) minmax(240px, 1fr);
+  gap: clamp(24px, 4vw, 64px);
+  min-height: 100vh; min-height: 100dvh; padding: 12vh 0;
+  color: inherit; text-decoration: none; cursor: pointer;
 }
-
-.project-year { font-size: clamp(14px, 1.5vw, 18px); font-weight: 400; opacity: 0.6; }
-.project-details { display: flex; flex-direction: column; gap: 10px; }
-
-.thumb-stack { position: relative; width: 100%; max-width: 320px; height: 200px; }
-.project-thumb {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: left center;
-  border-radius: 6px; display: block; background: rgba(var(--tone-light-rgb), 0.06);
-  transition: transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease;
+.project-screen.flip { grid-template-columns: minmax(240px, 1fr) minmax(0, 1.65fr); }
+.project-screen.flip .screen-media { order: 2; }
+.screen-media {
+  position: relative; height: 72vh; height: 72dvh; overflow: hidden;
+  border-radius: 6px; background: rgba(var(--tone-light-rgb), 0.06);
 }
-.thumb-stack .thumb-main { z-index: 3; }
-/* Stand-in plate for a project whose media hasn't been shot/added yet. */
-.thumb-empty {
-  display: flex; align-items: center; justify-content: center;
-  border: 1px dashed rgba(var(--tone-light-rgb), 0.3); background: rgba(var(--tone-light-rgb), 0.03);
+.screen-media video, .screen-media img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.project-screen:hover .screen-media video, .project-screen:hover .screen-media img,
+.project-screen:focus-visible .screen-media video, .project-screen:focus-visible .screen-media img { transform: scale(1.03); }
+.screen-empty {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  border: 1px dashed rgba(var(--tone-light-rgb), 0.3); border-radius: 6px;
   font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5;
 }
-body.inverted-theme .thumb-empty { border-color: rgba(var(--tone-dark-rgb), 0.25); background: rgba(var(--tone-dark-rgb), 0.03); }
-/* The selected/hovered card flips to the opposite ground, so the plate's
-   border has to flip with it or it disappears into the card. */
-.project-item.active .thumb-empty, .project-item:hover .thumb-empty {
-  border-color: rgba(var(--tone-dark-rgb), 0.3); background: rgba(var(--tone-dark-rgb), 0.04);
+body.inverted-theme .screen-empty { border-color: rgba(var(--tone-dark-rgb), 0.3); }
+.screen-text { display: flex; flex-direction: column; gap: 12px; }
+.project-screen.flip .screen-text { text-align: right; align-items: flex-end; }
+.screen-count {
+  font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums; opacity: 0.7;
 }
-body.inverted-theme .project-item.active .thumb-empty,
-body.inverted-theme .project-item:hover .thumb-empty {
-  border-color: rgba(var(--tone-light-rgb), 0.3); background: rgba(var(--tone-light-rgb), 0.05);
+.screen-open {
+  margin-top: 10px; font-size: clamp(14px, 1.3vw, 16px); font-weight: 600;
+  text-decoration: underline; text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px; text-underline-offset: 6px;
+  transition: text-underline-offset 0.25s ease;
 }
-.thumb-stack .thumb-bg-1 { z-index: 2; opacity: 0; transform: translate(6px, 6px) scale(0.97); }
-.thumb-stack .thumb-bg-2 { z-index: 1; opacity: 0; transform: translate(12px, 12px) scale(0.94); }
-.thumb-stack:hover .thumb-main,
-.project-item.active .thumb-main { transform: translate(-10px, -10px) scale(1.05); }
-.thumb-stack:hover .thumb-bg-1,
-.project-item.active .thumb-bg-1 { opacity: 0.85; transform: translate(10px, 10px) scale(1.0); }
-.thumb-stack:hover .thumb-bg-2,
-.project-item.active .thumb-bg-2 { opacity: 0.65; transform: translate(20px, 20px) scale(0.96); }
-
-/* The fan above only ever showed the same image in front. On the selected card
-   the layers take turns (render-projects.js advances data-top), so the second
-   and third stills get seen -- which on a phone, where there is no hover at
-   all, is the only way they ever were. */
-.project-item[data-top="1"] .thumb-main { z-index: 1; opacity: 0.65; }
-.project-item[data-top="1"] .thumb-bg-1 { z-index: 3; opacity: 1; transform: translate(-10px, -10px) scale(1.05); }
-.project-item[data-top="2"] .thumb-main { z-index: 2; opacity: 0.85; }
-.project-item[data-top="2"] .thumb-bg-1 { z-index: 1; opacity: 0.65; }
-.project-item[data-top="2"] .thumb-bg-2 { z-index: 3; opacity: 1; transform: translate(-10px, -10px) scale(1.05); }
+.project-screen:hover .screen-open, .project-screen:focus-visible .screen-open { text-underline-offset: 3px; }
+body.inverted-theme .screen-open { text-decoration-color: var(--accent-alt); }
 
 .project-title { font-size: clamp(24px, 4vw, 48px); font-weight: 600; margin: 0; }
 /* No opacity here. Dimming coloured text is how the light theme ended up at
@@ -295,55 +294,21 @@ body.inverted-theme .project-item:hover .thumb-empty {
 
 /* ============================================================= */
 /* THEME INVERSION                                               */
-/* Two axes that must stay consistent on every page:             */
-/*   1. body.inverted-theme  — the whole page flips to light.    */
-/*   2. .active / :hover     — a single card flips *against*     */
-/*      whatever the page theme currently is.                    */
+/*   body.inverted-theme  — the whole page flips to light.       */
 /* Accents: teal on dark grounds, amber on light grounds.        */
 /* ============================================================= */
 
 /* --- 1. page theme --- */
 body.inverted-theme { color: var(--tone-dark); }
-body.inverted-theme .project-item { border-top: 1px solid rgba(var(--tone-dark-rgb), 0.2); background: transparent; }
 body.inverted-theme .project-tags,
 body.inverted-theme .behance-link { color: var(--accent-alt); }
-
-/* --- 2. selected/hovered card, inverted against the page --- */
-.project-item.active, .project-item:hover, .project-item:focus-visible {
-  background: var(--tone-light) !important; color: var(--tone-dark) !important;
-  border-top: 1px solid var(--tone-light) !important;
-  transform: scale(1.02); box-shadow: 0 10px 40px rgba(var(--tone-dark-rgb), 0.5);
-}
-.project-item.active *, .project-item:hover *, .project-item:focus-visible * { color: var(--tone-dark) !important; }
-.project-item.active .project-tags, .project-item:hover .project-tags,
-.project-item:focus-visible .project-tags { color: var(--card-accent) !important; }
-
-body.inverted-theme .project-item.active, body.inverted-theme .project-item:hover,
-body.inverted-theme .project-item:focus-visible {
-  background: var(--tone-dark) !important; color: var(--tone-light) !important;
-  border-top: 1px solid var(--tone-dark) !important;
-}
-body.inverted-theme .project-item.active *, body.inverted-theme .project-item:hover *,
-body.inverted-theme .project-item:focus-visible * { color: var(--tone-light) !important; }
-body.inverted-theme .project-item.active .project-tags,
-body.inverted-theme .project-item:hover .project-tags,
-body.inverted-theme .project-item:focus-visible .project-tags { color: var(--card-accent-alt) !important; }
-
-/* --- THEME-GATED GROUPS (facilitation.html) --- */
-/* Cards tagged dark-only show on the dark theme, bright-only on the light
-   one. assets/scroll-nav.js recomputes its target list after every flip so
-   the ones that just appeared are reachable. */
-.project-item.bright-only { display: none; }
-.project-item.dark-only { display: grid; }
-body.inverted-theme .project-item.bright-only { display: grid; }
-body.inverted-theme .project-item.dark-only { display: none; }
 
 /* --- FOCUS --- */
 /* Deliberately quiet: a step of weight and a move to the accent, which is the
    same language the page already uses to say "this one". A ring would be the
-   only hard-edged rectangle on a site made of type and light. The card is the
-   exception and takes the selected treatment above, because on the card that
-   *is* what focus means here. */
+   only hard-edged rectangle on a site made of type and light. A project screen
+   says it the way it says hover: the picture leans in and the underline under
+   "View project" tightens. */
 :focus { outline: none; }
 :focus-visible { outline: none; }
 .nav-link:focus-visible,
@@ -391,17 +356,21 @@ body.inverted-theme .behance-link:focus-visible { color: var(--accent-alt); }
 /* --- ZOOMED --- */
 /* While the content is pinched open, the hover fan and the card lift would
    fight the pan for the same fingers. */
-body.is-zoomed .project-item.active { transform: none; box-shadow: none; }
 body.is-zoomed .nav-counter { opacity: 0.25; }
 
 @media (prefers-reduced-motion: reduce) {
   .nav-count-rule i { transition: none; }
-  .project-item, .project-thumb { transition: none; }
+  .screen-media video, .screen-media img { transition: none; }
 }
 
 @media (max-width: 768px) {
   .mobile-nav-zone { display: flex; }
-  .project-item { grid-template-columns: 1fr; gap: 5px; }
+  .project-screen, .project-screen.flip {
+    grid-template-columns: 1fr; gap: 18px; align-content: center; padding: 10vh 0;
+  }
+  .project-screen.flip .screen-media { order: 0; }
+  .project-screen.flip .screen-text { text-align: left; align-items: flex-start; }
+  .screen-media { height: 50vh; height: 50dvh; }
   /* The chevrons say the same thing with a bigger target. */
   .nav-counter { display: none; }
 }

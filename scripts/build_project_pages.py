@@ -76,13 +76,15 @@ TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/project-page.css">
+  <script src="assets/site-bar.js" defer></script>
 </head>
 <body data-project="{key}">
 
   <!-- A project used to carry one link out, to the list it came from, so
        reaching another section meant going back through a page you did not
-       want. The mark is home; the three names are the sections; the keys 1 2 3
-       do the same thing without the mouse. -->
+       want. The mark is home; the site bar across the
+       top (assets/site-bar.js) has every section, and the keys 1 2 3 do the
+       same without the mouse. -->
   <header class="project-nav">
     <a href="index.html" class="home-mark" aria-label="Home">
       <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
@@ -90,12 +92,6 @@ TEMPLATE = """<!DOCTYPE html>
         <path d="M16 3a13 13 0 0 0 0 26z" fill="currentColor"/>
       </svg>
     </a>
-    <a href="{back_href}" class="back-btn">← {back_label}</a>
-    <nav class="section-nav" aria-label="Sections">
-      <a href="work.html">work</a>
-      <a href="play.html">play</a>
-      <a href="facilitation.html">learn</a>
-    </nav>
   </header>
 
   <div id="main-wrapper">
@@ -208,12 +204,17 @@ def main() -> int:
                   f"its page links back home")
 
         title = (placement or {}).get("displayName") or data.get("name") or slug
+        # The tag names who the work was made with. "Jishnu" is the folder for
+        # solo work, and on his own site that says nothing, so it is left off.
+        category = data.get("category") or ""
+        if category.lower() == "jishnu":
+            category = ""
         page = TEMPLATE.format(
             marker=MARKER,
             key=escape(key),
             slug=slug,
             title=escape(title),
-            category=escape(data.get("category") or ""),
+            category=escape(category),
             description=escape(f"{title} — project by Jishnu Roy Chaudhury."),
             back_href=back_href,
             back_label=back_label,

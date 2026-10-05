@@ -66,6 +66,7 @@
       position: fixed; left: 0; top: 0; z-index: 151;
       font-family: 'Clash Display', sans-serif; font-size: 15px; font-weight: 600;
       white-space: nowrap; text-decoration: none;
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
       color: var(--hl, var(--tone-light, #f4f1ec));
       opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
     }

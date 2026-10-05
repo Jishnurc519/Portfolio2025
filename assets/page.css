@@ -365,12 +365,23 @@ body.is-zoomed .nav-counter { opacity: 0.25; }
 
 @media (max-width: 768px) {
   .mobile-nav-zone { display: flex; }
+  /* One screen on a phone, all of it: clear of the nav along the top and the
+     chevron along the bottom, the picture a little under half the height,
+     and the line about the project held to four lines so a long one cannot
+     push the screen past the bottom edge. */
   .project-screen, .project-screen.flip {
-    grid-template-columns: 1fr; gap: 18px; align-content: center; padding: 10vh 0;
+    grid-template-columns: 1fr; gap: 16px; align-content: center;
+    padding: 72px 0 84px;
   }
   .project-screen.flip .screen-media { order: 0; }
   .project-screen.flip .screen-text { text-align: left; align-items: flex-start; }
-  .screen-media { height: 50vh; height: 50dvh; }
+  .screen-media { height: 44vh; height: 44dvh; }
+  .screen-text { gap: 8px; }
+  .screen-text .project-desc {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+    overflow: hidden; margin-top: 0;
+  }
+  .screen-open { margin-top: 4px; }
   /* The chevrons say the same thing with a bigger target. */
   .nav-counter { display: none; }
 }

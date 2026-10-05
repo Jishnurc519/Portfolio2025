@@ -32,6 +32,17 @@
       --hl-alt: #185249;
     }
 
+    /* A finger on this page is a brush, and a held one turns the page over,
+       so the browser must not claim the touch for itself. Left to it, Android
+       Chrome reads a finger that rests or drifts as the start of a scroll or
+       a pull-to-refresh and cancels it, and a press of half a second opens the
+       long-press menu or starts selecting text -- either one cuts a hold off
+       before it completes. Links and buttons still answer a tap. */
+    html, body { touch-action: none; overscroll-behavior: none; }
+    * {
+      -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
+      -webkit-user-select: none; user-select: none;
+    }
     html, body {
       margin: 0; padding: 0; background: var(--tone-dark); color: var(--tone-light);
       min-height: 100dvh; width: 100vw; overflow: hidden;

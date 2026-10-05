@@ -77,6 +77,12 @@
       .site-nav-bar a { font-size: 14px; }
       .mobile-nav-zone.nav-top { top: 52px; }
     }
+    /* 320-wide phones: both a size down, so they never meet. */
+    @media (max-width: 360px) {
+      .site-mark { left: 12px; font-size: 13px; }
+      .site-nav-bar { right: 12px; gap: 12px; }
+      .site-nav-bar a { font-size: 13px; }
+    }
   `;
   document.head.appendChild(style);
 

@@ -58,7 +58,15 @@
       -webkit-font-smoothing: antialiased;
       overflow-x: clip;
     }
-    body.holding { user-select: none; -webkit-user-select: none; }
+    body.holding { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    /* On a phone, a long press on a picture or a clip should not offer to
+       save it or start selecting the page around it. */
+    @media (hover: none) {
+      * { -webkit-tap-highlight-color: transparent; }
+      img, video, .media, .tile-label, h1, h2, a, button {
+        -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+      }
+    }
     ::selection { background: var(--ink); color: var(--bg); }
     a { color: inherit; }
     img, video { display: block; max-width: 100%; }
@@ -798,6 +806,8 @@
         document.body.classList.add('holding');
       });
       const stop = () => { holding = false; document.body.classList.remove('holding'); };
+      // A held finger is the gesture, not a request for the long-press menu.
+      window.addEventListener('contextmenu', (e) => { if (holding) e.preventDefault(); });
       ['pointerup', 'pointercancel', 'blur'].forEach((ev) => window.addEventListener(ev, stop));
 
       let chargeTime = 0, exploding = false, force = 0, invertCycle = false, growth = 0;

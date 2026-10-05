@@ -55,6 +55,23 @@
     if (dest && dest !== here) { e.preventDefault(); location.href = dest; }
   });
 
+  // On a touch screen there is no space bar and no number keys, so the hint
+  // says only the part a finger can do. Run here because this is the first
+  // script on every page, ahead of anything that splits the hint into letters
+  // (the front page's canvas) or copies it (assets/cursor.js).
+  const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (touch) {
+    document.querySelectorAll('.hint').forEach((h) => { h.textContent = 'hold anywhere to invert'; });
+  }
+
+  // A finger held down long enough to invert the page is held long enough
+  // for the browser's long-press menu, which opens over the page and ends the
+  // hold. On the pages that have the gesture (a hint says so), a long press
+  // is the gesture, not a request for a menu.
+  if (touch && document.querySelector('.hint')) {
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
   const release = () => { window.KEY_HOLD.held = false; };
   window.addEventListener('keyup', (e) => { if (e.code === 'Space') release(); });
   // A key held while the tab loses focus never sends its keyup.

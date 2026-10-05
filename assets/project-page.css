@@ -38,6 +38,18 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* --- ON A PHONE ---
+   A long press on a heading, a button or a picture should not start
+   selecting the page or offer to save the image; the write-up itself stays
+   selectable, so a line of it can still be copied. */
+@media (hover: none) {
+  * { -webkit-tap-highlight-color: transparent; }
+  h1, h2, h3, .category-tag, .meta-row, .pager, .pager-link, button, a,
+  img, video, picture, figure, figcaption, .still, .video-still, .gallery, .spread-item.is-media {
+    -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  }
+}
+
 /* --- GETTING OUT --- */
 /* The wordmark (home) and work / play / learn come from assets/site-bar.js. */
 

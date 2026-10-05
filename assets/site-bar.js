@@ -149,11 +149,26 @@
 
   // The ground the page is on right now: the stage behind the list pages
   // (which turns over with the page), else the body, else the document.
+  // page.css fades the stage over 50ms when it turns, so straight after a flip
+  // its computed colour is somewhere between the two tones; read then, the
+  // band kept that in-between colour for good, a muddy brown over learn's
+  // gold. So where a fade is under way, take the colour it is heading for.
+  function settled(el) {
+    const c = getComputedStyle(el).backgroundColor;
+    if (!el.getAnimations) return c;
+    for (const a of el.getAnimations()) {
+      if (!/^background/.test(a.transitionProperty || '')) continue;
+      const k = a.effect && a.effect.getKeyframes();
+      const end = k && k.length && k[k.length - 1].backgroundColor;
+      if (end) return end;
+    }
+    return c;
+  }
   function groundColour() {
     const tries = [document.getElementById('stage-container'), document.body, document.documentElement];
     for (const t of tries) {
       if (!t) continue;
-      const c = getComputedStyle(t).backgroundColor;
+      const c = settled(t);
       const m = c.match(/rgba?\(([^)]+)\)/);
       if (!m) continue;
       const v = m[1].split(',').map((n) => parseFloat(n));
@@ -167,7 +182,18 @@
     band.style.background = `linear-gradient(to bottom, rgb(${g}) 0%, rgb(${g}) 62%, rgba(${g}, 0) 100%)`;
   }
   paintBand();
-  window.addEventListener('themechange', () => setTimeout(paintBand, 30));
+  // At once, from where the turn is heading; and again when any fade on the
+  // ground has finished, in case a browser could not say where it was going.
+  // Watched on the classes rather than on 'themechange', because not every
+  // page turns through scroll-nav: GMMBBQ flips body.inverted itself, and the
+  // band stayed dark over its pink.
+  const watch = new MutationObserver(paintBand);
+  [document.getElementById('stage-container'), document.body].forEach((el) => {
+    if (el) watch.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+  ['transitionend', 'transitioncancel'].forEach((t) => document.addEventListener(t, (e) => {
+    if (/^background/.test(e.propertyName)) paintBand();
+  }));
   window.addEventListener('load', paintBand);
   const showBand = (moved) => band.classList.toggle('on', moved);
 

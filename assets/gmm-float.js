@@ -25,6 +25,9 @@
       visibility: hidden;
     }
     #gmm-float.live { visibility: visible; }
+    /* Out of room (see "room to move" below): it fades away, and back. */
+    #gmm-float { transition: opacity 0.35s ease; }
+    #gmm-float.gone { opacity: 0; pointer-events: none; }
     #gmm-float .inner {
       position: relative; display: block; width: 100%; height: 100%;
       transition: scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -122,7 +125,7 @@
   const bottom = (p) => {
     if (!atBottom && p >= 0.97) atBottom = true;
     else if (atBottom && p < 0.85) atBottom = false;
-    say.classList.toggle('on', atBottom && el.classList.contains('live'));
+    say.classList.toggle('on', atBottom && el.classList.contains('live') && !gone);
   };
   window.addEventListener('navprogress', (e) => bottom(e.detail));
   window.addEventListener('scroll', () => {
@@ -186,13 +189,16 @@
   findPictures();
   window.addEventListener('load', findPictures);
   window.addEventListener('resize', findPictures);
+  // Returns whether it was inside a picture this frame.
   function bounceOffPictures(w, h, W, H, dt) {
     const PAD = 6, SHOVE = 900 * dt;
+    let hit = false;
     for (let i = 0; i < pictures.length; i++) {
       const r = pictures[i].getBoundingClientRect();
       if (r.width < 2 || r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) continue;
       const left = r.left - PAD, right = r.right + PAD, top = r.top - PAD, bottom = r.bottom + PAD;
       if (x + w <= left || x >= right || y + h <= top || y >= bottom) continue;
+      hit = true;
       const outL = x + w - left, outR = right - x, outT = y + h - top, outB = bottom - y;
       const ox = Math.min(outL, outR), oy = Math.min(outT, outB);
       if (ox < oy) {
@@ -206,6 +212,71 @@
         if (Math.sign(Math.sin(a)) === -dir) a = -a;
       }
     }
+    return hit;
+  }
+
+  // --- room to move ---
+  // Where the pictures leave it almost no clear ground -- a project's clip
+  // filling a phone screen, two big frames side by side -- it was shoved from
+  // one picture into the next and never settled, which read as a glitch. So
+  // a few times a second it looks at how much of the screen it could be in:
+  // a grid of spots, each one clear if a speaker centred there would touch no
+  // picture. Too little clear ground and it fades away where it is; once
+  // there is plenty again it comes back, at the clear spot nearest to where
+  // it left. The two thresholds are apart so it does not flicker between.
+  //
+  // And wherever it is wedged -- still inside a picture after half a second
+  // of being pushed, because the page slid one onto it or two have it boxed
+  // in -- it fades away the same way and comes back somewhere clear, rather
+  // than being seen to struggle.
+  const HIDE_BELOW = 0.22, SHOW_ABOVE = 0.35, COLS = 10, ROWS = 8;
+  const STUCK_SECS = 0.45, GONE_AT_LEAST = 600;
+  let gone = false, goneAt = 0, lastLook = 0, stuck = 0;
+  function fadeAway(now) {
+    gone = true; goneAt = now; stuck = 0;
+    el.classList.add('gone');
+    say.classList.remove('on');
+  }
+  function clearSpots(w, h, W, H) {
+    const spots = [];
+    const rects = [];
+    for (let i = 0; i < pictures.length; i++) {
+      const r = pictures[i].getBoundingClientRect();
+      if (r.width < 2 || r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) continue;
+      rects.push(r);
+    }
+    let free = 0;
+    for (let cy = 0; cy < ROWS; cy++) {
+      for (let cx = 0; cx < COLS; cx++) {
+        const sx = 8 + (W - w - 16) * (cx + 0.5) / COLS;
+        const sy = 60 + (H - h - 68) * (cy + 0.5) / ROWS;
+        let clear = true;
+        for (let k = 0; k < rects.length && clear; k++) {
+          const r = rects[k];
+          if (sx + w > r.left - 6 && sx < r.right + 6 && sy + h > r.top - 6 && sy < r.bottom + 6) clear = false;
+        }
+        if (clear) { free++; spots.push([sx, sy]); }
+      }
+    }
+    return { share: free / (COLS * ROWS), spots: spots };
+  }
+  function lookForRoom(now, w, h, W, H) {
+    if (now - lastLook < 150) return;
+    lastLook = now;
+    const room = clearSpots(w, h, W, H);
+    if (!gone && room.share < HIDE_BELOW) {
+      fadeAway(now);
+    } else if (gone && now - goneAt > GONE_AT_LEAST && room.share > SHOW_ABOVE && room.spots.length) {
+      let best = room.spots[0], bestD = Infinity;
+      room.spots.forEach((p) => {
+        const d = (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y);
+        if (d < bestD) { bestD = d; best = p; }
+      });
+      x = best[0]; y = best[1];
+      gone = false;
+      el.classList.remove('gone');
+      if (atBottom) say.classList.add('on');
+    }
   }
 
   (function tick(now) {
@@ -215,6 +286,9 @@
     if (!started) return;
     const w = el.offsetWidth, h = el.offsetHeight;
     const W = window.innerWidth, H = window.innerHeight;
+    if (!entering) lookForRoom(now, w, h, W, H);
+    // Faded away: it waits where it is until there is room again.
+    if (gone) return;
     if (!held && !reduce) {
       if (entering) {
         // Straight in, with only a slight weave; the walls don't count yet.
@@ -237,7 +311,8 @@
         if (x > W - w - 8) { x = W - w - 8; a = Math.PI - a; }
         if (y < 60) { y = 60; a = -a; }
         if (y > H - h - 8) { y = H - h - 8; a = -a; }
-        bounceOffPictures(w, h, W, H, dt);
+        stuck = bounceOffPictures(w, h, W, H, dt) ? stuck + dt : 0;
+        if (stuck > STUCK_SECS) fadeAway(now);
       }
     }
     el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' +

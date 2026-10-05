@@ -46,9 +46,10 @@ CUTS = [
     ("onebyzero/nodeshed/c-ledwalls",         0.30, 0.55),
     ("jishnu/jklu/c-cymora-1",                0.30, 0.45),
     # Sobha as it was made: the TouchDesigner visualisation, then the set
-    # itself -- the ring of lights, then the ")S(" -- back to back.
+    # itself, the ")S(" -- and Nodeshed's Rained In, the LED rain wall,
+    # between them.
     ("jishnu/sobha/c-viz-1",                  0.70, 0.75),
-    ("jishnu/sobha/c-set-5",                  0.15, 0.70),
+    ("onebyzero/nodeshed/c-rained-in",        0.40, 0.70),
     ("jishnu/sobha/c-set-1",                  0.30, 0.70),
     ("gmmbbq/joyorbisonwhp/c-jo-3409",        0.70, 0.50),
     ("onebyzero/nodeshed/c-painting-2",       0.30, 0.60),

@@ -194,6 +194,7 @@ const MEDIA_FORMATS = {
   "assets/onebyzero/nodeshed/c-onlyfans-2-poster.jpg",
   "assets/onebyzero/nodeshed/c-onlyfans-poster.jpg",
   "assets/onebyzero/nodeshed/c-painting-2-poster.jpg",
+  "assets/onebyzero/nodeshed/c-rained-in-poster.jpg",
   "assets/onebyzero/nodeshed/c-signal-poster.jpg",
   "assets/onebyzero/nodeshed/thumb-01.jpg",
   "assets/onebyzero/nodeshed/vid-01-poster.jpg",

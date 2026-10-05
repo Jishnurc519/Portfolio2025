@@ -352,6 +352,15 @@ const CURATED_MEDIA = {
           608,
           1080
         ]
+      },
+      "rained-in": {
+        "type": "video",
+        "src": "assets/onebyzero/nodeshed/c-rained-in.mp4",
+        "poster": "assets/onebyzero/nodeshed/c-rained-in-poster.jpg",
+        "size": [
+          608,
+          1080
+        ]
       }
     }
   },

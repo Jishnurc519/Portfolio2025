@@ -176,7 +176,9 @@ const PROJECT_DETAILS = {
 
       { h: "Rained In", id: "rained-in" },
       { p: "Inspired by Bangalore’s ability to start raining moments after causing several heatstrokes — weather that is usually quite gentle and sometimes quite mercurial. **Rained In** is an interactive audiovisual experience where users control the amount of rain, and where it is raining, using their hands. Rain sounds are a mixture of samples and synthesis, using VCV Rack and TouchDesigner.",
-        embed: "https://www.instagram.com/reel/DNdVBptP90S/", side: "right" },
+        media: "rained-in", side: "right" },
+      // The clip of our own beside the words, and the Instagram reel after.
+      { embed: "https://www.instagram.com/reel/DNdVBptP90S/", side: "full" },
 
       { h: "Buddha Bowl", id: "buddha-bowl" },
       { p: "A guided interactive experience that prompts users to ask questions about themselves, while leading them to question the very questions that they ask. Using the Buddha bowl and their voice as a medium, visitors witness their thoughts collapse into the ether as they delve deeper into their meditative experience.",

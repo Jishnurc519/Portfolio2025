@@ -107,6 +107,9 @@ CURATED = {
             # take, for the gallery (the story already uses the openings).
             "onlyfans-2": ("at:34", "assets/onebyzero/nodeshed/IMG_3052.MOV"),
             "painting-2": ("at:24", "assets/onebyzero/nodeshed/IMG_3042(1).MOV"),
+            # Rained In, the volumetric LED rain wall, with someone playing it
+            # -- a clip of our own, for the front page's reel.
+            "rained-in": ("at:38", "assets/onebyzero/nodeshed/IMG_3068.MOV"),
         },
     },
     # The best of the night's clips, one set per floor: roof projections in

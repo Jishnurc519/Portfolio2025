@@ -288,7 +288,7 @@
   // than being seen to struggle.
   const HIDE_BELOW = 0.22, SHOW_ABOVE = 0.35, COLS = 10, ROWS = 8;
   const STUCK_SECS = 0.45, GONE_AT_LEAST = 600;
-  let gone = false, goneAt = 0, lastLook = 0, stuck = 0;
+  let gone = false, goneAt = 0, lastLook = 0, stuck = 0, lastWt = null;
   function fadeAway(now) {
     gone = true; goneAt = now; stuck = 0;
     el.classList.add('gone');
@@ -363,8 +363,17 @@
         if (x > W - w - 8) { x = W - w - 8; a = Math.PI - a; }
         if (y < 60) { y = 60; a = -a; }
         if (y > H - h - 8) { y = H - h - 8; a = -a; }
-        stuck = bounceOffWalls(ws, w, h, dt) ? stuck + dt : 0;
-        if (stuck > STUCK_SECS) fadeAway(now);
+        // While the page itself is moving -- a slide, a scroll, a fling --
+        // text and pictures sweep across faster than it can be pushed
+        // aside, and it would be seen going straight through them. So if the
+        // page is moving and it is touching anything, it fades away at once
+        // and comes back somewhere clear when things have settled.
+        const wt = wrapperTop();
+        const moving = lastWt !== null && Math.abs(wt - lastWt) > 2;
+        lastWt = wt;
+        const hit = bounceOffWalls(ws, w, h, dt);
+        stuck = hit ? stuck + dt : 0;
+        if ((hit && moving) || stuck > STUCK_SECS) fadeAway(now);
       }
     }
     el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' +

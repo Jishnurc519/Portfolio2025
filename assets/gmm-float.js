@@ -176,27 +176,84 @@
     el.classList.add('live');
   }, reduce ? 0 : DELAY);
 
-  // --- the pictures are walls too ---
-  // It drifts over type and ground, but a photograph or a clip turns it
-  // back, the way the screen's edges do. Whichever side it went in by the
-  // least is the side it came through, so that is the axis it bounces on.
-  // The pictures move under it as the page slides, and one can arrive on
-  // top of it; then it is pushed back out quickly rather than in one jump,
-  // so it reads as being shoved aside rather than teleported.
+  // --- the pictures and the type are walls ---
+  // A photograph or a clip turns it back the way the screen's edges do, and
+  // so does any line of text -- the headings, the copy, the tags, the
+  // wordmark and the sections along the top. Whichever side it went in by
+  // the least is the side it came through, so that is the axis it bounces
+  // on. Walls move under it as the page slides, and one can arrive on top of
+  // it; then it is pushed back out quickly rather than in one jump, so it
+  // reads as being shoved aside rather than teleported.
+  //
+  // Text is walled a line at a time, not a paragraph at a time, so the gaps
+  // between blocks are still ground. Lines are measured once (on load, on a
+  // resize, when the page turns over, and every couple of seconds for
+  // anything that settles late) against the page's moving wrapper, and
+  // shifted with it each frame; measuring every line every frame would cost
+  // more than the speaker is worth.
   const PICTURES = '.screen-media, .behance-frame, .frames figure, .bleed, .onward img, .posts .post';
-  let pictures = [];
+  const TEXT = ['h1', 'h2', 'h3', 'p', '.subtitle', '.project-tags', '.screen-count', '.screen-open',
+    '.place', '.eyebrow', '.behance-link'].map((s) => '#main-wrapper ' + s).join(', ');
+  const FIXED_TEXT = '.site-mark, .site-nav-bar a';
+  const wrapper = document.getElementById('main-wrapper');
+  let pictures = [], lines = [], fixedLines = [];
   const findPictures = () => { pictures = [].slice.call(document.querySelectorAll(PICTURES)); };
-  findPictures();
-  window.addEventListener('load', findPictures);
-  window.addEventListener('resize', findPictures);
-  // Returns whether it was inside a picture this frame.
-  function bounceOffPictures(w, h, W, H, dt) {
-    const PAD = 6, SHOVE = 900 * dt;
-    let hit = false;
+  const wrapperTop = () => (wrapper ? wrapper.getBoundingClientRect().top : 0);
+  function measureText() {
+    const wt = wrapperTop();
+    const range = document.createRange();
+    lines = [];
+    document.querySelectorAll(TEXT).forEach((t) => {
+      if (t.closest('.screen-media')) return;
+      range.selectNodeContents(t);
+      const rs = range.getClientRects();
+      for (let i = 0; i < rs.length; i++) {
+        const r = rs[i];
+        if (r.width > 2 && r.height > 2) lines.push({ l: r.left, r: r.right, t: r.top - wt, b: r.bottom - wt });
+      }
+    });
+    fixedLines = [].map.call(document.querySelectorAll(FIXED_TEXT), (t) => {
+      const r = t.getBoundingClientRect();
+      return { l: r.left, r: r.right, t: r.top, b: r.bottom };
+    });
+  }
+  function remeasure() { findPictures(); measureText(); }
+  remeasure();
+  window.addEventListener('load', remeasure);
+  let resizeT = 0;
+  window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(remeasure, 200); });
+  window.addEventListener('themechange', () => setTimeout(remeasure, 50));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
+  setInterval(() => { if (document.visibilityState === 'visible') remeasure(); }, 2000);
+
+  // Everything solid on screen this frame, as plain boxes with their margins.
+  function walls(W, H) {
+    const out = [];
     for (let i = 0; i < pictures.length; i++) {
       const r = pictures[i].getBoundingClientRect();
       if (r.width < 2 || r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) continue;
-      const left = r.left - PAD, right = r.right + PAD, top = r.top - PAD, bottom = r.bottom + PAD;
+      out.push({ l: r.left - 6, r: r.right + 6, t: r.top - 6, b: r.bottom + 6 });
+    }
+    const wt = wrapperTop();
+    for (let i = 0; i < lines.length; i++) {
+      const L = lines[i];
+      const t = L.t + wt, b = L.b + wt;
+      if (b < 0 || t > H) continue;
+      out.push({ l: L.l - 4, r: L.r + 4, t: t - 4, b: b + 4 });
+    }
+    for (let i = 0; i < fixedLines.length; i++) {
+      const L = fixedLines[i];
+      out.push({ l: L.l - 4, r: L.r + 4, t: L.t - 4, b: L.b + 4 });
+    }
+    return out;
+  }
+
+  // Returns whether it was inside a wall this frame.
+  function bounceOffWalls(ws, w, h, dt) {
+    const SHOVE = 900 * dt;
+    let hit = false;
+    for (let i = 0; i < ws.length; i++) {
+      const { l: left, r: right, t: top, b: bottom } = ws[i];
       if (x + w <= left || x >= right || y + h <= top || y >= bottom) continue;
       hit = true;
       const outL = x + w - left, outR = right - x, outT = y + h - top, outB = bottom - y;
@@ -216,16 +273,16 @@
   }
 
   // --- room to move ---
-  // Where the pictures leave it almost no clear ground -- a project's clip
-  // filling a phone screen, two big frames side by side -- it was shoved from
-  // one picture into the next and never settled, which read as a glitch. So
-  // a few times a second it looks at how much of the screen it could be in:
-  // a grid of spots, each one clear if a speaker centred there would touch no
-  // picture. Too little clear ground and it fades away where it is; once
+  // Where the pictures and the type leave it almost no clear ground -- a
+  // project's clip and its write-up filling a phone screen, two big frames
+  // side by side -- it was shoved from one wall into the next and never
+  // settled, which read as a glitch. So a few times a second it looks at how
+  // much of the screen it could be in: a grid of spots, each one clear if a
+  // speaker centred there would touch no wall. Too little clear ground and it fades away where it is; once
   // there is plenty again it comes back, at the clear spot nearest to where
   // it left. The two thresholds are apart so it does not flicker between.
   //
-  // And wherever it is wedged -- still inside a picture after half a second
+  // And wherever it is wedged -- still inside a wall after half a second
   // of being pushed, because the page slid one onto it or two have it boxed
   // in -- it fades away the same way and comes back somewhere clear, rather
   // than being seen to struggle.
@@ -237,33 +294,27 @@
     el.classList.add('gone');
     say.classList.remove('on');
   }
-  function clearSpots(w, h, W, H) {
+  function clearSpots(ws, w, h, W, H) {
     const spots = [];
-    const rects = [];
-    for (let i = 0; i < pictures.length; i++) {
-      const r = pictures[i].getBoundingClientRect();
-      if (r.width < 2 || r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) continue;
-      rects.push(r);
-    }
     let free = 0;
     for (let cy = 0; cy < ROWS; cy++) {
       for (let cx = 0; cx < COLS; cx++) {
         const sx = 8 + (W - w - 16) * (cx + 0.5) / COLS;
         const sy = 60 + (H - h - 68) * (cy + 0.5) / ROWS;
         let clear = true;
-        for (let k = 0; k < rects.length && clear; k++) {
-          const r = rects[k];
-          if (sx + w > r.left - 6 && sx < r.right + 6 && sy + h > r.top - 6 && sy < r.bottom + 6) clear = false;
+        for (let k = 0; k < ws.length && clear; k++) {
+          const r = ws[k];
+          if (sx + w > r.l && sx < r.r && sy + h > r.t && sy < r.b) clear = false;
         }
         if (clear) { free++; spots.push([sx, sy]); }
       }
     }
     return { share: free / (COLS * ROWS), spots: spots };
   }
-  function lookForRoom(now, w, h, W, H) {
+  function lookForRoom(ws, now, w, h, W, H) {
     if (now - lastLook < 150) return;
     lastLook = now;
-    const room = clearSpots(w, h, W, H);
+    const room = clearSpots(ws, w, h, W, H);
     if (!gone && room.share < HIDE_BELOW) {
       fadeAway(now);
     } else if (gone && now - goneAt > GONE_AT_LEAST && room.share > SHOW_ABOVE && room.spots.length) {
@@ -286,7 +337,8 @@
     if (!started) return;
     const w = el.offsetWidth, h = el.offsetHeight;
     const W = window.innerWidth, H = window.innerHeight;
-    if (!entering) lookForRoom(now, w, h, W, H);
+    const ws = entering ? null : walls(W, H);
+    if (!entering) lookForRoom(ws, now, w, h, W, H);
     // Faded away: it waits where it is until there is room again.
     if (gone) return;
     if (!held && !reduce) {
@@ -311,7 +363,7 @@
         if (x > W - w - 8) { x = W - w - 8; a = Math.PI - a; }
         if (y < 60) { y = 60; a = -a; }
         if (y > H - h - 8) { y = H - h - 8; a = -a; }
-        stuck = bounceOffPictures(w, h, W, H, dt) ? stuck + dt : 0;
+        stuck = bounceOffWalls(ws, w, h, dt) ? stuck + dt : 0;
         if (stuck > STUCK_SECS) fadeAway(now);
       }
     }

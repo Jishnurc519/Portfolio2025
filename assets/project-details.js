@@ -52,6 +52,10 @@
 // out of search until it has one (scripts/build_project_pages.py).
 
 
+// θ̇ as a plot label: a combining dot does not sit over θ in most fonts,
+// so it is set as MathML (see `plots` in render-project.js).
+const THETA_DOT = '<math><mover accent="true"><mi>θ</mi><mo>˙</mo></mover></math>';
+
 const PROJECT_DETAILS = {
   // --- work ---
   "jishnu/fieldlinesim": {
@@ -282,6 +286,88 @@ const PROJECT_DETAILS = {
       "v-4216", "v-4223", "v-4226", "v-4232", "v-4209", "v-4231", "v-4242", "v-4244"
     ]
   },
+  // The first project in the old portfolio (Old Portfolio.pdf, pages 3-11),
+  // set as it was written there. Every figure is cut out of the PDF by
+  // scripts/build_slide_art.py.
+  "jishnu/chaosstructures": {
+    year: "2021",
+    role: "Research, design computation",
+    tools: ["TouchDesigner", "MATLAB", "Scientific Modelling"],
+    credits: "Research presented at ICAEHT 2021, the International Conference on Advances in Energy Harvesting Technology, organised by Lublin University of Technology, Poland.",
+    overview: "Creative expression through visualising deterministic chaos: from a mechanical engineering thesis on non-linear energy sinks to image systems that are extremely sensitive to where they start.",
+    story: [
+      { h: "The flap of a butterfly’s wing…" },
+      { p: "**What is chaos?** It is the property of a system whose behaviour is greatly sensitive to **small changes in initial conditions**. A change in initial conditions in a deterministic system that results in large differences in later states is known as a chaotic system.",
+        media: "assets/jishnu/chaosstructures/lorenz.png", side: "right",
+        caption: "An example of a chaotic system, the Lorenz attractor: three runs that start a hundredth apart (x = 0.1, 0.11; y = 0.1, 0.11) and do not stay together." },
+      { p: "Also known as the butterfly effect, chaos theory has been popularised by different forms of media through different stories, such as the Netflix series *Russian Doll* and computer games such as *Until Dawn*." },
+      { p: "The idea that a seemingly insignificant and unrelated decision may cause a series of events that leads to a drastic and vastly unexpected outcome is one that can give a sense of agency to people. To understand the nature of chaos, mathematicians, physicists and other academicians have spent centuries creating a massive body of work." },
+      { p: "In this project I explore the uses of chaos and the features of chaotic systems in creating unique visual identities and expression, and how mathematical formulations of chaos help inform this form of expression." },
+
+      { h: "Harnessing chaos in the physical world" },
+      { p: "For my final semester Mechanical Engineering thesis, the focus was on using **non-linear energy sinks (NES)**, a chaotic system, for effective vibration control (for durability) and energy harvesting (capturing ambient mechanical vibrations).",
+        media: "assets/jishnu/chaosstructures/nes-setup.png", side: "right",
+        caption: "The setup: block M on a spring and damper, a pendulum m hanging from it, and a magnet and coil reading the swing as a voltage." },
+      { p: "The research ran from 2020 into 2021 and looked at the effects of **noisy forcing on non-linear energy sinks and harvesters**. I presented the findings at **ICAEHT 2021**, the International Conference on Advances in Energy Harvesting Technology, held on 18–20 March and organised by Lublin University of Technology in Poland." },
+      { p: "A particularly useful feature of some chaotic systems is their versatility, and their ability to be tuned to respond to a range of operating conditions. To demonstrate this I considered a fairly simple setup." },
+
+      { h: "How this chaotic system works" },
+      { p: "It’s simpler than it sounds." },
+      { media: ["assets/jishnu/chaosstructures/nes-block.png", "assets/jishnu/chaosstructures/nes-pendulum.png", "assets/jishnu/chaosstructures/nes-magnet.png", "assets/jishnu/chaosstructures/nes-coil.png"], side: "full", icons: true,
+        captions: ["Block M vibrates for some reason.", "Pendulum m swings as a result.",
+                   "The pendulum’s connection to the magnet and coil generates voltage.",
+                   "The reading on the coil shows how much power is being harvested."] },
+
+      { h: "Reading the results" },
+      { p: "After non-dimensionalising the force equations, or the Lagrangian (not super important for our purposes), we get the following equations. The important thing to note is that **all the parameters are related to each other**, and changing them reveals different responses from the system." },
+      // Each is [MathML, number] and, for the long ones, the same broken at
+      // its = sign: a phone shows that instead of scrolling the line.
+      { equations: [
+        ['<math display="block"><mover accent="true"><mi>u</mi><mo>¨</mo></mover><mo>+</mo><mi>ε</mi><mspace width="0.17em"></mspace><mi>cos</mi><mspace width="0.17em"></mspace><mi>θ</mi><mspace width="0.17em"></mspace><mover accent="true"><mi>θ</mi><mo>¨</mo></mover><mo>−</mo><mi>ε</mi><mspace width="0.17em"></mspace><mi>sin</mi><mspace width="0.17em"></mspace><mi>θ</mi><mspace width="0.17em"></mspace><msup><mover accent="true"><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>+</mo><msub><mi>ζ</mi><mn>1</mn></msub><mover accent="true"><mi>u</mi><mo>˙</mo></mover><mo>+</mo><mi>u</mi><mo>=</mo><mi>f</mi><msup><mi mathvariant="normal">Ω</mi><mn>2</mn></msup><mspace width="0.17em"></mspace><mi>cos</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Ω</mi><mi>τ</mi><mo stretchy="false">)</mo></math>', "40",
+         ['<math display="block"><mover accent="true"><mi>u</mi><mo>¨</mo></mover><mo>+</mo><mi>ε</mi><mspace width="0.17em"></mspace><mi>cos</mi><mspace width="0.17em"></mspace><mi>θ</mi><mspace width="0.17em"></mspace><mover accent="true"><mi>θ</mi><mo>¨</mo></mover><mo>−</mo><mi>ε</mi><mspace width="0.17em"></mspace><mi>sin</mi><mspace width="0.17em"></mspace><mi>θ</mi><mspace width="0.17em"></mspace><msup><mover accent="true"><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>+</mo><msub><mi>ζ</mi><mn>1</mn></msub><mover accent="true"><mi>u</mi><mo>˙</mo></mover><mo>+</mo><mi>u</mi></math>', '<math display="block"><mo>=</mo><mi>f</mi><msup><mi mathvariant="normal">Ω</mi><mn>2</mn></msup><mspace width="0.17em"></mspace><mi>cos</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Ω</mi><mi>τ</mi><mo stretchy="false">)</mo></math>']],
+        ['<math display="block"><mover accent="true"><mi>θ</mi><mo>¨</mo></mover><mo>+</mo><mspace width="0.17em"></mspace><mi>cos</mi><mspace width="0.17em"></mspace><mi>θ</mi><mspace width="0.17em"></mspace><mover accent="true"><mi>u</mi><mo>¨</mo></mover><mo>+</mo><mo stretchy="false">(</mo><msub><mi>ζ</mi><mrow><mn>2</mn><mi>m</mi></mrow></msub><mo>+</mo><msub><mi>ζ</mi><mrow><mn>2</mn><mi>e</mi></mrow></msub><mo stretchy="false">)</mo><msup><mi>l</mi><mn>2</mn></msup><mover accent="true"><mi>θ</mi><mo>˙</mo></mover><mo>+</mo><msup><mi>r</mi><mn>2</mn></msup><mspace width="0.17em"></mspace><mi>sin</mi><mspace width="0.17em"></mspace><mi>θ</mi><mo>=</mo><mi>f</mi><msup><mi mathvariant="normal">Ω</mi><mn>2</mn></msup><mspace width="0.17em"></mspace><mi>cos</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Ω</mi><mi>τ</mi><mo stretchy="false">)</mo><mspace width="0.17em"></mspace><mi>cos</mi><mspace width="0.17em"></mspace><mi>θ</mi></math>', "41",
+         ['<math display="block"><mover accent="true"><mi>θ</mi><mo>¨</mo></mover><mo>+</mo><mspace width="0.17em"></mspace><mi>cos</mi><mspace width="0.17em"></mspace><mi>θ</mi><mspace width="0.17em"></mspace><mover accent="true"><mi>u</mi><mo>¨</mo></mover><mo>+</mo><mo stretchy="false">(</mo><msub><mi>ζ</mi><mrow><mn>2</mn><mi>m</mi></mrow></msub><mo>+</mo><msub><mi>ζ</mi><mrow><mn>2</mn><mi>e</mi></mrow></msub><mo stretchy="false">)</mo><msup><mi>l</mi><mn>2</mn></msup><mover accent="true"><mi>θ</mi><mo>˙</mo></mover><mo>+</mo><msup><mi>r</mi><mn>2</mn></msup><mspace width="0.17em"></mspace><mi>sin</mi><mspace width="0.17em"></mspace><mi>θ</mi></math>', '<math display="block"><mo>=</mo><mi>f</mi><msup><mi mathvariant="normal">Ω</mi><mn>2</mn></msup><mspace width="0.17em"></mspace><mi>cos</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Ω</mi><mi>τ</mi><mo stretchy="false">)</mo><mspace width="0.17em"></mspace><mi>cos</mi><mspace width="0.17em"></mspace><mi>θ</mi></math>']],
+        ['<math display="block"><mi>v</mi><mo>=</mo><mover accent="true"><mi>θ</mi><mo>˙</mo></mover></math>', "42"]] },
+      // Each plot's x and y are the limits at its frame, read off the PDF
+      // (scripts/build_slide_art.py, CHAOS_PLOTS, cuts the data to the same
+      // frame), so the ticks land where MATLAB drew them.
+      { p: "On changing ε, we see the following response in RMS voltage output.", side: "left",
+        plots: [{ src: "assets/jishnu/chaosstructures/plot-bifurcation.png", box: false, x: [0, 1.025], y: [-0.5, 2.036],
+          xticks: [0, 0.2, 0.4, 0.6, 0.8, 1], yticks: [-0.5, 0, 0.5, 1, 1.5, 2], xlabel: "ε", ylabel: "v" }],
+        caption: "Bifurcation diagram of voltage output against ε." },
+
+      { h: "Bifurcations, and why they matter" },
+      { p: "A **bifurcation** occurs when a small, smooth change made to the parameter values of a system (the bifurcation parameters) causes a sudden **qualitative or topological change in its behaviour**. The diagram above shows that as we change ε there are significant changes in the character and the voltage response of the system, at ε = 0.6 and at ε = 0.8 for example. These are bifurcations." },
+      { p: "To get a better idea of how these responses differ from each other, we can look at the **phase plots** (an indication of the qualitative state of a system) that form from these changes." },
+      { plots: [
+          { src: "assets/jishnu/chaosstructures/plot-phase-035.png", title: "ε = 0.35", x: [36, 39], y: [-0.5, 0.5], xticks: [36, 37, 38, 39], yticks: [-0.5, 0, 0.5], xlabel: "θ", ylabel: THETA_DOT },
+          { src: "assets/jishnu/chaosstructures/plot-phase-070.png", title: "ε = 0.7", x: [49, 51.36], y: [-0.5, 0.5], xticks: [49, 49.5, 50, 50.5, 51], yticks: [-0.5, 0, 0.5], xlabel: "θ", ylabel: THETA_DOT },
+          { src: "assets/jishnu/chaosstructures/plot-phase-080.png", title: "ε = 0.8", x: [30, 33], y: [-0.5, 0.5], xticks: [30, 31, 32, 33], yticks: [-0.5, 0, 0.5], xlabel: "θ", ylabel: THETA_DOT }],
+        caption: "Phase plots at ε = 0.35, 0.7 and 0.8: single, settled loops." },
+      { plots: [
+          { src: "assets/jishnu/chaosstructures/plot-phase-075.png", title: "ε = 0.75", x: [16, 20.68], y: [-2.1, 1.67], xticks: [16, 17, 18, 19, 20], yticks: [-2, -1, 0, 1], xlabel: "θ", ylabel: THETA_DOT },
+          { src: "assets/jishnu/chaosstructures/plot-phase-095.png", title: "ε = 0.95", x: [17, 21], y: [-1.23, 1.77], xticks: [17, 18, 19, 20, 21], yticks: [-1, 0, 1], xlabel: "θ", ylabel: THETA_DOT }],
+        caption: "At ε = 0.75 and 0.95 the trajectories get far more complex." },
+      { p: "Changing ε gives phase plots with different kinds of loops and shapes, each of which tells us how the system behaves. The plots at ε = 0.75 and 0.95 follow far more complex trajectories and contain more harmonics. These are regions where the system shows chaotic responses: complicated looking phase plots can imply chaotic behaviour." },
+      { p: "These qualitative changes in a system can be harnessed to express different emotions, and to create unique and interesting time dependent visual languages." },
+
+      { h: "Making such visualisations" },
+      { p: "I used TouchDesigner to build an image processing module that performs operations on each pixel of an image based on certain rules and conditions. This system shows an extreme dependence on initial conditions." },
+      { media: "assets/jishnu/chaosstructures/c-network.jpg", side: "full",
+        caption: "The network. Each block is a texture operator that does some kind of image manipulation: edge detects the edges in its input, blur blurs it, and so on, with a feedback loop running back through all of it." },
+      { p: "By changing the parameters of this chaotic system, its versatility of response can be used to create unique visuals. Here the parameter being changed is the **displace weight**, and each qualitative change in the system turns into a different visual output." },
+      { media: ["assets/jishnu/chaosstructures/c-displace-1.jpg", "assets/jishnu/chaosstructures/c-displace-2.jpg", "assets/jishnu/chaosstructures/c-displace-3.jpg", "assets/jishnu/chaosstructures/c-displace-4.jpg"], side: "full",
+        caption: "Displace weight at 0.008, 0.028, 0.208 and −788." },
+
+      { h: "More experiments with chaos" },
+      { p: "Messing around with chaotic systems and their parameters can lead to abstract and complex visualisations, which may be used to fabricate highly detailed models." },
+      { media: ["assets/jishnu/chaosstructures/c-render-1.jpg", "assets/jishnu/chaosstructures/c-render-2.jpg", "assets/jishnu/chaosstructures/c-render-3.jpg", "assets/jishnu/chaosstructures/c-render-4.jpg"], side: "full" },
+      { media: ["assets/jishnu/chaosstructures/diffusion-1.png", "assets/jishnu/chaosstructures/diffusion-2.png"], side: "full" },
+      { media: "assets/jishnu/chaosstructures/type-field.png", side: "full" }
+    ],
+    // The story shows every figure it has.
+    gallery: []
+  },
   "jishnu/unconference": {
     hero: "touch-1",
     year: "2025",
@@ -293,9 +379,11 @@ const PROJECT_DETAILS = {
       { p: "Put up a **LIDAR sensed booth** and connected it to an LED screen that people could touch, and look at different interactions of different products just doing their thing.",
         figure: 0, side: "right" }
     ],
-    // The booth was photographed eight times from nearly the same spot; two
-    // angles and the two clips.
-    gallery: [4, 6, "vid:0", "vid:1"]
+    // The booth was photographed eight times from nearly the same spot, and
+    // vid-02 is the wide shot the hero clip already is. The story has img-01;
+    // the gallery keeps the one portrait with someone reaching for the wall
+    // and the one close-up clip.
+    gallery: [5, "vid:0"]
   },
   // --- play ---
   // The robot is a UR10e -- the long-reach one of the pair -- going by the

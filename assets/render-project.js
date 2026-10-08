@@ -348,22 +348,127 @@
   // `ref` may be a list, which sets the files side by side in one figure.
   // `loop` makes any clip in it play on its own, muted and on repeat, with
   // no controls -- for the clips that are pictures rather than films.
-  function figureFor(ref, side, caption, loop) {
+  // `captions`, a list beside a list of files, sets a line under each one.
+  function figureFor(ref, side, caption, loop, captions) {
     const refs = Array.isArray(ref) ? ref : [ref];
-    const els = refs.map((r) => {
+    const els = refs.map((r, i) => {
       const m = resolveMedia(r);
-      return (loop && m && m.type === 'video') ? loopClip(m) : mediaEl(m, caption);
+      const el = (loop && m && m.type === 'video') ? loopClip(m) : mediaEl(m, (captions && captions[i]) || caption);
+      if (!el || !captions || !captions[i]) return el;
+      const cell = document.createElement('div');
+      cell.className = 'figure-cell';
+      const cap = document.createElement('p');
+      cap.className = 'cell-caption';
+      cap.textContent = captions[i];
+      cell.append(el, cap);
+      return cell;
     }).filter(Boolean);
     if (!els.length) return null;
     const fig = document.createElement('figure');
     fig.className = `story-figure side-${side || 'full'}` +
-      (els.length > 1 ? ` multi n-${Math.min(els.length, 3)}` : '');
+      (els.length > 1 ? ` multi n-${Math.min(els.length, 4)}` : '');
     els.forEach((el) => fig.appendChild(el));
     if (caption) {
       const cap = document.createElement('figcaption');
       cap.textContent = caption;
       fig.appendChild(cap);
     }
+    return fig;
+  }
+
+  // Plots rebuilt as type: the plotted data is an image cut to the plot's
+  // frame, and the axes, ticks, numbers and labels are real text laid over
+  // it. Ticks sit at percentages of the plot area, so they stay on their
+  // values at any width while the type keeps its own size.
+  //   { plots: [{ src, x: [min, max], y: [min, max], xticks: [...],
+  //     yticks: [...], xlabel, ylabel, box, title }], caption }
+  function plotsFigure(plots, side, caption) {
+    const fig = document.createElement('figure');
+    fig.className = `story-figure plots side-${side || 'full'} n-${plots.length}`;
+    const num = (v) => String(v).replace('-', '−');
+    plots.forEach((p) => {
+      const [x0, x1] = p.x, [y0, y1] = p.y;
+      const plot = document.createElement('div');
+      plot.className = 'plot';
+      if (p.title) {
+        const t = document.createElement('p');
+        t.className = 'plot-title';
+        t.textContent = p.title;
+        plot.appendChild(t);
+      }
+      const yl = document.createElement('span');
+      yl.className = 'plot-label y';
+      // A label may be MathML, for what plain text cannot set (a dotted θ).
+      const label = (el, v) => { if (/^</.test(v || '')) el.innerHTML = v; else el.textContent = v || ''; };
+      label(yl, p.ylabel);
+      const area = document.createElement('div');
+      area.className = 'plot-area' + (p.box === false ? '' : ' box');
+      // The data layer is cut to the frame, so its shape is the plot's.
+      const dim = (project.sizes || {})[p.src];
+      if (dim) area.style.aspectRatio = `${dim[0]} / ${dim[1]}`;
+      const img = document.createElement('img');
+      img.src = p.src;
+      img.alt = '';
+      img.decoding = 'async';
+      img.loading = 'lazy';
+      area.appendChild(img);
+      (p.xticks || []).forEach((v) => {
+        const t = document.createElement('span');
+        t.className = 'tick x';
+        t.style.left = `${(v - x0) / (x1 - x0) * 100}%`;
+        t.textContent = num(v);
+        area.appendChild(t);
+      });
+      (p.yticks || []).forEach((v) => {
+        const t = document.createElement('span');
+        t.className = 'tick y';
+        t.style.bottom = `${(v - y0) / (y1 - y0) * 100}%`;
+        t.textContent = num(v);
+        area.appendChild(t);
+      });
+      const xl = document.createElement('span');
+      xl.className = 'plot-label x';
+      label(xl, p.xlabel);
+      plot.append(yl, area, xl);
+      fig.appendChild(plot);
+    });
+    if (caption) {
+      const cap = document.createElement('figcaption');
+      cap.textContent = caption;
+      fig.appendChild(cap);
+    }
+    return fig;
+  }
+
+  // Numbered equations, set in MathML so they are type, not pictures.
+  //   { equations: [["<math>…</math>", "40", [narrow lines…]], …] }
+  // The optional third item is the equation broken into lines, shown
+  // instead on screens too narrow for it in one.
+  function equationsFigure(list, side) {
+    const fig = document.createElement('figure');
+    fig.className = `story-figure equations side-${side || 'full'}`;
+    list.forEach(([math, n, lines]) => {
+      const row = document.createElement('div');
+      row.className = 'eq';
+      const body = document.createElement('div');
+      body.className = 'eq-body';
+      body.innerHTML = math;
+      if (lines) {
+        body.classList.add('has-lines');
+        const broken = document.createElement('div');
+        broken.className = 'eq-lines';
+        broken.innerHTML = lines.join('');
+        body.appendChild(broken);
+      }
+      row.appendChild(body);
+      if (n) {
+        const tag = document.createElement('span');
+        tag.className = 'eq-n';
+        tag.textContent = `(${n})`;
+        row.appendChild(tag);
+      }
+      fig.appendChild(row);
+    });
     return fig;
   }
 
@@ -628,7 +733,10 @@
       };
       const fig = b.youtube ? ytFig(b.youtube)
         : b.embed ? instagramEmbed(b.embed, b.side)
-        : (ref !== undefined) ? figureFor(ref, b.side, b.caption, b.loop) : null;
+        : b.plots ? plotsFigure(b.plots, b.side, b.caption)
+        : b.equations ? equationsFigure(b.equations, b.side)
+        : (ref !== undefined) ? figureFor(ref, b.side, b.caption, b.loop, b.captions) : null;
+      if (fig && b.icons) fig.classList.add('icons');
       const row = document.createElement('div');
       row.className = fig ? `story-row side-${b.side || 'full'}` : 'story-row side-full';
       if (fig) row.appendChild(fig);

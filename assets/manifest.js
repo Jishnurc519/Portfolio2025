@@ -441,6 +441,127 @@ const SITE_MANIFEST = {
       ]
     }
   },
+  "jishnu/chaosstructures": {
+    "name": "ChaosStructures",
+    "category": "Jishnu",
+    "thumb": "assets/jishnu/chaosstructures/thumb-01.jpg",
+    "images": [
+      "assets/jishnu/chaosstructures/thumb-01.jpg",
+      "assets/jishnu/chaosstructures/thumb-02.jpg",
+      "assets/jishnu/chaosstructures/thumb-03.jpg"
+    ],
+    "videos": [],
+    "sizes": {
+      "assets/jishnu/chaosstructures/lorenz.png": [
+        1626,
+        1272
+      ],
+      "assets/jishnu/chaosstructures/nes-setup.png": [
+        1137,
+        951
+      ],
+      "assets/jishnu/chaosstructures/nes-block.png": [
+        540,
+        420
+      ],
+      "assets/jishnu/chaosstructures/nes-pendulum.png": [
+        540,
+        420
+      ],
+      "assets/jishnu/chaosstructures/nes-magnet.png": [
+        540,
+        420
+      ],
+      "assets/jishnu/chaosstructures/nes-coil.png": [
+        540,
+        420
+      ],
+      "assets/jishnu/chaosstructures/diffusion-1.png": [
+        663,
+        735
+      ],
+      "assets/jishnu/chaosstructures/diffusion-2.png": [
+        909,
+        888
+      ],
+      "assets/jishnu/chaosstructures/type-field.png": [
+        2193,
+        855
+      ],
+      "assets/jishnu/chaosstructures/plot-bifurcation.png": [
+        1024,
+        788
+      ],
+      "assets/jishnu/chaosstructures/plot-phase-035.png": [
+        520,
+        208
+      ],
+      "assets/jishnu/chaosstructures/plot-phase-070.png": [
+        572,
+        224
+      ],
+      "assets/jishnu/chaosstructures/plot-phase-075.png": [
+        576,
+        228
+      ],
+      "assets/jishnu/chaosstructures/plot-phase-080.png": [
+        528,
+        208
+      ],
+      "assets/jishnu/chaosstructures/plot-phase-095.png": [
+        532,
+        212
+      ],
+      "assets/jishnu/chaosstructures/c-render-1.jpg": [
+        855,
+        705
+      ],
+      "assets/jishnu/chaosstructures/c-render-2.jpg": [
+        543,
+        492
+      ],
+      "assets/jishnu/chaosstructures/c-render-3.jpg": [
+        855,
+        798
+      ],
+      "assets/jishnu/chaosstructures/c-render-4.jpg": [
+        543,
+        789
+      ],
+      "assets/jishnu/chaosstructures/c-displace-1.jpg": [
+        610,
+        1152
+      ],
+      "assets/jishnu/chaosstructures/c-displace-2.jpg": [
+        572,
+        1152
+      ],
+      "assets/jishnu/chaosstructures/c-displace-3.jpg": [
+        572,
+        1152
+      ],
+      "assets/jishnu/chaosstructures/c-displace-4.jpg": [
+        610,
+        1152
+      ],
+      "assets/jishnu/chaosstructures/c-network.jpg": [
+        2334,
+        736
+      ],
+      "assets/jishnu/chaosstructures/thumb-01.jpg": [
+        286,
+        576
+      ],
+      "assets/jishnu/chaosstructures/thumb-02.jpg": [
+        285,
+        266
+      ],
+      "assets/jishnu/chaosstructures/thumb-03.jpg": [
+        303,
+        296
+      ]
+    }
+  },
   "jishnu/emasculatedman": {
     "name": "EmasculatedMan",
     "category": "Jishnu",

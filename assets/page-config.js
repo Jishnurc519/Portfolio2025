@@ -28,7 +28,8 @@
 // on facilitation.html. `displayName` is optional.
 const PAGE_CONFIG = {
   // Order follows the notebook: the work run of write-ups, then the
-  // Unconference box that closes it. Sobha follows Nodeshed because it
+  // Unconference box that closes it, with Chaos Structures -- the old
+  // portfolio's first project -- just ahead of it. Sobha follows Nodeshed because it
   // was commissioned off the back of it. Nodeshed and 6th Sense live here rather
   // than under play -- both are written up as commissioned work.
   work: [
@@ -38,6 +39,7 @@ const PAGE_CONFIG = {
     { key: "jishnu/sobha" },
     { key: "onebyzero/middleroom" },
     { key: "onebyzero/sixthsense" },
+    { key: "jishnu/chaosstructures", displayName: "Chaos Structures" },
     { key: "jishnu/unconference" }
   ],
   // The notebook's own list for Play was:

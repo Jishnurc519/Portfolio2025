@@ -156,6 +156,9 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
   transition: opacity 0.2s ease;
 }
 .still:hover img { opacity: 0.88; }
+/* A transparent drawing is meant to sit on the page's own ground; the
+   loading tint behind it would show through as a lighter box. */
+.still img[src$=".png"] { background: none; border-radius: 0; }
 /* The AVIF wrapper around a still must not change how it lays out. */
 .still picture { display: block; }
 
@@ -281,11 +284,83 @@ h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 700; margin: 10px 0 0; line
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .story-figure.multi.n-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.story-figure.multi.n-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .story-figure.multi figcaption { grid-column: 1 / -1; }
+.story-figure .figure-cell .still { margin-bottom: 0; }
+.story-figure .cell-caption {
+  margin: 12px auto 0; max-width: 24ch; text-align: center;
+  font-size: 14px; line-height: 1.45; font-style: italic; opacity: 0.75;
+}
+/* Small icons in a row: keep them icon-sized rather than column-wide. */
+.story-figure.multi.icons { gap: 24px; max-width: 880px; }
+.story-figure.multi.icons .still img { width: 100%; max-width: 150px; margin: 0 auto; display: block; }
 .story-row.side-left .story-figure.multi img,
 .story-row.side-right .story-figure.multi img,
 .story-row.side-left .story-figure.multi video,
 .story-row.side-right .story-figure.multi video { width: 100%; max-height: none; }
+
+/* Plots rebuilt as type (render-project.js, plotsFigure): the data is an
+   image filling the plot area; axes are its borders, and every tick and
+   number is text placed at a percentage of the area, so it stays on its
+   value at any width. Room for the numbers is padding in em, so it grows
+   with the type rather than with the plot. */
+.story-figure.plots {
+  display: grid; gap: 28px 40px; align-items: end;
+  grid-template-columns: repeat(var(--plot-cols, 1), minmax(0, 1fr));
+}
+.story-figure.plots.n-2 { --plot-cols: 2; }
+.story-figure.plots.n-3 { --plot-cols: 3; }
+/* two plots take the width three would, so the pair is not twice the size */
+.story-figure.plots.n-2 { max-width: 880px; }
+.plot-label math { font-size: 17px; }
+.story-figure.plots figcaption { grid-column: 1 / -1; margin-top: 0; }
+.plot {
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "title title" "ylabel area" ". xlabel";
+  font-size: 13px; line-height: 1; color: rgba(var(--tone-light-rgb), 0.85);
+  font-variant-numeric: tabular-nums;
+}
+.plot-title { grid-area: title; margin: 0 0 8px; text-align: center; }
+.plot-label {
+  font-family: 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif;
+  font-style: italic; font-size: 17px; color: var(--tone-light);
+}
+.plot-label.y { grid-area: ylabel; align-self: center; padding-right: 6px; }
+.plot-label.x { grid-area: xlabel; justify-self: center; padding-top: 6px; }
+.plot-area {
+  grid-area: area; position: relative;
+  /* the tick numbers hang outside the frame, into this room */
+  margin: 0 0 1.9em 3.1em;
+  border-left: 1px solid currentColor; border-bottom: 1px solid currentColor;
+}
+.plot-area.box { border: 1px solid currentColor; }
+.plot-area img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: block; object-fit: fill; pointer-events: none;
+}
+.plot-area .tick { position: absolute; white-space: nowrap; }
+.plot-area .tick::before {
+  content: ""; position: absolute; background: currentColor;
+}
+.plot-area .tick.x { top: 100%; transform: translateX(-50%); padding-top: 0.65em; }
+.plot-area .tick.x::before { left: 50%; top: -5px; width: 1px; height: 5px; }
+.plot-area .tick.y { right: 100%; transform: translateY(50%); padding-right: 0.55em; }
+.plot-area .tick.y::before { right: -5px; top: 50%; width: 5px; height: 1px; }
+.story-row.side-left .story-figure.plots,
+.story-row.side-right .story-figure.plots { width: 100%; }
+
+/* Numbered equations in MathML. The number keeps the right edge; a line
+   too long for a phone scrolls inside its own row instead of the page. */
+.story-figure.equations { display: grid; gap: 1.1em; max-width: 880px; }
+.eq { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1em; }
+.eq-body { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; }
+.eq-body math {
+  font-family: 'STIX Two Math', 'Cambria Math', 'Latin Modern Math', math;
+  font-size: 21px; color: var(--tone-light);
+}
+.eq-lines { display: none; }
+.eq-lines math + math { padding-left: 2em; margin-top: 0.35em; }
+.eq-n { font-size: 15px; color: rgba(var(--tone-light-rgb), 0.7); font-variant-numeric: tabular-nums; }
 
 /* Line drawings redrawn from the notebook. Their strokes are currentColor,
    so they are ink on the section's ground like the type around them. */
@@ -553,7 +628,14 @@ blockquote cite {
   .story h2 { margin: 6vh 0 2.5vh; }
   .story-row.side-right .embed-figure { justify-self: start; order: 0; }
   .space-host { height: 62vh; }
-  .story-figure.multi.n-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .story-figure.multi.n-3,
+  .story-figure.multi.n-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Two plots to a row on a tablet, one on a phone: any narrower and the
+     plot would shrink below its own type. */
+  .story-figure.plots.n-3 { --plot-cols: 2; }
+  .eq-body math { font-size: clamp(13px, 3.9vw, 19px); }
+  .eq { gap: 0.6em; }
+  .eq-n { font-size: 13px; }
 
   /* No room for the original arrangement: the spread becomes a column, in
      the order its items were written, and narrow pieces pair up. */
@@ -617,4 +699,13 @@ body.sec-facilitation {
   --card-accent: #5a3f0c;
   --card-accent-alt: #e0b558;
   --hl: #a3e9e6;
+}
+
+/* Phones: one plot to a row, and the long equations broken at their =
+   (after the 768px block, which sets two plots to a row). */
+@media (max-width: 600px) {
+  .story-figure.plots.n-2, .story-figure.plots.n-3 { --plot-cols: 1; }
+  .story-figure.plots .plot { max-width: 520px; }
+  .eq-body.has-lines > math { display: none; }
+  .eq-body.has-lines > .eq-lines { display: block; }
 }

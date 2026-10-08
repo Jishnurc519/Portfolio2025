@@ -24,18 +24,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sanchez:ital@0;1&display=swap" rel="stylesheet">
   <style>
-    /* GMMBBQ runs on play's pair: the site's near-black and magenta, exact
-       complements channel by channel, and --tone-swap their sum -- the
+    /* GMMBBQ runs on its own pair: the site's near-black and a red bright
+       enough to read on it (5.4:1 either way round, so both the dark page
+       and the turned one hold AA), and --tone-swap their sum -- the
        operand the cursor ring (assets/cursor.js) paints itself with by
        difference. It is its own page rather than a project, so it scrolls
        natively and carries its own styles instead of page.css's fixed shell. */
     :root {
       --tone-dark: #0b0e13;
-      --tone-light: #eeaae8;
+      --tone-light: #f44848;
       --tone-dark-rgb: 11, 14, 19;
-      --tone-light-rgb: 238, 170, 232;
-      --tone-swap: #f9b8fb;
-      --tone-swap-rgb: 249, 184, 251;
+      --tone-light-rgb: 244, 72, 72;
+      --tone-swap: #ff565b;
+      --tone-swap-rgb: 255, 86, 91;
       --bg: var(--tone-dark);
       --ink: var(--tone-light);
       --ink-rgb: var(--tone-light-rgb);
@@ -112,8 +113,8 @@
     .media { border-radius: 4px; overflow: hidden; background: rgba(var(--ink-rgb), 0.06); }
     .media img, .media video { width: 100%; height: 100%; object-fit: cover; }
     /* Drawings are ink: they take --ink by being masks, not pictures. A
-       drawing is a pink PNG from scripts/build_slide_art.py; turned over,
-       it would be pink on pink, so the inverted page darkens it instead. */
+       drawing is a red PNG (scripts/build_slide_art.py's line work, repainted
+       in the page's red); turned over, it would be red on red, so the inverted page darkens it instead. */
     .art { background: none; }
     .art img { object-fit: contain; }
     body.inverted .art img { filter: brightness(0.06); }
@@ -310,11 +311,11 @@
          the ones from Readymag were saved off that site as it cropped them. -->
     <header class="hero wrap">
       <!-- The Gamma Barbecue logo itself (assets/Asset 1.png), inked twice --
-           pink for the dark page, near-black for the turned one -- because an
+           red for the dark page, near-black for the turned one -- because an
            image cannot take the page's colour and a CSS mask will not load
            from disk. -->
       <h1 class="hero-logo">
-        <img class="on-dark" src="assets/gmmbbq/about/logo-pink.png" alt="Gamma Barbecue" width="1595" height="470">
+        <img class="on-dark" src="assets/gmmbbq/about/logo-red.png" alt="Gamma Barbecue" width="1595" height="470">
         <img class="on-light" src="assets/gmmbbq/about/logo-dark.png" alt="" width="1595" height="470">
       </h1>
       <div class="sub"><span>new media stuff</span><span>deep fried experiences</span></div>
@@ -753,8 +754,8 @@
         return c;
       }
       // Two shades for the flock and the colour a charge pulls them towards,
-      // read off the page so they follow the turn: on the dark, pink going
-      // to paper; on the pink, near-black going darker still.
+      // read off the page so they follow the turn: on the dark, red going
+      // to paper; on the red, near-black going darker still.
       let shades = [], glow = null;
       function mix(a, b, t) { return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
       function rgbOf(v) { return v.split(',').map((n) => parseInt(n, 10) || 0); }

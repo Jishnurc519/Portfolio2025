@@ -792,12 +792,44 @@
         const vw = reel.videoWidth, vh = reel.videoHeight;
         const s = Math.max(W / vw, H / vh);
         const dw = vw * s, dh = vh * s;
+        // The letters are cut out of the reel before it goes down. The text
+        // is painted in difference, and over the reel that let the film show
+        // through the letters (bright footage came out cyan inside them);
+        // with the reel gone from under them they sit on the plain ground and
+        // come out solid, and still turn dark over a light mark.
+        if (reelCv.width !== canvas.width || reelCv.height !== canvas.height) {
+          reelCv.width = canvas.width; reelCv.height = canvas.height;
+        }
+        rctx.setTransform(1, 0, 0, 1, 0, 0);
+        rctx.globalCompositeOperation = 'source-over';
+        rctx.clearRect(0, 0, reelCv.width, reelCv.height);
+        rctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+        rctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        rctx.globalCompositeOperation = 'destination-out';
+        rctx.fillStyle = rctx.strokeStyle = '#000';
+        // a hair wider than the glyph, so its soft edge is not tinted either
+        rctx.lineWidth = 1;
+        rctx.lineJoin = 'round';
+        rctx.textAlign = 'center';
+        rctx.textBaseline = 'middle';
+        for (let i = 0; i < chars.length; i++) {
+          if (sides[i] === 1 || hintChars.has(chars[i])) continue;
+          const r = chars[i].getBoundingClientRect();
+          if (r.width === 0 || r.bottom < 0 || r.top > H) continue;
+          const cs = getComputedStyle(chars[i]);
+          rctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          rctx.fillText(chars[i].textContent, r.left + r.width / 2, r.top + r.height / 2);
+          rctx.strokeText(chars[i].textContent, r.left + r.width / 2, r.top + r.height / 2);
+        }
         ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalAlpha = REEL_ALPHA;
         ctx.globalCompositeOperation = 'screen';
-        ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        ctx.drawImage(reelCv, 0, 0);
         ctx.restore();
       }
+      const reelCv = document.createElement('canvas');
+      const rctx = reelCv.getContext('2d');
 
       // --- the text, split so each letter can be measured ---
       const chars = [];

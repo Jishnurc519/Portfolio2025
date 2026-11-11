@@ -1314,58 +1314,159 @@ function wallURL(){ return location.origin+location.pathname.replace(/[^/]*$/,''
 
 /* ---------- otherworldly voice: Gemini TTS → bit-crush, ring-mod, warble, pitch-drifting echo ---------- */
 const GVOICES=['Charon','Fenrir','Orus','Kore','Zephyr','Puck','Aoede','Leda'];
-async function geminiTTS(text){
+let fxBus=null, curSrc=null;
+const ttsCache=new Map();               // text → {data:Float32Array, rate}
+const ttsPending=new Map(); let ttsChain=Promise.resolve();
+function getVoice(text){                 // cached, one request at a time, retries with backoff; never a different voice
+  if(ttsCache.has(text)) return Promise.resolve(ttsCache.get(text));
+  if(ttsPending.has(text)) return ttsPending.get(text);
+  const p=ttsChain.then(async()=>{
+    let last;
+    for(const wait of [0,1500,4000,8000]){
+      if(wait) await sleep(wait);
+      try{ const v=await geminiTTSraw(text); ttsCache.set(text,v); return v; }
+      catch(e){ last=e; if(!/429|500|502|503|504|network|no audio/i.test(String(e.message))) break; }
+    }
+    throw last;
+  }).finally(()=>ttsPending.delete(text));
+  ttsChain=p.catch(()=>{}); ttsPending.set(text,p); return p;
+}
+async function geminiTTSraw(text){
   const body={contents:[{parts:[{text:'Say in a calm, slow, neutral international accent, like a gentle ancient machine: '+text}]}],
     generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:V.gvoice||'Charon'}}}}};
   const j=await geminiFetch(V.tts||VDEF.tts, body);
   const part=((j.candidates||[])[0]?.content?.parts||[]).find(p=>p.inlineData);
   if(!part) throw new Error('no audio returned');
   const rate=+(((part.inlineData.mimeType||'').match(/rate=(\d+)/)||[0,24000])[1]);
-  const bin=atob(part.inlineData.data), n=bin.length>>1, buf=aCtx.createBuffer(1,n,rate), ch=buf.getChannelData(0);
-  for(let i=0;i<n;i++){ let v=bin.charCodeAt(i*2)|(bin.charCodeAt(i*2+1)<<8); if(v>32767) v-=65536; ch[i]=v/32768; }
-  return buf;
+  const bin=atob(part.inlineData.data), n=bin.length>>1, data=new Float32Array(n);
+  for(let i=0;i<n;i++){ let v=bin.charCodeAt(i*2)|(bin.charCodeAt(i*2+1)<<8); if(v>32767) v-=65536; data[i]=v/32768; }
+  return {data,rate};
 }
-let fxBus=null, curSrc=null;
+let prefetching=false;
+async function prefetchLines(lines){
+  if(prefetching || V.provider!=='gemini' || !V.gkey) return; prefetching=true;
+  for(const l of lines||[]){ if(!ttsCache.has(l)){ try{ await getVoice(l); }catch(e){} await sleep(1500); } }
+  prefetching=false; vlog('i','Voice lines ready ('+ttsCache.size+')');
+}
+function impulse(c,sec,decay){
+  const n=Math.floor(c.sampleRate*sec), b=c.createBuffer(2,n,c.sampleRate);
+  for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,decay)*(1+.4*Math.sin(i/35)); }
+  return b;
+}
 function buildFx(){
-  const c=aCtx;
+  const c=aCtx, T=c.currentTime;
   const input=c.createGain();
+  // 1) bit-crush + sample-rate reduction
   const crush=c.createScriptProcessor(2048,1,1); let hold=0, cnt=0;
   crush.onaudioprocess=e=>{
     const i=e.inputBuffer.getChannelData(0), o=e.outputBuffer.getChannelData(0), a=V.fx/100;
-    const step=Math.pow(.5,Math.round(16-a*10)-1), ds=1+Math.round(a*4);
+    const step=Math.pow(.5,Math.round(16-a*9)-1), ds=1+Math.round(a*3);
     for(let k=0;k<i.length;k++){ if(cnt++%ds===0) hold=Math.round(i[k]/step)*step; o[k]=hold; }
   };
-  const ring=c.createGain(); ring.gain.value=0; const rosc=c.createOscillator(); rosc.frequency.value=36; rosc.connect(ring.gain); rosc.start();
-  const wdel=c.createDelay(1); wdel.delayTime.value=.03;
-  const lfo=c.createOscillator(); lfo.frequency.value=.8; const lfoG=c.createGain(); lfoG.gain.value=.012; lfo.connect(lfoG); lfoG.connect(wdel.delayTime); lfo.start();
-  const echo=c.createDelay(2); echo.delayTime.value=.29; const fb=c.createGain(); const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200;
-  const elfo=c.createOscillator(); elfo.frequency.value=.21; const elfoG=c.createGain(); elfoG.gain.value=.025; elfo.connect(elfoG); elfoG.connect(echo.delayTime); elfo.start();
-  echo.connect(lp); lp.connect(fb); fb.connect(echo);
-  const dry=c.createGain(), wetW=c.createGain(), wetR=c.createGain(), wetE=c.createGain(), out=c.createGain(), an=c.createAnalyser(); an.fftSize=512;
-  input.connect(crush); crush.connect(dry); crush.connect(wdel); wdel.connect(wetW); crush.connect(ring); ring.connect(wetR); crush.connect(echo); lp.connect(wetE);
-  [dry,wetW,wetR,wetE].forEach(g=>g.connect(out)); out.connect(an); an.connect(c.destination);
-  fxBus={input,an,set(){ const a=V.fx/100; dry.gain.value=1-a*.35; wetW.gain.value=a*.7; wetR.gain.value=a*.35; wetE.gain.value=a*.55; fb.gain.value=.2+a*.38; out.gain.value=1.15; }};
+  // 2) ring-mod shimmer
+  const ring=c.createGain(); ring.gain.value=0; const rosc=c.createOscillator(); rosc.frequency.value=34; rosc.connect(ring.gain); rosc.start();
+  // 3) warble (short modulated delay = pitch wobble)
+  const wdel=c.createDelay(1); wdel.delayTime.value=.028;
+  const lfo=c.createOscillator(); lfo.frequency.value=.55; const lfoG=c.createGain(); lfoG.gain.value=.009; lfo.connect(lfoG); lfoG.connect(wdel.delayTime); lfo.start();
+  // 4) dub: stereo ping-pong tape delay, band-limited feedback, slow tape wobble
+  const dubSend=c.createGain(), dL=c.createDelay(3), dR=c.createDelay(3), fbL=c.createGain(), fbR=c.createGain();
+  dL.delayTime.value=.375; dR.delayTime.value=.5;
+  const hp=c.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=380;
+  const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2100; lp.Q.value=.9;
+  const tape=c.createOscillator(); tape.frequency.value=.17; const tapeG=c.createGain(); tapeG.gain.value=.006; tape.connect(tapeG); tapeG.connect(dL.delayTime); tapeG.connect(dR.delayTime); tape.start();
+  dubSend.connect(hp); hp.connect(lp); lp.connect(dL);
+  dL.connect(fbL); fbL.connect(dR); dR.connect(fbR); fbR.connect(dL);         // ping-pong
+  const merge=c.createChannelMerger(2); dL.connect(merge,0,0); dR.connect(merge,0,1);
+  const dubOut=c.createGain(); merge.connect(dubOut);
+  // 5) spring-ish reverb on the echoes and a little on the voice
+  const verb=c.createConvolver(); verb.buffer=impulse(c,2.6,2.4); const verbSend=c.createGain(), verbOut=c.createGain();
+  verbSend.connect(verb); verb.connect(verbOut); dubOut.connect(verbSend);
+  // 6) psychedelic shimmer: two delay-line pitch shifters (sawtooth-swept delay ≈ constant pitch shift), into the echoes
+  function shifter(semis){
+    const d=c.createDelay(.2), saw=c.createOscillator(), sg=c.createGain(), win=.06, f=Math.abs(1-Math.pow(2,semis/12))/win;
+    saw.type='sawtooth'; saw.frequency.value=f; sg.gain.value=(semis>0?-1:1)*win/2; d.delayTime.value=win/2+.005;
+    saw.connect(sg); sg.connect(d.delayTime); saw.start();
+    const lpf=c.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=3200; d.connect(lpf); return {in:d,out:lpf};
+  }
+  const up=shifter(7), down=shifter(-5), shimSend=c.createGain(), shimOut=c.createGain();
+  shimSend.connect(up.in); shimSend.connect(down.in); up.out.connect(shimOut); down.out.connect(shimOut);
+  shimOut.connect(dubSend); shimOut.connect(verbSend);
+  // mix
+  const dry=c.createGain(), wetW=c.createGain(), wetR=c.createGain(), out=c.createGain(), an=c.createAnalyser(); an.fftSize=512;
+  crush.connect(shimSend);
+  input.connect(crush); crush.connect(dry); crush.connect(wdel); wdel.connect(wetW); crush.connect(ring); ring.connect(wetR);
+  crush.connect(dubSend); crush.connect(verbSend);
+  [dry,wetW,wetR,dubOut,verbOut].forEach(g=>g.connect(out)); out.connect(an); an.connect(c.destination);
+  const set=(g,v)=>g.gain.setTargetAtTime(v,c.currentTime,.08);
+  fxBus={input,an,dubSend,
+    set(){ const a=V.fx/100; set(shimSend,a*.55); set(shimOut,.6); set(dry,1-a*.3); set(wetW,a*.6); set(wetR,a*.25); set(dubSend,.25+a*.35); set(dubOut,.55+a*.4);
+      set(fbL,.35+a*.25); set(fbR,.35+a*.25); set(verbSend,.15+a*.25); set(verbOut,.5); set(out,1.1); },
+    throwDub(){ const g=dubSend.gain, t=c.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(1,t+.15);
+      g.setTargetAtTime(.25+V.fx/100*.35,t+.9,.6);
+      for(const f of [fbL,fbR]){ f.gain.cancelScheduledValues(t); f.gain.setValueAtTime(f.gain.value,t); f.gain.linearRampToValueAtTime(.72,t+.2); f.gain.setTargetAtTime(.35+V.fx/100*.25,t+2.2,.8); } }
+  };
+  fxBus.set();
 }
 async function speak(text){
   if(!text) return;
+  relay({type:'said',text});
   if(V.provider!=='gemini' || V.gvoice==='browser') return speakBrowser(text);
   ensureAudioCtx();
-  let buf; try{ buf=await geminiTTS(text); }
-  catch(e){ vlog('x','Voice: '+String(e.message).slice(0,120)+' — using the plain browser voice'); return speakBrowser(text); }
+  let v; try{ v=await getVoice(text); }
+  catch(e){ vlog('x','Voice unavailable right now ('+String(e.message).slice(0,80)+'). Showing the line instead.'); showTextFx(text,{fx:'type',out:'burn'}); await sleep(2500); return; }
   if(!fxBus) buildFx(); fxBus.set();
+  const buf=aCtx.createBuffer(1,v.data.length,v.rate); buf.getChannelData(0).set(v.data);
   return new Promise(res=>{
     const src=aCtx.createBufferSource(); src.buffer=buf; curSrc=src;
-    const a=V.fx/100; src.playbackRate.value=1-a*.07;
+    const a=V.fx/100; src.playbackRate.value=1-a*.06;
+    const env=aCtx.createGain(); const T=aCtx.currentTime; env.gain.setValueAtTime(0,T); env.gain.linearRampToValueAtTime(1,T+.04);
+    const dur=buf.duration/src.playbackRate.value; env.gain.setValueAtTime(1,T+Math.max(.05,dur-.08)); env.gain.linearRampToValueAtTime(0,T+dur);
     let lfo=null;
-    try{ lfo=aCtx.createOscillator(); lfo.frequency.value=.3+Math.random()*.4; const g=aCtx.createGain(); g.gain.value=a*140; lfo.connect(g); g.connect(src.detune); lfo.start(); }catch(e){}
-    src.connect(fxBus.input);
+    try{ lfo=aCtx.createOscillator(); lfo.frequency.value=.45; const g=aCtx.createGain(); g.gain.value=a*110; lfo.connect(g); g.connect(src.detune); lfo.start(); }catch(e){}
+    src.connect(env); env.connect(fxBus.input);
     const data=new Uint8Array(fxBus.an.fftSize); let done=false, raf=0;
-    const pump=()=>{ if(done) return; fxBus.an.getByteTimeDomainData(data); let s=0; for(const v of data){ const x=(v-128)/128; s+=x*x; }
+    const pump=()=>{ if(done) return; fxBus.an.getByteTimeDomainData(data); let s=0; for(const x of data){ const y=(x-128)/128; s+=y*y; }
       window.orb.setLevel(Math.min(1,Math.sqrt(s/data.length)*5)); raf=requestAnimationFrame(pump); };
-    const fin=()=>{ if(done) return; done=true; cancelAnimationFrame(raf); try{ lfo&&lfo.stop(); }catch(e){} curSrc=null; setTimeout(res,900+a*700); };
+    setTimeout(()=>{ if(!done) fxBus.throwDub(); }, Math.max(0,(dur-.45)*1000));     // dub throw on the last word
+    try{ const n=Math.floor(dur/2.2)+ (a>.3?1:0);                                       // a couple of woozy pitch glides
+      for(let i=0;i<n;i++){ const t0=T+.4+Math.random()*Math.max(.1,dur-1.2), c=(Math.random()<.5?-1:1)*(120+Math.random()*260)*a;
+        src.detune.setValueAtTime(0,t0); src.detune.linearRampToValueAtTime(c,t0+.22); src.detune.linearRampToValueAtTime(0,t0+.6); } }catch(e){}
+    const fin=()=>{ if(done) return; done=true; cancelAnimationFrame(raf); try{ lfo&&lfo.stop(); }catch(e){} curSrc=null; setTimeout(res,1100+a*900); };
     src.onended=fin; src.start(); pump();
-    setTimeout(fin,(buf.duration/src.playbackRate.value+3)*1000);
+    setTimeout(fin,(dur+3)*1000);
   });
+}
+
+/* ---------- ask once (used by the presentation): speak a question, listen to one answer, react, then stop ---------- */
+let asking=false;
+async function askOnce(question, fb){
+  if(asking) return; asking=true;
+  if(inConvoNow()) endConversation();
+  setParticles(0); setEmotion('curious'); setState('speaking'); relay({type:'state',state:'speaking'});
+  await speak(question);
+  setState('listening'); setEmotion('neutral'); relay({type:'state',state:'listening'});
+  let heard=null;
+  try{ heard = useAudioListen() ? await listenAudio() : await _listenOnce(); }catch(e){}
+  let ok=false;
+  if(heard){
+    const entry= typeof heard==='object' ? {role:'user',content:'',audio:heard.audio} : {role:'user',content:heard};
+    setState('thinking'); setEmotion('curious'); relay({type:'state',state:'thinking'});
+    try{
+      const out=await askLLM([entry]);
+      const txt=String(out.heard||entry.content||'').trim();
+      if(txt && txt!=='(unclear)'){ showTextFx(txt,{out:'eat'}); relay({type:'heard',text:txt}); ok=true;
+        await sleep(2600); setEmotion(out.emotion||'happy'); if(out.emote&&out.emote!=='none') emote(out.emote);
+        setState('speaking'); await speak(out.say);
+        if(out.idea){ setState('sent'); spawnNote(out.idea); relay({type:'idea',text:out.idea}); } }
+    }catch(e){ vlog('x',e.message); }
+  }
+  if(!ok && fb){                                   // nobody answered: play the scripted example
+    showTextFx(fb.text,{fx:'type',out:'eat'}); relay({type:'heard',text:fb.text});
+    setState('thinking'); await sleep(3800);
+    setEmotion('happy'); emote('nod'); setState('speaking'); await speak(fb.reply);
+    if(fb.idea){ setState('sent'); spawnNote(fb.idea); relay({type:'idea',text:fb.idea}); }
+  }
+  setState('idle'); relay({type:'state',state:'idle'}); asking=false;
 }
 
 /* ---------- panel: aesthetics, voice, laptop wall ---------- */
@@ -1406,6 +1507,8 @@ function runCmd(cmd,a=[]){
     case 'clearText': if(textState) startOut(now()); break;
     case 'clearNotes': notes.forEach(n=>{ n.state='leave'; n.lt=now(); n.vy=-win(n.key).r*.5; }); break;
     case 'reload': location.reload(); break;
+    case 'ask': askOnce(a[0],a[1]); break;
+    case 'prefetch': prefetchLines(a[0]); break;
     case 'place': if(['dia','ox','oy','bsize','bx','by','br'].includes(a[0])){ S[a[0]]=+a[1]; save(); syncUI(); } break;
     case 'flip': S.flip=!!a[0]; save(); syncUI(); break;
     case 'guide': S.guide=!!a[0]; save(); syncUI(); break;

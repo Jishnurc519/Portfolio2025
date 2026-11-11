@@ -4,52 +4,50 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Orb · Presentation & Control</title>
+<title>Brainstorm Booths</title>
 <style>
   :root{--c:#8cffd2;--t:#dcfff1;--dim:#5d7a70;--book:"Hoefler Text","Baskerville","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000;color:var(--t);font:14px/1.4 -apple-system,"Segoe UI",system-ui,sans-serif;overflow:hidden}
-  #app{display:grid;grid-template-columns:1fr;height:100%}
+  #bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}
+  #app{position:relative;z-index:1;display:grid;grid-template-columns:1fr;height:100%}
   body.ctl #app{grid-template-columns:1fr 340px}
   #side{display:none} body.ctl #side{display:block}
-  #nav button,#cueNow{display:none} body.ctl #nav button,body.ctl #cueNow{display:block}
-  #nav{border-top:none!important} body.ctl #nav{border-top:1px solid #12201b!important}
-  /* slides */
-  #stage{position:relative;display:flex;flex-direction:column;justify-content:center;padding:6vh 7vw;border-right:1px solid #12201b}
-  body:not(.ctl) #stage{border-right:none}
-  .kick{font:italic 1.3vw var(--book);color:var(--c);opacity:.75;letter-spacing:.04em;margin-bottom:1.2vh}
-  .title{font:italic 4.2vw/1.08 var(--book);color:var(--t);text-shadow:0 0 30px color-mix(in srgb,var(--c) 45%,transparent);margin:0 0 2.4vh}
-  .line{font:1.55vw/1.45 var(--book);color:var(--t);opacity:.82;max-width:46vw}
-  .pts{margin:2.4vh 0 0;padding:0;list-style:none;font:1.25vw/1.6 var(--book);opacity:.8}
-  .pts li::before{content:"✦ ";color:var(--c)}
-  #cueNow{position:absolute;left:7vw;bottom:9vh;font:italic 1vw var(--book);color:var(--c);opacity:.7}
-  #nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:14px 7vw;border-top:1px solid #12201b}
-  #dots{display:flex;gap:6px;flex:1} #dots i{width:22px;height:3px;background:#1d2e28;border-radius:2px} #dots i.on{background:var(--c)}
-  .fade{animation:fade .7s ease both} @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  /* controls */
-  #side{overflow:auto;padding:14px 16px;background:#030605}
-  h3{margin:14px 0 6px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
-  h3:first-child{margin-top:0}
+  #stage{position:relative;display:flex;flex-direction:column;justify-content:center;padding:6vh 7vw;pointer-events:none}
+  #slide{max-width:52vw}
+  .kick{font:italic 1.25vw var(--book);color:var(--c);opacity:.8;letter-spacing:.05em;margin-bottom:1.4vh}
+  .title{font:italic 4.4vw/1.06 var(--book);color:var(--t);margin:0 0 2.6vh;text-shadow:0 0 28px color-mix(in srgb,var(--c) 50%,transparent)}
+  .title span{display:inline-block;opacity:0;filter:blur(14px);transform:translateY(.25em);animation:in .9s cubic-bezier(.2,.8,.2,1) forwards}
+  .line{font:1.5vw/1.5 var(--book);color:var(--t);opacity:0;animation:fadein 1.2s ease forwards;animation-delay:.9s}
+  .pts{margin:2.4vh 0 0;padding:0;list-style:none;font:1.2vw/1.7 var(--book)}
+  .pts li{opacity:0;animation:fadein .8s ease forwards} .pts li::before{content:"✦  ";color:var(--c)}
+  @keyframes in{to{opacity:1;filter:blur(0);transform:none}}
+  @keyframes fadein{to{opacity:.85}}
+  .out{animation:out .45s ease forwards} @keyframes out{to{opacity:0;filter:blur(10px);transform:translateY(-12px)}}
+  #dots{position:absolute;left:7vw;bottom:5vh;display:flex;gap:6px} #dots i{width:22px;height:2px;background:#1d2e28} #dots i.on{background:var(--c)}
+  #ask{position:absolute;left:7vw;bottom:10vh;font:italic 1.2vw var(--book);color:var(--c);opacity:0;transition:opacity .6s}
+  #ask.on{opacity:.9;animation:pulse 1.6s ease-in-out infinite} @keyframes pulse{50%{opacity:.4}}
+  #side{position:relative;z-index:2;overflow:auto;padding:14px 16px;background:#030605ee;border-left:1px solid #12201b}
+  h3{margin:14px 0 6px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)} h3:first-child{margin-top:0}
   .row{display:flex;flex-wrap:wrap;gap:5px}
   button{background:#0a1411;color:var(--t);border:1px solid #1f3a31;border-radius:6px;padding:6px 9px;font:inherit;font-size:12.5px;cursor:pointer}
-  button:hover{border-color:var(--c)} button.on{border-color:var(--c);background:#0f2a21}
-  button.big{padding:9px 14px;font-size:14px}
+  button:hover{border-color:var(--c)}
   input,select,textarea{width:100%;background:#050b09;color:var(--t);border:1px solid #1f3a31;border-radius:6px;padding:6px 8px;font:inherit;font-size:12.5px;margin:3px 0}
   input[type=range]{padding:0}
   #st{font-size:11.5px;color:var(--dim)}
-  #cursorHide{cursor:none}
   #feed{font:italic 13px var(--book);max-height:150px;overflow:auto;border:1px solid #12201b;border-radius:6px;padding:6px 8px;margin-top:6px}
   #feed p{margin:3px 0} #feed .i{color:var(--c);font-style:normal}
 </style>
 </head>
 <body>
+<canvas id="bg"></canvas>
 <div id="app">
   <section id="stage">
     <div id="slide"></div>
-    <div id="cueNow"></div>
-    <div id="nav"><button id="prev">←</button><div id="dots"></div><button id="replay">↻ replay cue</button><button id="next" class="big">Next →</button></div>
+    <div id="ask">● it is listening — say an idea</div>
+    <div id="dots"></div>
   </section>
-  <aside id="side">
+<aside id="side">
     <div id="st">connecting…</div>
     <h3>Hologram</h3>
     <div class="row"><button data-c="show">Show</button><button data-c="hide">Hide</button><button data-c="dissolve" data-a="1">Dissolve</button><button data-c="dissolve" data-a="0">Form</button></div>
@@ -79,81 +77,75 @@
   </aside>
 </div>
 <script>
-/* Presentation + live control for the orb. Link carries the pairing topic: control.html#topic=orb-xxxx
-   Commands go to ntfy.sh/<topic>-ctl (and a same-device BroadcastChannel). Each slide fires one "seq" cue. */
+/* Brainstorm Booths — presentation (laptop) that also drives the hologram on the iPad.
+   → / space next · ← back · F fullscreen · C hidden controls · H/S hide/show hologram */
 const q=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
 const DEFAULT_TOPIC='';   // filled in for a private build
 const topic=q.get('topic')||DEFAULT_TOPIC;
 const THEME={seance:'#8cffd2',holo:'#38a8ff',ember:'#ff8c26',phosphor:'#40ff59',ultraviolet:'#b861ff',gilded:'#ffcc59'};
 const NAMES={seance:'Séance',holo:'Holo',ember:'Ember',phosphor:'Phosphor',ultraviolet:'Ultraviolet',gilded:'Gilded'};
+const BOOK=getComputedStyle(document.documentElement).getPropertyValue('--book');
+const MONO='"SF Mono",Menlo,Consolas,"Courier New",monospace';
 let bc=null; try{ bc=new BroadcastChannel('brainstorm-ctl'); }catch(e){}
-function send(m){
-  try{ bc&&bc.postMessage(m); }catch(e){}
-  if(topic) fetch('https://ntfy.sh/'+encodeURIComponent(topic+'-ctl'),{method:'POST',body:JSON.stringify(m)}).catch(()=>{});
-}
-const cmd=(c,...args)=>send({cmd:c,args});
-const seq=steps=>send({cmd:'seq',steps});
-function tint(k){ if(THEME[k]) document.documentElement.style.setProperty('--c',THEME[k]); }
+function send(m){ try{ bc&&bc.postMessage(m); }catch(e){} if(topic) fetch('https://ntfy.sh/'+encodeURIComponent(topic+'-ctl'),{method:'POST',body:JSON.stringify(m)}).catch(()=>{}); }
+const cmd=(c,...args)=>{ send({cmd:c,args}); mirror(c,args); };
+let col=THEME.seance;
+function tint(k){ if(THEME[k]){ col=THEME[k]; document.documentElement.style.setProperty('--c',col); } }
 
-/* ---------- the deck: brief, about the idea and the possibilities. Each cue: [ms, command, args…] ---------- */
+/* ---------- the deck ---------- */
 const SLIDES=[
   {kick:'Brainstorm Booths', title:'Talk to a ghost in a glass.', line:'A small glowing being lives inside a glass vessel. You speak to it, and your ideas take shape in front of you.',
-   note:'Hologram fades in from nothing',
-   cue:[[0,'hide'],[0,'scene','clear'],[0,'theme','seance'],[0,'dissolve',1],[0,'emotion','neutral'],[900,'show'],[1600,'dissolve',0],[3600,'emote','nod']]},
-
-  {kick:'How it works · the base state', title:'Pick up. Speak. Watch.', line:'Anyone walks up, picks up the handset and says an idea out loud.',
-   pts:['It listens, and its eyes open wide','Your words appear in the glass','It answers in its own strange voice','A good idea becomes a sticky note'],
-   note:'Plays one full visitor exchange on the glass',
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','neutral'],[300,'state','listening'],
-        [3200,'text','What if bus stops ran on sunlight and charged your phone?','type','eat',2.6],
-        [3400,'state','thinking'],[3400,'emotion','curious'],
-        [8200,'emotion','happy'],[8300,'emote','nod'],[8400,'say','Sunlit shelters. I like that very much.'],
-        [11800,'note','Solar bus stops'],[12200,'state','idle']]},
-
-  {kick:'Possibility · words become matter', title:'What you say, you can see.', line:'Spoken words appear in old-book type, then fall, burn away, or get swallowed by the orb.',
-   note:'Three text effects in a row',
-   cue:[[0,'show'],[0,'scene','clear'],[200,'text','Heat that warms one home could warm the whole street.','rain','collapse',2],
-        [6200,'text','Speak, and I shall remember.','scramble','burn',1.6],
-        [10800,'text','Every rooftop, a little wind garden.','assemble','scatter',1.8]]},
-
-  {kick:'Possibility · ideas you can hold', title:'Good ideas become sticky notes.', line:'They drop, tumble and stack inside the glass, then fly out to the big wall for everyone to see.',
-   note:'Notes drop into the cube and appear on the wall',
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','excited'],[300,'note','Rooftop wind gardens'],[1700,'note','Heat-sharing streets'],[3100,'note','Ice batteries for summer'],[4500,'emote','jump']]},
-
-  {kick:'Possibility · it has feelings', title:'It reacts, like a creature would.', line:'Curious at odd ideas, delighted by bold ones, surprised by wild ones. Its face is made of simple characters.',
-   pts:['curious  o O','delighted  ^ ^','surprised  O O','thinking  @ @'],
-   note:'Cycles through emotions',
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','curious'],[1800,'emotion','happy'],[1900,'emote','nod'],[3600,'emotion','surprised'],[5400,'state','thinking'],[7400,'state','idle'],[7400,'emotion','sad'],[9000,'emotion','neutral']]},
-
-  {kick:'Possibility · one object, many moods', title:'Six looks for six brands.', line:'Séance, Holo, Ember, Phosphor, Ultraviolet, Gilded. Each recolours the being, its words and its notes.',
-   note:'Cycles through the aesthetics',
-   cue:[[0,'show'],[0,'theme','ember'],[2000,'theme','holo'],[4000,'theme','phosphor'],[6000,'theme','ultraviolet'],[8000,'theme','gilded'],[10000,'theme','seance']]},
-
-  {kick:'Possibility · brand moments', title:'Between two vessels.', line:'Particles stream across, a logo assembles itself, and the being travels from one glass to the other.',
-   note:'Logo, then the orb moves across',
-   cue:[[0,'show'],[0,'scene','flow'],[2500,'scene','logo'],[7500,'scene','clear'],[8000,'scene','transfer']]},
-
-  {kick:'Possibility · appear on cue', title:'It shows up only when it should.', line:'The hologram can vanish and return on cue, so it can hide behind a reveal or wake up for a keynote moment.',
-   note:'Vanishes, then returns',
-   cue:[[0,'show'],[600,'dissolve',1],[1800,'hide'],[4200,'show'],[4400,'dissolve',0],[6000,'emote','burst'],[6100,'emotion','happy']]},
-
-  {kick:'Brainstorm Booths', title:'Every idea, kept.', line:'Now it is listening. Go ahead and try it.',
-   note:'Returns to the live base state and starts listening',
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','happy'],[300,'say','Every idea, kept. Now, tell me yours.'],[4500,'scene','auto'],[4600,'listen',1]]},
+   cue:[[0,'listen',0],[0,'hide'],[0,'scene','clear'],[0,'clearNotes'],[0,'theme','seance'],[0,'dissolve',1],[0,'emotion','neutral'],[900,'show'],[1600,'dissolve',0],
+        [3400,'emote','nod'],[3600,'say','Hello. I live in the glass. Speak to me, and I will remember.']]},
+  {kick:'How it works', title:'Pick up. Speak. Watch.', line:'Anyone walks up, picks up the handset and says an idea out loud.',
+   pts:['It listens, and its eyes open wide','Your words appear in the glass','It answers in its own strange voice','A good idea becomes a sticky note'], ask:true,
+   cue:[[0,'show'],[0,'scene','clear'],[300,'ask','Tell me an idea for tomorrow’s energy.',
+        {text:'What if bus stops ran on sunlight and charged your phone?',reply:'Sunlit shelters. I like that very much.',idea:'Solar bus stops'}]]},
+  {kick:'Words become matter', title:'What you say, you can see.', line:'Spoken words appear in old-book type, then fall, burn away, or get swallowed by the orb.',
+   cue:[[0,'show'],[0,'scene','clear'],[200,'say','Your words become something you can see.'],
+        [3200,'text','Heat that warms one home could warm the whole street.','rain','collapse',2],
+        [9000,'text','Speak, and I shall remember.','scramble','burn',1.6],
+        [13500,'text','Every rooftop, a little wind garden.','assemble','scatter',1.8]]},
+  {kick:'Ideas you can hold', title:'Good ideas become sticky notes.', line:'They drop, tumble and stack inside the glass, then fly out to the big wall for everyone to see.',
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','excited'],[200,'say','Good ideas become notes. I keep every one.'],
+        [2800,'note','Rooftop wind gardens'],[4200,'note','Heat-sharing streets'],[5600,'note','Ice batteries for summer'],[7000,'emote','jump']]},
+  {kick:'It has feelings', title:'It reacts, like a creature would.', line:'Curious at odd ideas, delighted by bold ones, surprised by wild ones. Its face is made of simple characters.',
+   pts:['curious   o O','delighted   ^ ^','surprised   O O','thinking   @ @'],
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','curious'],[300,'say','I feel things too.'],[2600,'emotion','happy'],[2700,'emote','nod'],
+        [4400,'emotion','surprised'],[4500,'say','Oh!'],[6400,'state','thinking'],[8400,'state','idle'],[8400,'emotion','sad'],[10000,'emotion','neutral']]},
+  {kick:'One object, many moods', title:'Six looks for six brands.', line:'Séance, Holo, Ember, Phosphor, Ultraviolet, Gilded. Each recolours the being, its words and its notes.',
+   cue:[[0,'show'],[0,'say','I can wear many colours.'],[1800,'theme','ember'],[3600,'theme','holo'],[5400,'theme','phosphor'],[7200,'theme','ultraviolet'],[9000,'theme','gilded'],[10800,'theme','seance']]},
+  {kick:'Brand moments', title:'Between two vessels.', line:'Particles stream across, a logo assembles itself, and the being travels from one glass to the other.',
+   cue:[[0,'show'],[0,'scene','flow'],[200,'say','I can travel between vessels.'],[3000,'scene','logo'],[8000,'scene','clear'],[8500,'scene','transfer'],[12500,'scene','transfer']]},
+  {kick:'Appear on cue', title:'It shows up only when it should.', line:'The hologram can vanish and return on cue, hiding behind a reveal or waking up for a keynote moment.',
+   cue:[[0,'show'],[200,'say','Now you see me.'],[2600,'dissolve',1],[3600,'hide'],[6000,'show'],[6200,'dissolve',0],[7600,'emote','burst'],[7700,'emotion','happy'],[8000,'say','And now, I am back.']]},
+  {kick:'Every idea, kept', title:'Every idea, kept.', line:'Everything said in the room today, gathered in one place. Now it is listening. Go ahead and try it.', finale:true, ask:true,
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','happy'],[300,'say','Every idea, kept. Now, tell me yours.'],[5000,'scene','auto'],[5100,'listen',1]]},
 ];
-let cur=0;
-const slideEl=document.getElementById('slide'), dots=document.getElementById('dots'), cueNow=document.getElementById('cueNow');
-SLIDES.forEach((_,i)=>{ const d=document.createElement('i'); d.onclick=()=>go(i); dots.appendChild(d); });
+const LINES=[]; SLIDES.forEach(S=>S.cue.forEach(c=>{ if(c[1]==='say') LINES.push(c[2]); if(c[1]==='ask'){ LINES.push(c[2]); if(c[3]) LINES.push(c[3].reply); } }));
+
+let cur=0, timers=[];
+const slideEl=document.getElementById('slide'), dots=document.getElementById('dots'), askEl=document.getElementById('ask');
+SLIDES.forEach(()=>dots.appendChild(document.createElement('i')));
 function render(){
   const S=SLIDES[cur];
-  slideEl.innerHTML=`<div class="fade"><div class="kick">${S.kick}</div><h1 class="title">${S.title}</h1><div class="line">${S.line}</div>${S.pts?'<ul class="pts">'+S.pts.map(p=>'<li>'+p+'</li>').join('')+'</ul>':''}</div>`;
+  const words=S.title.split(' ');
+  let k=0; const title=words.map(w=>`<span style="animation-delay:${(k++)*.09}s">${w}&nbsp;</span>`).join('');
+  slideEl.innerHTML=`<div class="kick">${S.kick}</div><h1 class="title">${title}</h1><div class="line">${S.line}</div>${S.pts?'<ul class="pts">'+S.pts.map((p,i)=>`<li style="animation-delay:${1.3+i*.25}s">${p}</li>`).join('')+'</ul>':''}`;
   [...dots.children].forEach((d,i)=>d.classList.toggle('on',i<=cur));
-  cueNow.textContent='On the glass: '+S.note;
+  askEl.classList.remove('on');
 }
-function go(i,fire=true){ cur=Math.max(0,Math.min(SLIDES.length-1,i)); render(); if(fire){ seq(SLIDES[cur].cue); const th=SLIDES[cur].cue.find(c=>c[1]==='theme'); if(th) tint(th[2]); } }
-document.getElementById('next').onclick=()=>go(cur+1);
-document.getElementById('prev').onclick=()=>go(cur-1);
-document.getElementById('replay').onclick=()=>go(cur);
+function go(i){
+  const n=Math.max(0,Math.min(SLIDES.length-1,i)); if(n===cur && i!==cur) return;
+  slideEl.classList.add('out');
+  setTimeout(()=>{ slideEl.classList.remove('out'); cur=n; render(); fire(); },380);
+}
+function fire(){
+  const S=SLIDES[cur]; timers.forEach(clearTimeout); timers=[];
+  send({cmd:'seq',steps:S.cue});
+  for(const [d,c,...a] of S.cue) timers.push(setTimeout(()=>mirror(c,a),d));
+  if(S.finale) timers.push(setTimeout(rainIdeas,2200));
+}
 addEventListener('keydown',e=>{
   if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ e.preventDefault(); go(cur+1); }
@@ -162,20 +154,114 @@ addEventListener('keydown',e=>{
   if(e.key==='c') document.body.classList.toggle('ctl');
   if(e.key==='f'){ const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d); }
 });
-render();
+render(); setTimeout(fire,300);
+setTimeout(()=>send({cmd:'prefetch',args:[LINES]}),2500);   // iPad pre-loads every spoken line → same voice, no waiting
 
-/* ---------- live controls ---------- */
+/* ---------- the laptop's own ghost: mirrors the iPad (emotion, state, show/hide, speech) ---------- */
+const cv=document.getElementById('bg'), g=cv.getContext('2d'); let W,H,dpr;
+function resize(){ dpr=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; g.setTransform(dpr,0,0,dpr,0,0); }
+addEventListener('resize',resize); resize();
+const now=()=>performance.now()/1000;
+const EYES={neutral:['o','o'],happy:['^','^'],curious:['o','O'],sad:['T','T'],excited:['*','*'],surprised:['O','O'],angry:['>','<']};
+const EMO={neutral:{sp:1,spr:1},happy:{sp:1.8,spr:1.05},curious:{sp:.8,spr:1.1},sad:{sp:.45,spr:.85},excited:{sp:2.6,spr:1.3},surprised:{sp:1.1,spr:1.45},angry:{sp:2.2,spr:.9}};
+let emotion='neutral', state='idle', vis=1, visT=1, form=1, formT=1, emoteT=-9, emoteK='', speakUntil=0, phase=0, spr=1, sp=1;
+let captions=[], ideas=[], notes=[], blinkT=0, nextBlink=3;
+const dust=Array.from({length:110},()=>({x:Math.random(),y:Math.random(),z:Math.random(),v:.004+Math.random()*.01}));
+function mirror(c,a){
+  if(c==='emotion' && EYES[a[0]]) emotion=a[0];
+  if(c==='state') state=a[0];
+  if(c==='emote'){ emoteK=a[0]; emoteT=now(); }
+  if(c==='theme') tint(a[0]);
+  if(c==='hide') visT=0; if(c==='show') visT=1;
+  if(c==='dissolve') formT=1-(+a[0]);
+  if(c==='say') caption(a[0]);
+  if(c==='ask'){ caption(a[0]); setTimeout(()=>{ if(SLIDES[cur].ask) askEl.classList.add('on'); state='listening'; },Math.min(5000,1500+a[0].length*70)); }
+  if(c==='note') addIdea(a[0]);
+  if(c==='clearNotes') notes=[];
+}
+function caption(t){ captions.push({t,t0:now()}); if(captions.length>2) captions.shift(); speakUntil=now()+Math.max(1.6,t.length*.07); }
+function addIdea(t){ if(ideas.includes(t)) return; ideas.push(t); if(SLIDES[cur].finale && notes.length) dropNote(t); }
+function dropNote(t){ const w=Math.min(230,W*.15), h=w*.75; notes.push({t,x:W*(.1+Math.random()*.8),y:-h,vx:(Math.random()-.5)*80,vy:40,ang:(Math.random()-.5)*.6,va:(Math.random()-.5)*2,w,h,a:0}); }
+function rainIdeas(){
+  notes=[]; const list=ideas.length?ideas:['Your idea here'];
+  list.forEach((t,i)=>setTimeout(()=>dropNote(t),i*380));
+}
+function stepNotes(dt){
+  for(const n of notes){ n.a=Math.min(1,n.a+dt*2); n.vy+=900*dt; n.x+=n.vx*dt; n.y+=n.vy*dt; n.ang+=n.va*dt; n.vx*=.995; n.va*=.985;
+    n.ang=Math.atan2(Math.sin(n.ang),Math.cos(n.ang)); n.va+=-n.ang*2*dt;
+    const c=Math.abs(Math.cos(n.ang)), s=Math.abs(Math.sin(n.ang)), hw=(c*n.w+s*n.h)/2, hh=(s*n.w+c*n.h)/2, fl=H-30;
+    if(n.y+hh>fl){ n.y=fl-hh; if(n.vy>0) n.vy*=-.25; n.vx*=.85; n.va=n.va*.5-n.ang*.6; }
+    if(n.x-hw<10){ n.x=10+hw; n.vx=Math.abs(n.vx)*.4; } if(n.x+hw>W-10){ n.x=W-10-hw; n.vx=-Math.abs(n.vx)*.4; } }
+  for(let i=0;i<notes.length;i++) for(let j=i+1;j<notes.length;j++){ const A=notes[i],B=notes[j],dx=B.x-A.x,dy=B.y-A.y,ox=(A.w+B.w)/2*.9-Math.abs(dx),oy=(A.h+B.h)/2*.9-Math.abs(dy);
+    if(ox>0&&oy>0){ if(oy<ox){ const p=oy/2*Math.sign(dy||1); A.y-=p; B.y+=p; const v=(A.vy+B.vy)/2; A.vy=v; B.vy=v; } else { const p=ox/2*Math.sign(dx||1); A.x-=p; B.x+=p; } } }
+}
+function wrap(text,maxW){ const ws=String(text).split(/\s+/), L=[]; let c=''; for(const w of ws){ const t=c?c+' '+w:w; if(g.measureText(t).width>maxW&&c){L.push(c);c=w;} else c=t; } if(c)L.push(c); return L; }
+let last=now();
+function frame(){
+  const t=now(), dt=Math.min(.033,t-last); last=t;
+  g.clearRect(0,0,W,H);
+  vis+=(visT-vis)*Math.min(1,dt*2); form+=(formT-form)*Math.min(1,dt*1.5);
+  const E=EMO[emotion]||EMO.neutral; sp+=(E.sp-sp)*dt*2; spr+=(E.spr-spr)*dt*2; phase+=dt*sp*(state==='thinking'?2.5:1);
+  // dust
+  g.fillStyle=col;
+  for(const d of dust){ d.y-=d.v*dt*(1+d.z); if(d.y<0){ d.y=1; d.x=Math.random(); }
+    g.globalAlpha=.08+d.z*.25; g.fillRect(d.x*W,d.y*H,1+d.z*1.6,1+d.z*1.6); }
+  // ghost orb (right side)
+  const cx=W*.72, cy=H*.46+Math.sin(t*.8)*H*.012, R=Math.min(W,H)*.15;
+  const talking=t<speakUntil, lvl=talking?.5+.5*Math.abs(Math.sin(t*11)):0;
+  g.save(); g.globalCompositeOperation='lighter';
+  const blobs=[[0,0,1]];
+  for(let i=0;i<6;i++){ const a=i*1.047+phase*.7, inc=Math.sin(phase*.6+i*1.7)*.6, d=.6*spr*(1+.15*Math.sin(phase*1.3+i));
+    blobs.push([Math.cos(a)*Math.cos(inc)*d*(1+(1-form)*2.5), Math.sin(inc)*d*(1+(1-form)*2.5)+(emotion==='sad'?.25:0), .5+.08*Math.sin(phase*2+i)+lvl*.08]); }
+  for(const [bx,by,br] of blobs){ const x=cx+bx*R, y=cy+by*R, r=R*.55*br*(.3+.7*form);
+    const gr=g.createRadialGradient(x,y,r*.2,x,y,r*1.6); gr.addColorStop(0,col+'00'); gr.addColorStop(.55,col+'22'); gr.addColorStop(.68,col+'aa'); gr.addColorStop(.74,col+'22'); gr.addColorStop(1,col+'00');
+    g.globalAlpha=vis*(.55+.45*form); g.fillStyle=gr; g.beginPath(); g.arc(x,y,r*1.6,0,7); g.fill(); }
+  g.restore();
+  // ASCII eyes
+  nextBlink-=dt; if(nextBlink<0){ blinkT=.13; nextBlink=2.5+Math.random()*4; }
+  let pair=EYES[emotion]||EYES.neutral;
+  if(state==='listening') pair=['0','0'];
+  if(state==='thinking'){ const c=['@','o','@','e'][Math.floor(t*7)%4]; pair=[c,c]; }
+  if(blinkT>0){ blinkT-=dt; if(state!=='thinking') pair=['-','-']; }
+  const et=t-emoteT, env=Math.exp(-et*3)*(et<2?1:0);
+  const ny= emoteK==='nod'?Math.sin(et*13)*R*.06*env : emoteK==='jump'?-Math.max(0,Math.sin(et*6))*R*.12*env : 0;
+  const nx= emoteK==='shake'?Math.sin(et*15)*R*.08*env : 0;
+  g.globalAlpha=vis*form; g.fillStyle='#fff'; g.shadowColor=col; g.shadowBlur=R*.12;
+  g.font=`700 ${R*.3}px ${MONO}`; g.textAlign='center'; g.textBaseline='middle';
+  g.fillText(pair[0],cx-R*.22+nx,cy-R*.04+ny); g.fillText(pair[1],cx+R*.22+nx,cy-R*.04+ny); g.shadowBlur=0;
+  // captions with dub echoes
+  for(const C of captions){
+    const e=t-C.t0, n=Math.min(C.t.length,Math.floor(e*24)), a=e<C.t.length*.07+2.5?1:Math.max(0,1-(e-C.t.length*.07-2.5)/1.2);
+    if(a<=0) continue;
+    const txt=C.t.slice(0,n), y=cy+R*1.35;
+    g.font=`italic ${Math.min(30,W*.019)}px ${BOOK}`; g.textAlign='center';
+    for(let k=3;k>=0;k--){ g.globalAlpha=vis*a*(k?.14/k:.95); g.fillStyle=k?col:'#fff'; g.fillText('“'+txt+(n<C.t.length?'':'”'),cx+k*9,y+k*7); }
+  }
+  // sticky notes (finale)
+  stepNotes(dt);
+  for(const n of notes){ g.save(); g.translate(n.x,n.y); g.rotate(n.ang); g.globalAlpha=n.a;
+    g.fillStyle=col; g.globalAlpha=n.a*.13; g.fillRect(-n.w/2,-n.h/2,n.w,n.h); g.globalAlpha=n.a;
+    g.strokeStyle=col; g.lineWidth=2; g.shadowColor=col; g.shadowBlur=12; g.strokeRect(-n.w/2,-n.h/2,n.w,n.h);
+    g.globalAlpha=n.a*.45; g.fillStyle=col; g.fillRect(-n.w*.18,-n.h/2-n.h*.07,n.w*.36,n.h*.14); g.globalAlpha=n.a; g.shadowBlur=3;
+    g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle';
+    let fs=n.h*.2, L; for(;fs>8;fs*=.9){ g.font=`italic ${fs}px ${BOOK}`; L=wrap(n.t,n.w*.84); if(L.length*fs*1.15<=n.h*.75) break; }
+    L.forEach((l,i)=>g.fillText(l,0,(i-(L.length-1)/2)*fs*1.15)); g.restore(); }
+  g.globalAlpha=1;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- hidden live controls (press C) ---------- */
 document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; cmd(b.dataset.c, a===undefined?undefined:(isNaN(+a)?a:+a)); });
 const emosEl=document.getElementById('emos');
 for(const e of ['neutral','happy','curious','sad','excited','surprised','angry']){ const b=document.createElement('button'); b.textContent=e[0].toUpperCase()+e.slice(1); b.onclick=()=>cmd('emotion',e); emosEl.appendChild(b); }
 const thEl=document.getElementById('themes');
-for(const k of Object.keys(THEME)){ const b=document.createElement('button'); b.textContent=NAMES[k]; b.onclick=()=>{ cmd('theme',k); tint(k); }; thEl.appendChild(b); }
+for(const k of Object.keys(THEME)){ const b=document.createElement('button'); b.textContent=NAMES[k]; b.onclick=()=>cmd('theme',k); thEl.appendChild(b); }
 const txt=document.getElementById('txt');
 document.getElementById('bText').onclick=()=>txt.value.trim()&&cmd('text',txt.value.trim(),document.getElementById('fx').value,document.getElementById('out').value);
 document.getElementById('bNote').onclick=()=>txt.value.trim()&&cmd('note',txt.value.trim());
 document.getElementById('bSay').onclick=()=>txt.value.trim()&&cmd('say',txt.value.trim());
 document.getElementById('fxAmt').onchange=e=>cmd('fx',+e.target.value);
-
 
 /* ---------- calibration sliders ---------- */
 const CAL=[['dia','Cylinder size',150,900,545],['ox','Cylinder X',-700,700,-320],['oy','Cylinder Y',-500,500,0],['bsize','Cube size',150,900,445],['bx','Cube X',-700,700,320],['by','Cube Y',-500,500,0],['br','Brightness',20,300,100]];
@@ -190,17 +276,25 @@ for(const [k,label,mn,mx,v] of CAL){
 function setCal(pl){ for(const inp of calEl.querySelectorAll('input')){ const k=inp.dataset.k; if(pl[k]!==undefined){ inp.value=pl[k]; inp.nextElementSibling.textContent=pl[k]; } } }
 setTimeout(()=>cmd('getPlace'),1500);
 
+
 /* ---------- what comes back from the booth ---------- */
 const feed=document.getElementById('feed'), st=document.getElementById('st');
 function addFeed(cls,t){ const p=document.createElement('p'); p.className=cls; p.textContent=t; feed.prepend(p); while(feed.children.length>30) feed.lastChild.remove(); }
-function handle(ev){ if(!ev) return; if(ev.theme) tint(ev.theme); if(ev.type==='place') setCal(ev.place); if(ev.type==='heard') addFeed('','“'+ev.text+'”'); if(ev.type==='idea') addFeed('i','✦ '+ev.text); }
+function handle(ev){
+  if(!ev) return; if(ev.theme) tint(ev.theme);
+  if(ev.type==='place') setCal(ev.place);
+  if(ev.type==='heard'){ addFeed('','“'+ev.text+'”'); askEl.classList.remove('on'); }
+  if(ev.type==='idea'){ addFeed('i','✦ '+ev.text); addIdea(ev.text); }
+  if(ev.type==='said' && !captions.some(c=>c.t===ev.text && now()-c.t0<6)) caption(ev.text);
+  if(ev.type==='state'){ state=ev.state; if(ev.state!=='listening') askEl.classList.remove('on'); }
+}
 try{ new BroadcastChannel('brainstorm-wall').onmessage=e=>handle(e.data); }catch(e){}
 if(topic){
   const es=new EventSource('https://ntfy.sh/'+encodeURIComponent(topic)+'/sse');
   es.onopen=()=>st.textContent='● paired with '+topic;
   es.onerror=()=>st.textContent='○ reconnecting… ('+topic+')';
   es.onmessage=e=>{ try{ const d=JSON.parse(e.data); if(d.event==='message') handle(JSON.parse(d.message)); }catch(err){} };
-} else st.textContent='No pairing code in the link. Open the Control link shown in the orb panel.';
+} else st.textContent='No pairing code in the link.';
 </script>
 </body>
 </html>

@@ -29,7 +29,8 @@ const THEMES={
   gilded:{base:'#ffcc59',text:'#fff2cc',note:['#ffd36b','#ffe9a8','#e0a940'],font:BOOK},
 };
 const q=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
-const topic=q.get('topic')||'';
+const DEFAULT_TOPIC='';   // filled in for a private build
+const topic=q.get('topic')||DEFAULT_TOPIC;
 let TH=THEMES[q.get('theme')]||THEMES.seance;
 const cv=document.getElementById('c'), g=cv.getContext('2d'), st=document.getElementById('st');
 let W,H,dpr;

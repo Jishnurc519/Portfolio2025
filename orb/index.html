@@ -655,8 +655,8 @@ syncUI();
 // triple-tap toggles panel, drag spins orb
 let taps=[], drag=null;
 cv.addEventListener('pointerdown',e=>{
-  const n=performance.now(); taps=taps.filter(x=>n-x<600); taps.push(n);
-  if(taps.length>=3){ panel.classList.toggle('show'); taps=[]; }
+  const n=performance.now(); taps=taps.filter(x=>n-x<1200); taps.push(n);
+  if(taps.length>=5){ panel.classList.toggle('show'); taps=[]; }
   drag={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch};
 });
 addEventListener('pointermove',e=>{ if(!drag) return;
@@ -1406,6 +1406,10 @@ function runCmd(cmd,a=[]){
     case 'clearText': if(textState) startOut(now()); break;
     case 'clearNotes': notes.forEach(n=>{ n.state='leave'; n.lt=now(); n.vy=-win(n.key).r*.5; }); break;
     case 'reload': location.reload(); break;
+    case 'place': if(['dia','ox','oy','bsize','bx','by','br'].includes(a[0])){ S[a[0]]=+a[1]; save(); syncUI(); } break;
+    case 'flip': S.flip=!!a[0]; save(); syncUI(); break;
+    case 'guide': S.guide=!!a[0]; save(); syncUI(); break;
+    case 'getPlace': relay({type:'place',place:{dia:S.dia,ox:S.ox,oy:S.oy,bsize:S.bsize,bx:S.bx,by:S.by,br:S.br,flip:S.flip,guide:S.guide}}); break;
   }
 }
 function handleCtl(m){

@@ -63,6 +63,9 @@
     <div class="row"><button id="bText">Show as text</button><button id="bNote">Drop as note</button><button id="bSay">Say it</button></div>
     <h3>Voice FX</h3>
     <input id="fxAmt" type="range" min="0" max="100" value="70">
+    <h3>Calibration (fit the windows to the glass)</h3>
+    <div class="row"><button data-c="guide" data-a="1">Show outlines</button><button data-c="guide" data-a="0">Hide outlines</button><button data-c="flip" data-a="1">Flip on</button><button data-c="flip" data-a="0">Flip off</button></div>
+    <div id="cal"></div>
     <h3>Listening</h3>
     <div class="row"><button data-c="listen" data-a="1">Start listening</button><button data-c="listen" data-a="0">Stop</button><button data-c="reload">Reload iPad</button></div>
     <h3>From the booth</h3>
@@ -73,7 +76,8 @@
 /* Presentation + live control for the orb. Link carries the pairing topic: control.html#topic=orb-xxxx
    Commands go to ntfy.sh/<topic>-ctl (and a same-device BroadcastChannel). Each slide fires one "seq" cue. */
 const q=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
-const topic=q.get('topic')||'';
+const DEFAULT_TOPIC='';   // filled in for a private build
+const topic=q.get('topic')||DEFAULT_TOPIC;
 const THEME={seance:'#8cffd2',holo:'#38a8ff',ember:'#ff8c26',phosphor:'#40ff59',ultraviolet:'#b861ff',gilded:'#ffcc59'};
 const NAMES={seance:'Séance',holo:'Holo',ember:'Ember',phosphor:'Phosphor',ultraviolet:'Ultraviolet',gilded:'Gilded'};
 let bc=null; try{ bc=new BroadcastChannel('brainstorm-ctl'); }catch(e){}
@@ -164,10 +168,24 @@ document.getElementById('bNote').onclick=()=>txt.value.trim()&&cmd('note',txt.va
 document.getElementById('bSay').onclick=()=>txt.value.trim()&&cmd('say',txt.value.trim());
 document.getElementById('fxAmt').onchange=e=>cmd('fx',+e.target.value);
 
+
+/* ---------- calibration sliders ---------- */
+const CAL=[['dia','Cylinder size',150,900,545],['ox','Cylinder X',-700,700,-320],['oy','Cylinder Y',-500,500,0],['bsize','Cube size',150,900,445],['bx','Cube X',-700,700,320],['by','Cube Y',-500,500,0],['br','Brightness',20,300,100]];
+const calEl=document.getElementById('cal');
+for(const [k,label,mn,mx,v] of CAL){
+  const l=document.createElement('label'); l.style.cssText='display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0';
+  l.innerHTML=`<span style="width:92px">${label}</span><input type="range" min="${mn}" max="${mx}" value="${v}" style="flex:1"><output style="width:38px;text-align:right">${v}</output>`;
+  const inp=l.querySelector('input'), out=l.querySelector('output'); let tm=0;
+  inp.oninput=()=>{ out.textContent=inp.value; clearTimeout(tm); tm=setTimeout(()=>cmd('place',k,+inp.value),120); };
+  inp.dataset.k=k; calEl.appendChild(l);
+}
+function setCal(pl){ for(const inp of calEl.querySelectorAll('input')){ const k=inp.dataset.k; if(pl[k]!==undefined){ inp.value=pl[k]; inp.nextElementSibling.textContent=pl[k]; } } }
+setTimeout(()=>cmd('getPlace'),1500);
+
 /* ---------- what comes back from the booth ---------- */
 const feed=document.getElementById('feed'), st=document.getElementById('st');
 function addFeed(cls,t){ const p=document.createElement('p'); p.className=cls; p.textContent=t; feed.prepend(p); while(feed.children.length>30) feed.lastChild.remove(); }
-function handle(ev){ if(!ev) return; if(ev.theme) tint(ev.theme); if(ev.type==='heard') addFeed('','“'+ev.text+'”'); if(ev.type==='idea') addFeed('i','✦ '+ev.text); }
+function handle(ev){ if(!ev) return; if(ev.theme) tint(ev.theme); if(ev.type==='place') setCal(ev.place); if(ev.type==='heard') addFeed('','“'+ev.text+'”'); if(ev.type==='idea') addFeed('i','✦ '+ev.text); }
 try{ new BroadcastChannel('brainstorm-wall').onmessage=e=>handle(e.data); }catch(e){}
 if(topic){
   const es=new EventSource('https://ntfy.sh/'+encodeURIComponent(topic)+'/sse');

@@ -28,11 +28,13 @@
   #vlog{font-size:11.5px;max-height:140px;overflow:auto;background:#05080e;border:1px solid #1b2433;border-radius:5px;padding:6px;margin-top:6px}
   #vlog p{margin:2px 0} #vlog .u{color:#7dffb0} #vlog .a{color:#7fd8ff} #vlog .x{color:#ff8a8a} #vlog .i{color:#ffd84d}
   #talk.big{width:100%;padding:10px;font-size:14px;margin-top:6px}
+  #ov{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none}
   #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#f88;padding:30px;text-align:center}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<canvas id="ov"></canvas>
 <div id="err"></div>
 
 <div id="panel">
@@ -51,13 +53,25 @@
   </div>
   <h3>Particles</h3>
   <label>Dissolve <input id="dis" type="range" min="0" max="100" value="0"><output id="disO">0</output></label>
-  <h3>Placement</h3>
+  <h3>Scene</h3>
+  <div class="row" id="scenes">
+    <button data-sc="auto">Auto</button><button data-sc="orbA">Orb in cylinder</button><button data-sc="orbB">Orb in cube</button>
+    <button data-sc="transfer">Transfer</button><button data-sc="logo">Logo</button><button data-sc="idea">Idea</button>
+    <button data-sc="flow">Flow</button><button data-sc="clear">Clear</button>
+  </div>
+  <input id="logoText" type="text" placeholder="Logo text (used when no image)">
+  <label style="font-size:12px">Logo image <input id="logoFile" type="file" accept="image/*" style="font-size:11px;max-width:170px"></label>
+  <h3>Cylinder window (circle)</h3>
   <label>Diameter <input id="dia" type="range" min="150" max="900"><output id="diaO"></output></label>
-  <label>Offset X <input id="ox" type="range" min="-500" max="500"><output id="oxO"></output></label>
+  <label>Offset X <input id="ox" type="range" min="-700" max="700"><output id="oxO"></output></label>
   <label>Offset Y <input id="oy" type="range" min="-500" max="500"><output id="oyO"></output></label>
+  <h3>Cube window (square)</h3>
+  <label>Size <input id="bsize" type="range" min="150" max="900"><output id="bsizeO"></output></label>
+  <label>Offset X <input id="bx" type="range" min="-700" max="700"><output id="bxO"></output></label>
+  <label>Offset Y <input id="by" type="range" min="-500" max="500"><output id="byO"></output></label>
   <label>Brightness <input id="br" type="range" min="20" max="150"><output id="brO"></output></label>
   <div class="row" style="margin-top:6px">
-    <button id="flip">Flip vertical</button><button id="guide">Guide circle</button>
+    <button id="flip">Flip vertical</button><button id="guide">Guide outlines</button>
     <button id="demo">Demo loop</button><button id="mic">Use mic</button>
   </div>
   <h3>Voice assistant</h3>
@@ -89,9 +103,10 @@ const $=id=>document.getElementById(id);
 /* =========================================================
    SETTINGS
    ========================================================= */
-const DEF={dia:452,ox:0,oy:0,br:100,flip:true,guide:false,demo:true};
+const DEF={dia:452,ox:-280,oy:0,bsize:369,bx:280,by:0,br:100,flip:true,guide:false,demo:true,scene:'auto',logoText:'ENERGY',layoutV:2};
 let S=Object.assign({},DEF);
 try{Object.assign(S,JSON.parse(localStorage.getItem('orbSettings3d')||'{}'));}catch(e){}
+if(S.layoutV!==2){ Object.assign(S,{ox:DEF.ox,bx:DEF.bx,by:DEF.by,bsize:DEF.bsize,scene:'auto',logoText:DEF.logoText,layoutV:2}); }
 const save=()=>{try{localStorage.setItem('orbSettings3d',JSON.stringify(S));}catch(e){}};
 
 /* =========================================================
@@ -131,7 +146,7 @@ const now=()=>performance.now()/1000;
    orb.setParticles(0..1)      // 1 = fully dissolved into particles
    orb.setLevel(0..1)          // live audio level, drives speaking/listening motion
    postMessage({orb:'speaking', emotion:'happy', emote:'nod', particles:0, level:.5}) */
-window.orb={setState,setEmotion,emote,setParticles,setLevel:v=>{extLevel=Math.max(0,Math.min(1,v)); extT=performance.now();}};
+window.orb={setScene:(s)=>setScene(s),moveTo:(k)=>moveTo(k),showText:(t,secs)=>showIdea(t,secs),showLogo:()=>applyScene('logo'),setState,setEmotion,emote,setParticles,setLevel:v=>{extLevel=Math.max(0,Math.min(1,v)); extT=performance.now();}};
 addEventListener('message',e=>{
   const d=e.data||{}; let ext=false;
   if(typeof d.orb==='string'){setState(d.orb);ext=true;}
@@ -152,7 +167,8 @@ if(!gl){ const e=document.getElementById('err'); e.style.display='flex'; e.textC
 const NB=7;            // number of metaballs
 const COMMON=`
 const float F=2.6; const float CZ=4.0;
-uniform vec2 uRes; uniform vec2 uCenter; uniform float uRad; uniform float uFlip;
+uniform vec2 uRes; uniform vec2 uCenter; uniform float uRad; uniform float uFlip; uniform float uShape;
+uniform vec2 uOC; uniform float uOR; uniform float uOShape;
 uniform mat3 uRot; uniform float uTime; uniform vec3 uCol; uniform float uInt;
 `;
 
@@ -181,9 +197,11 @@ float map(vec3 p){ vec3 q; return map(p,q); }
 void main(){
   vec2 uv=(gl_FragCoord.xy-uCenter)/uRad;
   if(uFlip>.5) uv.y=-uv.y;
-  float r=length(uv);
+  float r = uShape<.5 ? length(uv) : max(abs(uv.x),abs(uv.y));
+  vec2 uo=(gl_FragCoord.xy-uOC)/uOR;
+  float ro = uOShape<.5 ? length(uo) : max(abs(uo.x),abs(uo.y));
   vec3 col=vec3(0);
-  float ring = uGuide*smoothstep(1.5,0.,abs(r-1.)*uRad);
+  float ring = uGuide*max(smoothstep(1.5,0.,abs(r-1.)*uRad), smoothstep(1.5,0.,abs(ro-1.)*uOR));
   if(r>1.){ o=vec4(vec3(1.,.15,.25)*ring,1); return; }
 
   if(uSolid>.002){
@@ -231,8 +249,11 @@ precision highp float;
 ${COMMON}
 layout(location=0) in vec4 aD;   // xyz unit dir, w seed
 layout(location=1) in float aB;  // which metaball
+layout(location=2) in vec2 aT;   // target point inside the other window (-1..1), for logos / text
 uniform vec4 uP[${NB}];          // full-size blobs (for particle homes)
 uniform float uDis; uniform float uSpark; uniform float uSent; uniform float uBurst; uniform float uDpr;
+uniform vec2 uFromC; uniform float uFromR; uniform float uTravel;
+uniform float uForm; uniform float uFormFrac; uniform float uFlow; uniform float uFlowDir; uniform float uArc; uniform float uTS;
 out float vA; out vec2 vUv;
 void main(){
   vec4 b=uP[int(aB)];
@@ -253,15 +274,34 @@ void main(){
   vec2 uv=w.xy*persp;
   vUv=uv;
   vec2 sv=uv; if(uFlip>.5) sv.y=-sv.y;
-  vec2 scr=uCenter+sv*uRad;
+  float s2=fract(s*7.31+aD.x*.37);
+  // TRAVEL: the dissolved orb flies from one window to the other, each particle leaving at its own moment
+  float kt=smoothstep(s*.35,s*.35+.65,uTravel);
+  vec2 C=mix(uFromC,uCenter,kt); float Rr=mix(uFromR,uRad,kt);
+  vec2 scr=C+sv*Rr + vec2(0., sin(kt*3.14159)*uArc*(.6+s*.8));
+  float travelVis=(uTravel>0. && uTravel<1.) ? 1. : 0.;
+  // FORM: a share of the particles fly over and build the logo / text in the other window
+  vec2 tg=aT*uTS; if(uFlip>.5) tg.y=-tg.y;
+  vec2 tgt=uOC+tg*uOR + vec2(sin(uTime*1.3+s*50.),cos(uTime*1.1+s*40.))*1.2*uDpr;
+  float kf=step(s,uFormFrac)*smoothstep(s2*.3,s2*.3+.5,uForm);
+  scr=mix(scr,tgt,kf) + vec2(0., sin(kf*3.14159)*uArc*.7);
+  // FLOW: a thin stream that keeps travelling between the two windows
+  float fm=step(.86,s)*uFlow;
+  float ph=fract(uTime*(.12+s2*.1)+s2*9.);
+  float pp= uFlowDir>0. ? ph : 1.-ph;
+  vec2 fa=uCenter+aD.xy*.35*uRad, fb=uOC+tg*.8*uOR;
+  vec2 fscr=mix(fa,fb,smoothstep(0.,1.,pp))+vec2(0.,sin(pp*3.14159)*uArc*(.5+s2));
+  scr=mix(scr,fscr,fm);
   gl_Position=vec4(scr/uRes*2.-1.,0,1);
-  gl_PointSize=(1.2+s*2.4)*uDpr*persp*.55;
+  gl_PointSize=mix((1.2+s*2.4)*uDpr*persp*.55, (1.3+s2*1.4)*uDpr, max(kf,fm));
 
   float vis=max(d, uSpark*step(s,.12)*(.5+.5*sin(uTime*3.+s*90.)));
   vis=max(vis, sentMask*sin(clamp(uSent,0.,1.)*3.14159));
   vis=max(vis, (uBurst>0.?1.:0.)*(1.-uBurst/1.6));
+  vis=max(vis,travelVis);
   float back = w.z<0. ? mix(1.,.35,1.-d) : 1.;   // particles behind a solid orb are dimmer
-  vA=vis*back*smoothstep(1.,.8,length(uv))*(.5+.5*s);
+  float edge = travelVis>0. ? 1. : smoothstep(1.,.8,length(uv));
+  vA=max(vis*back*edge*(.5+.5*s)*(1.-kf)*(1.-fm), max(kf*(.5+.5*s2), fm*sin(ph*3.14159)*.9));
 }`;
 
 const PT_FS=`#version 300 es
@@ -270,7 +310,6 @@ uniform vec3 uCol; uniform float uInt;
 in float vA; in vec2 vUv;
 out vec4 o;
 void main(){
-  if(length(vUv)>1.) discard;
   vec2 c=gl_PointCoord*2.-1.; float m=1.-dot(c,c); if(m<=0.) discard;
   vec3 col=mix(uCol,vec3(.85,.97,1.),.35)*m*m*vA*uInt*.9;
   o=vec4(col,1);
@@ -302,6 +341,10 @@ const b1=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b1); gl.bufferData(gl.
 gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,4,gl.FLOAT,false,0,0);
 const b2=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b2); gl.bufferData(gl.ARRAY_BUFFER,pb,gl.STATIC_DRAW);
 gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
+const pt=new Float32Array(NP*2);
+for(let i=0;i<NP;i++){ pt[i*2]=Math.random()*1.6-.8; pt[i*2+1]=Math.random()*1.6-.8; }
+const b3=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b3); gl.bufferData(gl.ARRAY_BUFFER,pt,gl.DYNAMIC_DRAW);
+gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
 const emptyVao=gl.createVertexArray();
 
 let W,H,dpr;
@@ -318,6 +361,114 @@ function rotMat(yaw,pitch,roll){ // returns column-major R = Ry*Rx*Rz
   const M=mul(mul(Ry,Rx),Rz);
   return new Float32Array([M[0][0],M[1][0],M[2][0], M[0][1],M[1][1],M[2][1], M[0][2],M[1][2],M[2][2]]);
 }
+
+/* =========================================================
+   TWO WINDOWS + SCENES
+   A = cylinder (circle), B = cube (square). The orb lives in one ("host"); the other shows logos, ideas, streams.
+   ========================================================= */
+let hostKey='A', travelFromKey=null, travel=null, travelK=0, forceDis=0;
+let form=0, formTarget=0, flow=0, flowTarget=0, flowDir=1, content={kind:'text',text:'ENERGY'}, logoImg=null;
+const otherKey=()=> hostKey==='A'?'B':'A';
+function win(k){
+  return k==='A' ? {cx:W/2+S.ox, cy:H/2+S.oy, r:S.dia/2, shape:0}
+                 : {cx:W/2+S.bx, cy:H/2+S.by, r:S.bsize/2, shape:1};
+}
+function moveTo(k){
+  if(travel || hostKey===k) return;
+  travel={from:hostKey, to:k, t0:now()}; formTarget=0;
+}
+// draw logo / text into a square 2D context of size n (used both for particle targets and the crisp overlay)
+function drawContent(c,n,col){
+  c.clearRect(0,0,n,n); c.fillStyle=col||'#fff';
+  if(content.kind==='logo' && logoImg){
+    const sc=Math.min(n/logoImg.width,n/logoImg.height)*.92, w=logoImg.width*sc, h=logoImg.height*sc;
+    c.drawImage(logoImg,(n-w)/2,(n-h)/2,w,h); return;
+  }
+  const words=String(content.text||'').toUpperCase().split(/\s+/).filter(Boolean);
+  let fs=n*.3, lines=[];
+  for(;fs>n*.07;fs*=.9){
+    c.font=`700 ${fs}px -apple-system,"Segoe UI",system-ui,sans-serif`;
+    lines=[]; let cur='';
+    for(const w of words){ const t=cur?cur+' '+w:w; if(c.measureText(t).width>n*.92 && cur){ lines.push(cur); cur=w; } else cur=t; }
+    if(cur) lines.push(cur);
+    if(lines.length*fs*1.1<=n*.9 && lines.every(l=>c.measureText(l).width<=n*.92)) break;
+  }
+  c.textAlign='center'; c.textBaseline='middle';
+  lines.forEach((l,i)=>c.fillText(l,n/2,n/2+(i-(lines.length-1)/2)*fs*1.1));
+}
+const tc=document.createElement('canvas'); tc.width=tc.height=160; const tcx=tc.getContext('2d',{willReadFrequently:true});
+function rebuildTargets(){
+  drawContent(tcx,160,'#fff');
+  const d=tcx.getImageData(0,0,160,160).data, pts=[];
+  for(let y=0;y<160;y+=1) for(let x=0;x<160;x+=1){
+    const i=(y*160+x)*4, v=d[i+3]*(d[i]+d[i+1]+d[i+2])/765;
+    if(v>110) pts.push([(x/160)*2-1, -((y/160)*2-1)]);
+  }
+  for(let i=0;i<NP;i++){
+    const q = pts.length ? pts[(i*7919+13)%pts.length] : [Math.random()*2-1,Math.random()*2-1];
+    pt[i*2]=q[0]*.9; pt[i*2+1]=q[1]*.9;
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER,b3); gl.bufferSubData(gl.ARRAY_BUFFER,0,pt);
+}
+function setContent(c){ content=c; rebuildTargets(); }
+
+// crisp overlay once the particles have formed
+const ov=document.getElementById('ov'), ovx=ov.getContext('2d');
+const oc=document.createElement('canvas'), ocx=oc.getContext('2d');
+function drawOverlay(OW,inten){
+  if(ov.width!==cv.width||ov.height!==cv.height){ ov.width=cv.width; ov.height=cv.height; }
+  ovx.clearRect(0,0,ov.width,ov.height);
+  const a=Math.min(1,Math.max(0,(form-.75)/.2))*.8*Math.min(1,inten);
+  if(a<=0.01) return;
+  const n=Math.round(OW.r*2*.9*dpr*(OW.shape?1:.72)); if(n<8) return;
+  if(oc.width!==n){ oc.width=oc.height=n; }
+  const c=P.col, rgb=`rgb(${Math.round(c[0]*255)},${Math.round(c[1]*255)},${Math.round(c[2]*255)})`;
+  drawContent(ocx,n, content.kind==='logo'?null:rgb);
+  ovx.save(); ovx.globalAlpha=a; ovx.globalCompositeOperation='lighter';
+  ovx.translate(OW.cx*dpr,OW.cy*dpr); if(S.flip) ovx.scale(1,-1);
+  ovx.drawImage(oc,-n/2,-n/2); ovx.restore();
+}
+
+// scene director
+let sceneT=0, idleStep=0, ideaUntil=0, lastIdea='';
+const IDLE_SEQ=['flow','logo','clear','transfer','flow','logo','clear','transfer'];
+function applyScene(sc){
+  if(sc==='orbA'){ moveTo('A'); formTarget=0; flowTarget=0; }
+  else if(sc==='orbB'){ moveTo('B'); formTarget=0; flowTarget=0; }
+  else if(sc==='transfer'){ flowTarget=0; moveTo(otherKey()); }
+  else if(sc==='logo'){ setContent(logoImg?{kind:'logo'}:{kind:'text',text:S.logoText||'ENERGY'}); formTarget=1; flowTarget=0; }
+  else if(sc==='idea'){ setContent({kind:'text',text:lastIdea||'Your idea here'}); formTarget=1; flowTarget=0; }
+  else if(sc==='flow'){ formTarget=0; flowTarget=1; flowDir=1; }
+  else if(sc==='clear'){ formTarget=0; flowTarget=0; }
+}
+function setScene(sc){ S.scene=sc; save(); markScenes(); if(sc!=='auto') applyScene(sc); else sceneT=0; }
+function showIdea(text,secs=7){ lastIdea=text; ideaUntil=now()+secs; setContent({kind:'text',text}); formTarget=1; flowTarget=0; }
+function sceneTick(t,dt){
+  // travel timeline: dissolve 0.7s → fly 1.8s → reform
+  if(travel){
+    const e=t-travel.t0; forceDis=1;
+    if(e<.7){ travelK=0; travelFromKey=null; }
+    else { const k=(e-.7)/1.8; travelFromKey=travel.from; hostKey=travel.to; travelK=Math.min(1,k);
+      if(k>=1){ travel=null; travelK=0; travelFromKey=null; forceDis=0; } }
+  } else forceDis=0;
+  form+=(formTarget-form)*Math.min(1,dt*1.6);
+  flow+=(flowTarget-flow)*Math.min(1,dt*1.2);
+
+  if(S.scene!=='auto') return;
+  const talking = typeof inConvo!=='undefined' && inConvo;
+  if(t<ideaUntil) return;                                   // an idea is on show
+  if(ideaUntil && t>=ideaUntil){ ideaUntil=0; formTarget=0; }
+  if(talking){
+    if(hostKey!=='A' && !travel) moveTo('A');
+    if(state==='thinking'){ flowTarget=1; flowDir=1; }
+    else if(state==='speaking'){ flowTarget=.5; flowDir=-1; }
+    else flowTarget=0;
+    formTarget=0;
+    return;
+  }
+  if(t-sceneT>9){ sceneT=t; applyScene(IDLE_SEQ[idleStep++%IDLE_SEQ.length]); }
+}
+
 const blobs=new Float32Array(NB*4), blobsFull=new Float32Array(NB*4);
 let last=now();
 
@@ -343,7 +494,9 @@ function frame(){
   ripple+=(((listening?.6+amp:0)+(speaking?.25*amp:0))-ripple)*.1;
   const orbitBoost = thinking?2.2:0;
   const kMod = thinking? .7 : 1;
-  dis+=(disTarget-dis)*Math.min(1,dt*1.6);
+  sceneTick(t,dt);
+  const dGoal=Math.max(disTarget,forceDis);
+  dis+=(dGoal-dis)*Math.min(1,dt*(forceDis>0?4:1.6));
 
   phase   += dt*P.speed;
   orbitAcc+= dt*(P.orbit+orbitBoost)*P.speed*(thinking?1.6:1);
@@ -384,8 +537,10 @@ function frame(){
   const R=rotMat(yaw+eYaw+dragYaw, pitch, P.roll*.5+Math.sin(t*.23)*.05);
 
   // common uniforms
-  const cx=W/2+S.ox, cy=H/2+S.oy;
-  const center=[cx*dpr,(H-cy)*dpr], rad=S.dia/2*dpr, inten=P.int*(S.br/100);
+  const HW=win(hostKey), OW=win(otherKey()), FW=win(travelFromKey||hostKey);
+  const center=[HW.cx*dpr,(H-HW.cy)*dpr], rad=HW.r*dpr, inten=P.int*(S.br/100);
+  const oC=[OW.cx*dpr,(H-OW.cy)*dpr], oR=OW.r*dpr, fC=[FW.cx*dpr,(H-FW.cy)*dpr], fR=FW.r*dpr;
+  const arc=Math.min(260,Math.hypot(oC[0]-center[0],oC[1]-center[1])*.25);
   const sentP=(t-sentT)/1.5, sent= sentP>=0&&sentP<=1 ? sentP : 0;
   const bt=t-burstT, burst= bt>=0&&bt<1.6 ? (1-Math.exp(-bt*4))*1.6*Math.exp(-Math.max(0,bt-.6)*2) : 0;
 
@@ -394,6 +549,7 @@ function frame(){
   gl.useProgram(RAY.p); gl.bindVertexArray(emptyVao);
   const U=RAY.u;
   gl.uniform2f(U.uRes,cv.width,cv.height); gl.uniform2f(U.uCenter,...center); gl.uniform1f(U.uRad,rad);
+  gl.uniform1f(U.uShape,HW.shape); gl.uniform2f(U.uOC,...oC); gl.uniform1f(U.uOR,oR); gl.uniform1f(U.uOShape,OW.shape);
   gl.uniform1f(U.uFlip,S.flip?1:0); gl.uniformMatrix3fv(U.uRot,false,R); gl.uniform1f(U.uTime,t);
   gl.uniform3fv(U.uCol,P.col); gl.uniform1f(U.uInt,inten);
   gl.uniform4fv(U.uB,blobs); gl.uniform1f(U.uK,P.k*kMod*Math.max(.05,shrink));
@@ -405,11 +561,15 @@ function frame(){
   gl.useProgram(PT.p); gl.bindVertexArray(vao);
   const V=PT.u;
   gl.uniform2f(V.uRes,cv.width,cv.height); gl.uniform2f(V.uCenter,...center); gl.uniform1f(V.uRad,rad);
+  gl.uniform2f(V.uOC,...oC); gl.uniform1f(V.uOR,oR); gl.uniform2f(V.uFromC,...fC); gl.uniform1f(V.uFromR,fR);
+  gl.uniform1f(V.uTravel,travelK); gl.uniform1f(V.uForm,form); gl.uniform1f(V.uFormFrac,.6); gl.uniform1f(V.uFlow,flow);
+  gl.uniform1f(V.uFlowDir,flowDir); gl.uniform1f(V.uArc,arc); gl.uniform1f(V.uTS,OW.shape?1:.72);
   gl.uniform1f(V.uFlip,S.flip?1:0); gl.uniformMatrix3fv(V.uRot,false,R); gl.uniform1f(V.uTime,t);
   gl.uniform3fv(V.uCol,P.col); gl.uniform1f(V.uInt,inten);
   gl.uniform4fv(V.uP,blobsFull); gl.uniform1f(V.uDis,dis); gl.uniform1f(V.uSpark,P.spark);
   gl.uniform1f(V.uSent,sent); gl.uniform1f(V.uBurst,burst); gl.uniform1f(V.uDpr,dpr);
   gl.drawArrays(gl.POINTS,0,NP);
+  drawOverlay(OW,inten);
 
   requestAnimationFrame(frame);
 }
@@ -468,11 +628,12 @@ function markButtons(){
   document.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===emotion));
 }
 function syncUI(){
-  for(const k of ['dia','ox','oy','br']){ $(k).value=S[k]; $(k+'O').textContent=S[k]; }
+  for(const k of ['dia','ox','oy','bsize','bx','by','br']){ $(k).value=S[k]; $(k+'O').textContent=S[k]; }
+  $('logoText').value=S.logoText||''; markScenes();
   $('flip').classList.toggle('on',S.flip); $('guide').classList.toggle('on',S.guide); $('demo').classList.toggle('on',S.demo);
   markButtons();
 }
-for(const k of ['dia','ox','oy','br']) $(k).oninput=e=>{S[k]=+e.target.value; $(k+'O').textContent=S[k]; save();};
+for(const k of ['dia','ox','oy','bsize','bx','by','br']) $(k).oninput=e=>{S[k]=+e.target.value; $(k+'O').textContent=S[k]; save();};
 $('dis').oninput=e=>{stopDemo(); setParticles(e.target.value/100);};
 $('flip').onclick=()=>{S.flip=!S.flip; save(); syncUI();};
 $('guide').onclick=()=>{S.guide=!S.guide; save(); syncUI();};
@@ -481,6 +642,14 @@ $('mic').onclick=async e=>{ if(await startMic()) e.target.classList.add('on'); }
 document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{stopDemo(); setState(b.dataset.s);});
 document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{stopDemo(); setEmotion(b.dataset.m);});
 document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>emote(b.dataset.e));
+function markScenes(){ document.querySelectorAll('[data-sc]').forEach(b=>b.classList.toggle('on',b.dataset.sc===S.scene)); }
+document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>setScene(b.dataset.sc));
+$('logoText').onchange=e=>{ S.logoText=e.target.value.trim()||'ENERGY'; save(); if(content.kind==='text' && !lastIdea) setContent({kind:'text',text:S.logoText}); };
+function loadLogo(src){ const im=new Image(); im.onload=()=>{ logoImg=im; if(content.kind==='logo') rebuildTargets(); }; im.src=src; }
+$('logoFile').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ localStorage.setItem('orbLogo',r.result); }catch(err){} loadLogo(r.result); setScene('logo'); }; r.readAsDataURL(f); };
+try{ const l=localStorage.getItem('orbLogo'); if(l) loadLogo(l); }catch(e){}
+setContent({kind:'text',text:S.logoText||'ENERGY'});
 $('fs').onclick=()=>{const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);};
 $('close').onclick=()=>panel.classList.remove('show');
 syncUI();
@@ -713,7 +882,7 @@ async function askLLM(history){ return V.provider==='claude' ? askClaude(history
 
 /* ---------- ideas → wall ---------- */
 function sendIdea(idea){
-  setState('sent');
+  setState('sent'); showIdea(idea);
   vlog('i','✦ '+idea);
   const payload={type:'idea',text:idea,booth:V.booth,ts:Date.now()};
   try{ window.parent!==window && window.parent.postMessage(payload,'*'); }catch(e){}

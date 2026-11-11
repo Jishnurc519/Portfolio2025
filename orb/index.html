@@ -70,6 +70,7 @@
     <input id="vKey" type="password" placeholder="Anthropic API key (sk-ant-…)">
     <input id="vProxy" type="text" placeholder="Proxy URL (optional, hides the key)">
     <input id="vModel" type="text" placeholder="Model">
+    <select id="vListen"><option value="auto">Listening: automatic</option><option value="audio">Listening: send audio to Gemini</option><option value="browser">Listening: browser speech recognition</option></select>
     <select id="vLang"><option value="en-IN">English (India)</option><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="hi-IN">Hindi</option></select>
     <select id="vVoice"></select>
     <input id="vWall" type="text" placeholder="LED wall webhook URL (optional)">
@@ -516,7 +517,7 @@ document.addEventListener('visibilitychange',async()=>{if(!document.hidden){try{
    VOICE ASSISTANT  – speech in → Claude → speech out, driving the orb
    ========================================================= */
 const VDEF={
-  provider:'gemini', gkey:'', gmodel:'gemini-3.5-flash-lite', key:'', proxy:'', model:'claude-haiku-5-5', lang:'en-IN', voice:'', wall:'', booth:'Booth 1', hands:true,
+  provider:'gemini', listen:'auto', gkey:'', gmodel:'gemini-3.5-flash-lite', key:'', proxy:'', model:'claude-haiku-5-5', lang:'en-IN', voice:'', wall:'', booth:'Booth 1', hands:true,
   sys:`You are the glowing orb inside a brainstorm booth at a corporate energy event. Visitors pick up a phone handset and brainstorm with you about the future of energy: renewables, grids, storage, hydrogen, efficiency, cities, everyday life.
 Be warm, curious and quick. Speak in 1–2 short sentences (under 35 words): this is spoken aloud, so no lists, no markdown, no emoji.
 Build on the visitor's idea, add one sharp twist, then ask one short question to push it further.
@@ -606,6 +607,61 @@ function listenOnce(){
 }
 let currentRec=null, lastMicErr='';
 
+
+/* ---------- speech in, any browser: record audio ourselves and send it to Gemini ---------- */
+let micStream=null, aCtx=null;
+function ensureAudioCtx(){ try{ if(!aCtx) aCtx=new (window.AudioContext||window.webkitAudioContext)(); if(aCtx.state==='suspended') aCtx.resume(); }catch(e){} }
+async function getMic(){
+  if(micStream && micStream.active) return micStream;
+  micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  return micStream;
+}
+function encodeWav(chunks, sr){
+  let len=0; for(const c of chunks) len+=c.length;
+  const all=new Float32Array(len); let o=0; for(const c of chunks){ all.set(c,o); o+=c.length; }
+  const ratio=sr/16000, n=Math.floor(all.length/ratio), pcm=new Int16Array(n);
+  for(let i=0;i<n;i++){ const v=Math.max(-1,Math.min(1,all[Math.floor(i*ratio)])); pcm[i]=v<0?v*0x8000:v*0x7fff; }
+  const buf=new ArrayBuffer(44+pcm.length*2), dv=new DataView(buf);
+  const w=(p,str)=>{ for(let i=0;i<str.length;i++) dv.setUint8(p+i,str.charCodeAt(i)); };
+  w(0,'RIFF'); dv.setUint32(4,36+pcm.length*2,true); w(8,'WAVE'); w(12,'fmt ');
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,16000,true); dv.setUint32(28,32000,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+  w(36,'data'); dv.setUint32(40,pcm.length*2,true); new Int16Array(buf,44).set(pcm);
+  const u8=new Uint8Array(buf); let bin='';
+  for(let i=0;i<u8.length;i+=0x8000) bin+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+function listenAudio(){
+  return new Promise(async res=>{
+    let stream;
+    try{ ensureAudioCtx(); stream=await getMic(); }
+    catch(e){ lastMicErr=e.name||e.message; vlog('x','Mic blocked: '+(e.message||e.name)+'. Allow the microphone for this site.'); res(null); return; }
+    const sr=aCtx.sampleRate, src=aCtx.createMediaStreamSource(stream), proc=aCtx.createScriptProcessor(4096,1,1);
+    const chunks=[], pre=[], TH=0.015, t0=performance.now();
+    let started=false, lastLoud=0, done=false;
+    const finish=()=>{
+      if(done) return; done=true; lvlMode='off';
+      try{ proc.disconnect(); src.disconnect(); }catch(e){}
+      res(started ? {audio:encodeWav(chunks,sr)} : null);
+    };
+    proc.onaudioprocess=e=>{
+      if(done) return;
+      const d=e.inputBuffer.getChannelData(0), copy=new Float32Array(d);
+      let sum=0; for(let i=0;i<d.length;i++) sum+=d[i]*d[i];
+      const rms=Math.sqrt(sum/d.length), now=performance.now();
+      lvlKick=Math.max(lvlKick,Math.min(1,rms*10));
+      if(rms>TH){ if(!started){ started=true; chunks.push(...pre); } lastLoud=now; }
+      if(started) chunks.push(copy); else { pre.push(copy); if(pre.length>6) pre.shift(); }
+      if(started && (now-lastLoud>1300 || now-t0>20000)) finish();
+      else if(!started && now-t0>15000) finish();
+    };
+    src.connect(proc); proc.connect(aCtx.destination);
+    lvlMode='listen';
+    currentRec={abort:finish, stop:finish};
+  });
+}
+const useAudioListen=()=> V.listen==='audio' || (V.listen!=='browser' && (V.provider==='gemini' || !SR));
+
 /* ---------- Claude ---------- */
 async function askClaude(history){
   const url=V.proxy||'https://api.anthropic.com/v1/messages';
@@ -615,6 +671,7 @@ async function askClaude(history){
     headers['x-api-key']=V.key;
     headers['anthropic-dangerous-direct-browser-access']='true';
   }
+  if(history.some(m=>m.audio)) throw new Error('Claude cannot take audio here. Use Chrome/Edge, or switch the provider to Gemini.');
   const body={model:V.model,max_tokens:400,system:V.sys,tools:[RESPOND_TOOL],
     tool_choice:{type:'tool',name:'respond'},messages:history};
   const r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
@@ -628,18 +685,20 @@ async function askClaude(history){
 
 
 const GEMINI_SCHEMA={type:'OBJECT',properties:{
+  heard:{type:'STRING'},
   say:{type:'STRING'},
   emotion:{type:'STRING',enum:['neutral','happy','curious','sad','excited','surprised','angry']},
   emote:{type:'STRING',enum:['none','nod','shake','jump','burst']},
   idea:{type:'STRING'},
   end_conversation:{type:'BOOLEAN'}},
-  required:['say','emotion','emote','idea','end_conversation']};
+  required:['heard','say','emotion','emote','idea','end_conversation']};
 async function askGemini(history){
   if(!V.gkey) throw new Error('Add a Gemini API key in Settings');
   const model=V.gmodel||VDEF.gmodel;
   const body={
-    systemInstruction:{parts:[{text:V.sys}]},
-    contents:history.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),
+    systemInstruction:{parts:[{text:V.sys+'\n\nThe visitor may speak to you as audio. Put an exact transcript of what they said in "heard" (empty if their message was text). If the audio is only noise or unclear, briefly ask them to say it again.'}]},
+    contents:history.map(m=>({role:m.role==='assistant'?'model':'user',
+      parts: m.audio ? [{text:'(visitor speaking)'},{inlineData:{mimeType:'audio/wav',data:m.audio}}] : [{text:m.content}]})),
     generationConfig:{responseMimeType:'application/json',responseSchema:GEMINI_SCHEMA,maxOutputTokens:400}
   };
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -666,17 +725,20 @@ function sendIdea(idea){
 let session=0, inConvo=false;
 async function startConversation(){
   if(inConvo) return;
+  ensureAudioCtx(); if(useAudioListen()) getMic().catch(()=>{});
   const my=++session; inConvo=true; updTalk();
   stopDemo(); setParticles(0);
   const history=[]; let misses=0;
   const alive=()=>session===my;
   const turn=async userText=>{
-    history.push({role:'user',content:userText});
+    const entry= typeof userText==='object' ? {role:'user',content:'',audio:userText.audio} : {role:'user',content:userText};
+    history.push(entry);
     setState('thinking'); setEmotion('curious');
     let out;
     try{ out=await askLLM(history); }
     catch(e){ vlog('x',e.message); setEmotion('sad'); setState('speaking'); await speak("Sorry, my connection dropped. Try again in a moment."); return 'end'; }
     if(!alive()) return 'end';
+    if(entry.audio){ entry.content=(out.heard||'').trim()||'(unclear)'; delete entry.audio; vlog('u',entry.content); }
     history.push({role:'assistant',content:out.say});
     vlog('a',out.say);
     setEmotion(out.emotion||'neutral');
@@ -707,7 +769,7 @@ async function startConversation(){
       } else await sleep(300);
       continue;
     }
-    misses=0; if(!typedEcho.has(heard)) vlog('u',heard); typedEcho.delete(heard);
+    misses=0; if(typeof heard==='string'){ if(!typedEcho.has(heard)) vlog('u',heard); typedEcho.delete(heard); }
     res=await turn(heard);
   }
   if(alive()) endConversation();
@@ -733,23 +795,23 @@ async function typed(text){
 }
 let pendingTyped=null; const typedEcho=new Set();
 const _listenOnce=listenOnce;
-listenOnce=async function(){ if(pendingTyped){ const t=pendingTyped; pendingTyped=null; return t; } return _listenOnce(); };
+listenOnce=async function(){ if(pendingTyped){ const t=pendingTyped; pendingTyped=null; return t; } return useAudioListen() ? listenAudio() : _listenOnce(); };
 
 /* ---------- UI wiring ---------- */
 function syncVoiceUI(){
-  $('vProv').value=V.provider; $('vGKey').value=V.gkey; $('vGModel').value=V.gmodel;
+  $('vListen').value=V.listen||'auto'; $('vProv').value=V.provider; $('vGKey').value=V.gkey; $('vGModel').value=V.gmodel;
   $('vKey').value=V.key; $('vProxy').value=V.proxy; $('vModel').value=V.model; $('vLang').value=V.lang;
   $('vWall').value=V.wall; $('vBooth').value=V.booth; $('vSys').value=V.sys;
   $('autoListen').classList.toggle('on',V.hands);
 }
-for(const [id,k] of [['vProv','provider'],['vGKey','gkey'],['vGModel','gmodel'],['vKey','key'],['vProxy','proxy'],['vModel','model'],['vLang','lang'],['vWall','wall'],['vBooth','booth'],['vSys','sys'],['vVoice','voice']])
-  $(id).addEventListener('change',e=>{ if(k==='sys') V.sysCustom=!!e.target.value.trim(); V[k]=e.target.value.trim()||(k in {model:1,gmodel:1,sys:1,provider:1}?VDEF[k]:''); vsave(); });
+for(const [id,k] of [['vListen','listen'],['vProv','provider'],['vGKey','gkey'],['vGModel','gmodel'],['vKey','key'],['vProxy','proxy'],['vModel','model'],['vLang','lang'],['vWall','wall'],['vBooth','booth'],['vSys','sys'],['vVoice','voice']])
+  $(id).addEventListener('change',e=>{ if(k==='sys') V.sysCustom=!!e.target.value.trim(); V[k]=e.target.value.trim()||(k in {model:1,gmodel:1,sys:1,provider:1,listen:1}?VDEF[k]:''); vsave(); });
 $('autoListen').onclick=()=>{ V.hands=!V.hands; vsave(); syncVoiceUI(); };
 $('vSettingsBtn').onclick=()=>{ const s=$('vSettings'); s.style.display=s.style.display==='none'?'block':'none'; };
 $('talk').onclick=()=>{ inConvo?endConversation():startConversation(); };
 $('vType').addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.value.trim()){ typed(e.target.value.trim()); e.target.value=''; } });
 syncVoiceUI(); updTalk();
-if(!SR) vlog('x','Speech recognition not supported in this browser. Use Safari (iOS 14.5+) or Chrome, or type below.');
+if(!SR && V.provider==='claude') vlog('x','This browser has no speech recognition. Use Chrome/Edge, or switch the provider to Gemini (it listens to the audio directly).');
 if(V.provider==='gemini' ? !V.gkey : (!V.key && !V.proxy)) vlog('x','Open Settings and add your '+(V.provider==='gemini'?'Gemini':'Anthropic')+' API key.');
 
 /* single tap on the orb = start / next turn (push-to-talk) / end; triple-tap still opens the panel */

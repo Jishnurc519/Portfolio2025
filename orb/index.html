@@ -697,6 +697,14 @@ Only set end_conversation true when the visitor clearly says goodbye or asks to 
 let V=Object.assign({},VDEF);
 try{Object.assign(V,JSON.parse(localStorage.getItem('orbVoice')||'{}'));}catch(e){}
 if(!V.sysCustom) V.sys=VDEF.sys;
+// keys can arrive in the link: …/#gkey=XXXX (Gemini) or #akey=XXXX (Anthropic). Saved on this device, then removed from the address bar.
+(function(){
+  const h=new URLSearchParams(location.hash.replace(/^#/,''));
+  let got=false;
+  if(h.get('gkey')){ V.gkey=h.get('gkey'); V.provider='gemini'; got=true; }
+  if(h.get('akey')){ V.key=h.get('akey'); V.provider='claude'; got=true; }
+  if(got){ try{ localStorage.setItem('orbVoice',JSON.stringify(V)); }catch(e){} history.replaceState(null,'',location.pathname+location.search); }
+})();
 const vsave=()=>{try{localStorage.setItem('orbVoice',JSON.stringify(V));}catch(e){}};
 
 const RESPOND_TOOL={

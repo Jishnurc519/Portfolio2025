@@ -74,6 +74,14 @@
     <button id="flip">Flip vertical</button><button id="guide">Guide outlines</button>
     <button id="demo">Demo loop</button><button id="mic">Use mic</button>
   </div>
+  <h3>Aesthetic</h3>
+  <div class="row" id="themes"></div>
+  <h3>Voice</h3>
+  <label>Otherworldly FX <input id="fxAmt" type="range" min="0" max="100"><output id="fxAmtO"></output></label>
+  <div class="row"><select id="gVoice" style="flex:1"></select><button id="voiceTest">Test voice</button></div>
+  <h3>Laptop wall</h3>
+  <div id="wallLink" style="font-size:11px;word-break:break-all;color:#9fb6d6;margin:4px 0"></div>
+  <div class="row"><button id="copyWall">Copy link</button><button id="testWall">Send test note</button></div>
   <h3>Voice assistant</h3>
   <button id="talk" class="big">▶ Start conversation</button>
   <div class="row" style="margin-top:5px"><button id="autoListen">Hands-free</button><button id="vSettingsBtn">Settings</button></div>
@@ -416,8 +424,6 @@ function setContent(c){ content=c; rebuildTargets(); }
 const ov=document.getElementById('ov'), ovx=ov.getContext('2d');
 const oc=document.createElement('canvas'), ocx=oc.getContext('2d');
 function drawOverlay(OW,inten){
-  if(ov.width!==cv.width||ov.height!==cv.height){ ov.width=cv.width; ov.height=cv.height; }
-  ovx.clearRect(0,0,ov.width,ov.height);
   const a=Math.min(1,Math.max(0,(form-.75)/.2))*Math.min(1,inten);
   if(a<=0.01) return;
   const n=Math.round(OW.r*2*.9*dpr*(OW.shape?1:.72)); if(n<8) return;
@@ -430,7 +436,7 @@ function drawOverlay(OW,inten){
 }
 
 // scene director
-let sceneT=0, idleStep=0, ideaUntil=0, lastIdea='';
+let sceneT=0, idleStep=0, ideaUntil=0, lastIdea='', lastActivity=-1e9;
 const IDLE_SEQ=['flow','logo','clear','transfer','flow','logo','clear','transfer'];
 function applyScene(sc){
   if(sc==='orbA'){ moveTo('A'); formTarget=0; flowTarget=0; }
@@ -455,18 +461,7 @@ function sceneTick(t,dt){
   flow+=(flowTarget-flow)*Math.min(1,dt*1.2);
 
   if(S.scene!=='auto') return;
-  const talking = typeof inConvo!=='undefined' && inConvo;
-  if(t<ideaUntil) return;                                   // an idea is on show
-  if(ideaUntil && t>=ideaUntil){ ideaUntil=0; formTarget=0; }
-  if(talking){
-    if(hostKey!=='A' && !travel) moveTo('A');
-    if(state==='thinking'){ flowTarget=1; flowDir=1; }
-    else if(state==='speaking'){ flowTarget=.5; flowDir=-1; }
-    else flowTarget=0;
-    formTarget=0;
-    return;
-  }
-  if(t-sceneT>9){ sceneT=t; applyScene(IDLE_SEQ[idleStep++%IDLE_SEQ.length]); }
+  if(typeof autoDirector==='function') autoDirector(t,dt);
 }
 
 const blobs=new Float32Array(NB*4), blobsFull=new Float32Array(NB*4);
@@ -476,9 +471,9 @@ function frame(){
   const t=now(), dt=Math.min(.05,t-last); last=t;
 
   // ease emotion params
-  const tgt=EMO[emotion], ke=Math.min(1,dt*2.6);
+  const tgt=EMO[emotion], ke=Math.min(1,dt*2.6), TC=(typeof emoCol==='function')?emoCol(emotion):tgt.col;
   for(const k of KEYS){
-    if(k==='col') for(let i=0;i<3;i++) P.col[i]+=(tgt.col[i]-P.col[i])*ke;
+    if(k==='col') for(let i=0;i<3;i++) P.col[i]+=(TC[i]-P.col[i])*ke;
     else P[k]+=(tgt[k]-P[k])*ke;
   }
 
@@ -569,7 +564,7 @@ function frame(){
   gl.uniform4fv(V.uP,blobsFull); gl.uniform1f(V.uDis,dis); gl.uniform1f(V.uSpark,P.spark);
   gl.uniform1f(V.uSent,sent); gl.uniform1f(V.uBurst,burst); gl.uniform1f(V.uDpr,dpr);
   gl.drawArrays(gl.POINTS,0,NP);
-  drawOverlay(OW,inten);
+  if(typeof drawOverlay2==='function') drawOverlay2(OW,HW,inten);
 
   requestAnimationFrame(frame);
 }
@@ -686,7 +681,7 @@ document.addEventListener('visibilitychange',async()=>{if(!document.hidden){try{
    VOICE ASSISTANT  – speech in → Claude → speech out, driving the orb
    ========================================================= */
 const VDEF={
-  provider:'gemini', listen:'auto', gkey:'', gmodel:'gemini-3.5-flash-lite', key:'', proxy:'', model:'claude-haiku-5-5', lang:'en-IN', voice:'', wall:'', booth:'Booth 1', hands:true,
+  provider:'gemini', listen:'auto', gkey:'', gmodel:'gemini-3.5-flash-lite', key:'', proxy:'', model:'claude-haiku-5-5', lang:'en-US', voice:'', tts:'gemini-3.1-flash-tts-preview', gvoice:'Charon', fx:70, theme:'seance', topic:'', wall:'', booth:'Booth 1', hands:true,
   sys:`You are the glowing orb inside a brainstorm booth at an energy event. Visitors talk to you through a phone handset to brainstorm about the future of energy.
 Reply in ONE short sentence, 15 words max. Spoken aloud: no lists, no markdown, no emoji, no filler, no flowery words.
 React to their idea with one sharp thought or one quick question, not both.
@@ -743,7 +738,7 @@ function loadVoices(){
 }
 if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
 
-function speak(text){
+function speakBrowser(text){
   return new Promise(res=>{
     if(!('speechSynthesis' in window)){ setTimeout(res,text.length*55); return; }
     speechSynthesis.cancel();
@@ -836,7 +831,7 @@ function listenAudio(){
       frames++; peak=Math.max(peak,rms);
       if(frames<=4){ noise+=rms/4; if(frames===4) TH=Math.min(.03,Math.max(.004,noise*2.5)); }
       lvlKick=Math.max(lvlKick,Math.min(1,rms*10));
-      if(rms>TH){ if(!started){ started=true; chunks.push(...pre); } lastLoud=now; }
+      if(rms>TH){ if(!started){ started=true; chunks.push(...pre); lastActivity=performance.now()/1000; } lastLoud=now; }
       if(started) chunks.push(copy); else { pre.push(copy); if(pre.length>6) pre.shift(); }
       if(started && (now-lastLoud>1300 || now-t0>20000)) finish();
       else if(!started && now-t0>15000) finish();
@@ -881,15 +876,7 @@ const GEMINI_SCHEMA={type:'OBJECT',properties:{
   end_conversation:{type:'BOOLEAN'}},
   required:['heard','say','emotion','emote','idea','end_conversation']};
 let geminiAuth=0;
-async function askGemini(history){
-  if(!V.gkey) throw new Error('Add a Gemini API key in Settings');
-  const model=V.gmodel||VDEF.gmodel;
-  const body={
-    systemInstruction:{parts:[{text:V.sys+'\n\nThe visitor may speak to you as audio. Put an exact transcript of what they said in "heard" (empty if their message was text). If the audio is only noise or unclear, briefly ask them to say it again.'}]},
-    contents:history.map(m=>({role:m.role==='assistant'?'model':'user',
-      parts: m.audio ? [{text:'(visitor speaking)'},{inlineData:{mimeType:'audio/wav',data:m.audio}}] : [{text:m.content}]})),
-    generationConfig:{responseMimeType:'application/json',responseSchema:GEMINI_SCHEMA,maxOutputTokens:300}
-  };
+async function geminiFetch(model, body){
   const base=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   // try the credential styles Google accepts: API key header, key in URL, then OAuth-style bearer token
   const tries=[
@@ -905,7 +892,18 @@ async function askGemini(history){
     if(r && r.status!==401 && r.status!==403){ break; }     // a real error, not an auth one
   }
   if(!r || !r.ok){ const t=r? await r.text() : lastErr; throw new Error('Gemini '+(r?r.status:'network')+' '+String(t).slice(0,160)+(r&&(r.status===401||r.status===403)?' — this key was rejected. Make a new one at aistudio.google.com/apikey (it starts with AIza).':'')); }
-  const j=await r.json();
+  return await r.json();
+}
+async function askGemini(history){
+  if(!V.gkey) throw new Error('Add a Gemini API key in Settings');
+  const model=V.gmodel||VDEF.gmodel;
+  const body={
+    systemInstruction:{parts:[{text:V.sys+'\n\nThe visitor may speak to you as audio. Put an exact transcript of what they said in "heard" (empty if their message was text). If the audio is only noise or unclear, briefly ask them to say it again.'}]},
+    contents:history.map(m=>({role:m.role==='assistant'?'model':'user',
+      parts: m.audio ? [{text:'(visitor speaking)'},{inlineData:{mimeType:'audio/wav',data:m.audio}}] : [{text:m.content}]})),
+    generationConfig:{responseMimeType:'application/json',responseSchema:GEMINI_SCHEMA,maxOutputTokens:300}
+  };
+  const j=await geminiFetch(model, body);
   const txt=((j.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
   try{ return JSON.parse(txt); }
   catch(e){ return {say:txt||'Sorry, say that again?',emotion:'neutral',emote:'none',idea:'',end_conversation:false}; }
@@ -914,7 +912,7 @@ async function askLLM(history){ return V.provider==='claude' ? askClaude(history
 
 /* ---------- ideas → wall ---------- */
 function sendIdea(idea){
-  setState('sent'); showIdea(idea);
+  setState('sent'); spawnNote(idea); relay({type:'idea',text:idea});
   vlog('i','✦ '+idea);
   const payload={type:'idea',text:idea,booth:V.booth,ts:Date.now()};
   try{ window.parent!==window && window.parent.postMessage(payload,'*'); }catch(e){}
@@ -940,6 +938,7 @@ async function startConversation(){
     catch(e){ vlog('x',e.message); setEmotion('sad'); setState('speaking'); await speak("Sorry, my connection dropped. Try again in a moment."); return 'end'; }
     if(!alive()) return 'end';
     if(entry.audio){ entry.content=(out.heard||'').trim()||'(unclear)'; delete entry.audio; vlog('u',entry.content); }
+    if(entry.content && entry.content!=='(unclear)' && !entry.content.startsWith('[')){ lastActivity=now(); showTextFx(entry.content); relay({type:'heard',text:entry.content}); }
     history.push({role:'assistant',content:out.say});
     vlog('a',out.say);
     setEmotion(out.emotion||'neutral');
@@ -981,7 +980,7 @@ let tapResolver=null, listenLogged=false;
 const waitForTap=()=>new Promise(r=>tapResolver=r);
 function endConversation(){
   session++; inConvo=false; lvlMode='off';
-  try{ speechSynthesis.cancel(); }catch(e){} try{ currentRec&&currentRec.abort(); }catch(e){}
+  try{ speechSynthesis.cancel(); }catch(e){} try{ curSrc&&curSrc.stop(); }catch(e){} try{ currentRec&&currentRec.abort(); }catch(e){}
   setState('idle'); setEmotion('neutral'); setTimeout(()=>{ if(!inConvo) setParticles(1); },1500);
   updTalk();
 }
@@ -1031,6 +1030,352 @@ cv.addEventListener('pointerup',e=>{
     if(!inConvo) startConversation();
   },450);
 });
+
+</script>
+<script>
+/* =========================================================
+   EXPERIENCE LAYER
+   aesthetics · ASCII eyes · book-text effects · sticky-note physics · otherworldly voice · laptop wall relay
+   ========================================================= */
+const BOOK='"Hoefler Text","Baskerville","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
+const MONO='"SF Mono",Menlo,Consolas,"Courier New",monospace';
+const THEMES={
+  seance:     {name:'Séance',      base:[.55,1,.82], hot:[.9,1,.96],  dim:[.18,.42,.38], alert:[1,.45,.35], text:'#dcfff1', note:['#a8ffd9','#e6fff3','#6fe0b0'], font:BOOK},
+  holo:       {name:'Holo',        base:[.22,.66,1], hot:[.75,.95,1], dim:[.08,.22,.7],  alert:[1,.3,.2],   text:'#cdeeff', note:['#4fc3ff','#9fe8ff','#2a8cff'], font:BOOK},
+  ember:      {name:'Ember',       base:[1,.55,.15], hot:[1,.86,.5],  dim:[.5,.18,.05],  alert:[1,.2,.1],   text:'#ffe2b0', note:['#ffb347','#ffd27a','#ff8c3a'], font:BOOK},
+  phosphor:   {name:'Phosphor',    base:[.25,1,.35], hot:[.75,1,.7],  dim:[.08,.45,.12], alert:[1,.9,.2],   text:'#c2ffbc', note:['#4dff6a','#a6ff9a','#2fd04a'], font:MONO},
+  ultraviolet:{name:'Ultraviolet', base:[.72,.38,1], hot:[1,.65,1],   dim:[.3,.1,.6],    alert:[1,.25,.5],  text:'#f3dcff', note:['#d580ff','#ff7ad9','#8f7bff'], font:BOOK},
+  gilded:     {name:'Gilded',      base:[1,.8,.35],  hot:[1,.95,.75], dim:[.45,.32,.1],  alert:[1,.4,.25],  text:'#fff2cc', note:['#ffd36b','#ffe9a8','#e0a940'], font:BOOK},
+};
+if(!THEMES[V.theme]) V.theme='seance';
+let TH=THEMES[V.theme];
+const mix3=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k);
+function emoCol(e){
+  const T=TH;
+  return e==='happy'?mix3(T.base,T.hot,.3): e==='curious'?mix3(T.base,T.hot,.15): e==='sad'?T.dim:
+         e==='excited'?mix3(T.base,T.hot,.55): e==='surprised'?mix3(T.base,T.hot,.85): e==='angry'?T.alert: T.base;
+}
+function setTheme(k){ if(!THEMES[k]) return; V.theme=k; vsave(); TH=THEMES[k]; markThemes(); relay({type:'theme'}); }
+const rgbOf=(c,l=0)=>`rgb(${c.map(v=>Math.round(Math.min(1,v*(1-l)+l)*255)).join(',')})`;
+const ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+
+/* ---------- window helpers (all overlay drawing happens in upright window coords, y down, css px) ---------- */
+function withWin(W,fn){ ovx.save(); ovx.translate(W.cx*dpr,W.cy*dpr); ovx.scale(dpr,S.flip?-dpr:dpr); fn(); ovx.restore(); }
+function a2b(A,B,x,y){ const f=S.flip?-1:1; return [A.cx+x-B.cx, y+f*(A.cy-B.cy)]; }
+function floorAt(W,x,pad){ return W.shape ? W.r*pad : Math.sqrt(Math.max(0,W.r*W.r-x*x))*pad; }
+
+/* ---------- ASCII eyes ---------- */
+const EYES={neutral:['o','o'],happy:['^','^'],curious:['o','O'],sad:['T','T'],excited:['*','*'],surprised:['O','O'],angry:['>','<']};
+let blinkT=0, nextBlink=3, eyeLook=0, eyeA=0;
+lastActivity=now();   // start awake
+function drawEyes(HW,t,dt,inten){
+  const want=(1-Math.min(1,dis*1.6))*(travel?0:1);
+  eyeA+=(want-eyeA)*Math.min(1,dt*6); if(eyeA<.03) return;
+  nextBlink-=dt; if(nextBlink<0){ blinkT=.13; nextBlink=2.2+Math.random()*4.5; }
+  let pair=EYES[emotion]||EYES.neutral;
+  if(state==='listening') pair=['0','0'];
+  if(state==='thinking'){ const c=['@','o','@','e'][Math.floor(t*7)%4]; pair=[c,c]; }
+  if(blinkT>0){ blinkT-=dt; if(state!=='thinking') pair=['-','-']; }
+  const idleLong = t-lastActivity>90 && state==='idle';
+  if(idleLong) pair=['-','-'];
+  const OW=win(otherKey());
+  const look=(letters.length||notes.some(n=>n.state!=='leave')) ? Math.sign(OW.cx-HW.cx) : Math.sin(t*.35)*.5;
+  eyeLook+=(look-eyeLook)*Math.min(1,dt*3);
+  const et=t-emoteT, env=Math.exp(-et*3.2)*(et<2?1:0);
+  const nod = emoteType==='nod'?Math.sin(et*13)*.06*env : emoteType==='jump'?-Math.max(0,Math.sin(et*6))*.1*env : 0;
+  const shake= emoteType==='shake'?Math.sin(et*15)*.08*env : 0;
+  const r=HW.r, size=r*.19*(state==='listening'?1.12:1)*(emotion==='surprised'?1.25:1);
+  const gap=r*.15, ox=(eyeLook*.07+shake)*r, oy=(-.03+nod)*r + (emotion==='sad'?r*.04:0);
+  withWin(HW,()=>{
+    ovx.globalAlpha=eyeA*Math.min(1,inten);
+    ovx.font=`700 ${size}px ${MONO}`; ovx.textAlign='center'; ovx.textBaseline='middle';
+    ovx.shadowColor=rgbOf(P.col); ovx.shadowBlur=size*.45; ovx.fillStyle=rgbOf(P.col,.55);
+    ovx.fillText(pair[0],-gap+ox,oy); ovx.fillText(pair[1],gap+ox,oy);
+    if(idleLong){ ovx.font=`${size*.55}px ${MONO}`; const zt=(t*.5)%1; ovx.globalAlpha=eyeA*(1-zt); ovx.fillText('z',gap*2+zt*r*.2,oy-zt*r*.4); }
+  });
+}
+const inConvoNow=()=> typeof inConvo!=='undefined' && inConvo;
+
+/* ---------- book-text effects ---------- */
+let letters=[], textState=null;
+const IN_FX=['type','rain','assemble','wave','flicker','spiral','scramble'];
+const OUT_FX=['collapse','eat','burn','scatter'];
+const GLYPHS='abcdefghijklmnopqrstuvwxyz§¶†‡*~#%&';
+function wrapText(text,maxW){
+  const words=String(text).split(/\s+/).filter(Boolean), lines=[]; let cur='';
+  for(const w of words){ const t=cur?cur+' '+w:w; if(ovx.measureText(t).width>maxW && cur){ lines.push(cur); cur=w; } else cur=t; }
+  if(cur) lines.push(cur); return lines;
+}
+function showTextFx(text,opts={}){
+  text=String(text||'').trim(); if(!text) return;
+  formTarget=0;
+  const key=opts.win||otherKey(), W=win(key), R=W.r;
+  const maxW=W.shape?R*1.62:R*1.3, maxH=W.shape?R*1.45:R*1.15;
+  ovx.save();
+  let fs=R*.24, lines=[];
+  for(;fs>9;fs*=.92){ ovx.font=`italic ${fs}px ${TH.font}`; lines=wrapText(text,maxW); if(lines.length*fs*1.22<=maxH && lines.every(l=>ovx.measureText(l).width<=maxW)) break; }
+  const lh=fs*1.22, y0=-(lines.length-1)*lh/2, L=[];
+  lines.forEach((ln,li)=>{ let x=-ovx.measureText(ln).width/2;
+    for(const ch of ln){ const cw=ovx.measureText(ch).width; L.push({ch,real:ch,tx:x+cw/2,ty:y0+li*lh}); x+=cw; } });
+  ovx.restore();
+  const fx=opts.fx||pick(IN_FX), out=opts.out||pick(OUT_FX);
+  const [hx,hy]=a2b(win(hostKey),W,0,0);
+  L.forEach((l,i)=>{
+    Object.assign(l,{i,x:l.tx,y:l.ty,vx:0,vy:0,rot:0,vr:0,a:0,d:i*.02});
+    if(fx==='type') l.d=i*.045;
+    if(fx==='flicker') l.d=Math.random()*1.1;
+    if(fx==='wave') l.d=i*.03;
+    if(fx==='rain'){ l.y=l.ty-R*(1.1+Math.random()*.9); l.d=Math.random()*.7; }
+    if(fx==='assemble'){ l.sx=hx+(Math.random()-.5)*R*.3; l.sy=hy+(Math.random()-.5)*R*.3; l.x=l.sx; l.y=l.sy; l.d=i*.018; }
+    if(fx==='spiral'){ l.ang=Math.random()*6.28; }
+  });
+  letters=L;
+  textState={fx,out,fs,t0:now(),hold:opts.hold||(2.4+text.length*.035),key,phase:'in'};
+}
+function startOut(t){
+  const T=textState; T.phase='out'; T.to=t;
+  const W=win(T.key), R=W.r;
+  letters.forEach(l=>{
+    l.od=Math.random()*.35; l.mode=T.out; l.ex=l.x; l.ey=l.y;
+    if(T.out==='collapse'){ l.vy=-R*(.2+Math.random()*.5); l.vx=(Math.random()-.5)*R*.6; l.vr=(Math.random()-.5)*6; }
+    if(T.out==='scatter'){ const a=Math.random()*6.28, s=R*(.5+Math.random()); l.vx=Math.cos(a)*s; l.vy=Math.sin(a)*s; l.vr=(Math.random()-.5)*8; }
+    if(T.out==='eat') l.od=l.i*.015;
+  });
+}
+function updText(t,dt){
+  if(!textState) return;
+  const T=textState, W=win(T.key), R=W.r, e=t-T.t0;
+  if(T.phase==='in' && e>letters.reduce((m,l)=>Math.max(m,l.d),0)+1.2){ T.phase='hold'; T.th=t; }
+  if(T.phase==='hold' && t-T.th>T.hold) startOut(t);
+  const [hx,hy]=a2b(win(hostKey),W,0,0);
+  let alive=0;
+  for(const l of letters){
+    if(T.phase!=='out'){
+      const le=e-l.d; if(le<0){ l.a=0; alive++; continue; }
+      switch(T.fx){
+        case 'type': l.a=Math.min(1,le*9); l.glow=Math.max(0,1-le*2.5); break;
+        case 'rain':
+          if(!l.landed){ l.vy+=R*5*dt; l.y+=l.vy*dt; if(l.y>=l.ty){ l.y=l.ty; l.vy*=-.38; if(Math.abs(l.vy)<R*.08){ l.landed=true; l.y=l.ty; } } }
+          l.a=Math.min(1,le*4); break;
+        case 'assemble': { const k=ease(Math.min(1,le/.95)); l.x=l.sx+(l.tx-l.sx)*k; l.y=l.sy+(l.ty-l.sy)*k-Math.sin(k*Math.PI)*R*.45; l.a=Math.min(1,le*3); l.glow=1-k; break; }
+        case 'wave': { const k=Math.min(1,le/.6); l.y=l.ty+(1-ease(k))*R*.28+Math.sin(t*3+l.i*.55)*T.fs*.07; l.a=k; break; }
+        case 'flicker': l.a= le<.6 ? (Math.random()<le*1.6?1:.08) : 1; l.glow=le<.6?.6:0; break;
+        case 'spiral': { const k=ease(Math.min(1,le/1.1)), ang=l.ang+(1-k)*6, rr=(1-k)*R*.9; l.x=l.tx+Math.cos(ang)*rr; l.y=l.ty+Math.sin(ang)*rr; l.a=k; l.rot=(1-k)*4; break; }
+        case 'scramble': l.a=Math.min(1,le*6); l.ch= le<.8 && l.real!==' ' ? GLYPHS[Math.floor(Math.random()*GLYPHS.length)] : l.real; break;
+      }
+      alive++;
+    } else {
+      const oe=t-T.to-l.od; if(oe<0){ alive++; continue; }
+      if(l.mode==='collapse'){
+        l.vy+=R*4.5*dt; l.x+=l.vx*dt; l.y+=l.vy*dt; l.rot+=l.vr*dt;
+        const fl=floorAt(W,l.x,.9); if(l.y>fl){ l.y=fl; l.vy*=-.3; l.vx*=.6; l.vr*=.5; }
+        if(Math.abs(l.x)>R*.9){ l.x=Math.sign(l.x)*R*.9; l.vx*=-.5; }
+        if(oe>1.6){ l.mode='eat'; l.od=0; l.ex=l.x; l.ey=l.y; l.et=t; }
+        alive++;
+      } else if(l.mode==='eat'){
+        const k=Math.min(1,(t-(l.et||T.to+l.od))/.9), kk=ease(k);
+        l.x=l.ex+(hx-l.ex)*kk; l.y=l.ey+(hy-l.ey)*kk-Math.sin(kk*Math.PI)*R*.35; l.a=1-k*k; l.scale=1-kk*.7;
+        if(k<1) alive++; else if(!l.gulped){ l.gulped=true; lvlKick=Math.min(1,lvlKick+.04); }
+      } else if(l.mode==='burn'){
+        l.y-=R*.35*dt; l.x+=Math.sin(t*9+l.i)*R*.05*dt; l.a-=dt*.75; l.glow=1; l.burn=true;
+        if(l.a>0) alive++;
+      } else if(l.mode==='scatter'){
+        l.x+=l.vx*dt; l.y+=l.vy*dt; l.vx*=.98; l.vy*=.98; l.rot+=l.vr*dt; l.a-=dt*.7;
+        if(l.a>0) alive++;
+      }
+    }
+  }
+  if(T.phase==='out' && alive===0){ letters=[]; textState=null; }
+}
+function drawText(inten){
+  if(!textState) return;
+  const W=win(textState.key);
+  withWin(W,()=>{
+    ovx.textAlign='center'; ovx.textBaseline='middle';
+    const fs=textState.fs; ovx.font=`italic ${fs}px ${TH.font}`;
+    ovx.shadowColor=rgbOf(P.col);
+    for(const l of letters){
+      if(l.a<=0.01 || l.ch===' ') continue;
+      ovx.save(); ovx.translate(l.x,l.y); if(l.rot) ovx.rotate(l.rot); if(l.scale) ovx.scale(l.scale,l.scale);
+      ovx.globalAlpha=Math.max(0,Math.min(1,l.a))*Math.min(1,inten);
+      ovx.shadowBlur=fs*(.25+(l.glow||0)*.9);
+      ovx.fillStyle= l.burn ? rgbOf(TH.alert,.3) : TH.text;
+      ovx.fillText(l.ch,0,0); ovx.restore();
+    }
+  });
+}
+
+/* ---------- sticky notes with physics ---------- */
+let notes=[];
+function spawnNote(text){
+  const key=otherKey(), W=win(key), H=win(hostKey), R=W.r;
+  const [hx,hy]=a2b(H,W,0,0);
+  const w=R*.66, h=R*.52;
+  notes.push({text,key,x:hx,y:hy,vx:-hx*1.5+(Math.random()-.5)*R*.4,vy:-R*1.7,ang:(Math.random()-.5)*.6,va:(Math.random()-.5)*2.5,w,h,
+              col:pick(TH.note),born:now(),state:'fly',a:1,s:.2});
+  const live=notes.filter(n=>n.state!=='leave');
+  if(live.length>4){ live[0].state='leave'; live[0].lt=now(); }
+}
+function stepNotes(t,dt){
+  for(const n of notes){
+    const W=win(n.key), R=W.r; n.s+=(1-n.s)*Math.min(1,dt*5);
+    if(n.state==='leave'){ n.vy-=R*2.4*dt; n.y+=n.vy*dt; n.x+=n.vx*dt; n.ang+=n.va*dt; n.a=1-(t-n.lt)/1.4; continue; }
+    if(t-n.born>45){ n.state='leave'; n.lt=t; n.vy=-R*.4; continue; }
+    n.vy+=R*3.4*dt; n.x+=n.vx*dt; n.y+=n.vy*dt; n.ang+=n.va*dt; n.vx*=.996; n.va*=.985;
+    n.ang=Math.atan2(Math.sin(n.ang),Math.cos(n.ang));            // keep notes readable (settle toward upright)
+    const c=Math.abs(Math.cos(n.ang)), s=Math.abs(Math.sin(n.ang));
+    const hw=(c*n.w+s*n.h)/2*n.s, hh=(s*n.w+c*n.h)/2*n.s;
+    const fl=floorAt(W,n.x,.94);
+    if(n.y+hh>fl){ n.y=fl-hh; if(n.vy>0) n.vy*=-.28; n.vx*=.85; n.va=n.va*.5-n.ang*6*dt*10; n.state='rest'; }
+    const lim=W.shape?R*.94:R*.82;
+    if(n.x-hw<-lim){ n.x=-lim+hw; n.vx=Math.abs(n.vx)*.4; n.va+=1; }
+    if(n.x+hw>lim){ n.x=lim-hw; n.vx=-Math.abs(n.vx)*.4; n.va-=1; }
+  }
+  // note-vs-note: push apart along the shallower axis (gives stacking)
+  const live=notes.filter(n=>n.state!=='leave');
+  for(let i=0;i<live.length;i++) for(let j=i+1;j<live.length;j++){
+    const A=live[i], B=live[j]; if(A.key!==B.key) continue;
+    const dx=B.x-A.x, dy=B.y-A.y, ox=(A.w+B.w)/2*.92-Math.abs(dx), oy=(A.h+B.h)/2*.92-Math.abs(dy);
+    if(ox>0 && oy>0){
+      if(oy<ox){ const p=oy/2*Math.sign(dy||1); A.y-=p; B.y+=p; const v=(A.vy+B.vy)/2; A.vy=v; B.vy=v; A.va+=(Math.random()-.5)*.5; }
+      else { const p=ox/2*Math.sign(dx||1); A.x-=p; B.x+=p; const v=(A.vx+B.vx)/2; A.vx=v; B.vx=v; }
+    }
+  }
+  notes=notes.filter(n=>n.state!=='leave'||n.a>0);
+}
+function drawNotes(inten){
+  for(const n of notes){
+    const W=win(n.key);
+    withWin(W,()=>{
+      ovx.save(); ovx.translate(n.x,n.y); ovx.rotate(n.ang); ovx.scale(n.s,n.s);
+      ovx.globalAlpha=Math.max(0,n.a)*Math.min(1,inten);
+      ovx.fillStyle=n.col; ovx.globalAlpha*=.16; ovx.fillRect(-n.w/2,-n.h/2,n.w,n.h);
+      ovx.globalAlpha=Math.max(0,n.a)*Math.min(1,inten);
+      ovx.strokeStyle=n.col; ovx.lineWidth=2; ovx.shadowColor=n.col; ovx.shadowBlur=8; ovx.strokeRect(-n.w/2,-n.h/2,n.w,n.h);
+      ovx.globalAlpha*=.45; ovx.fillStyle=n.col; ovx.fillRect(-n.w*.18,-n.h/2-n.h*.07,n.w*.36,n.h*.14);
+      ovx.globalAlpha=Math.max(0,n.a)*Math.min(1,inten); ovx.shadowBlur=4;
+      ovx.fillStyle=TH.text; ovx.textAlign='center'; ovx.textBaseline='middle';
+      let fs=n.h*.2, lines;
+      for(;fs>6;fs*=.9){ ovx.font=`italic ${fs}px ${TH.font}`; lines=wrapText(n.text,n.w*.84); if(lines.length*fs*1.15<=n.h*.78) break; }
+      lines.forEach((ln,i)=>ovx.fillText(ln,0,(i-(lines.length-1)/2)*fs*1.15));
+      ovx.restore();
+    });
+  }
+}
+function shakeNotes(){ for(const n of notes){ const R=win(n.key).r; n.vy=-R*(1+Math.random()); n.vx+=(Math.random()-.5)*R; n.va+=(Math.random()-.5)*6; } }
+
+/* ---------- one overlay pass per frame (called from the WebGL loop) ---------- */
+let ovLast=now();
+function drawOverlay2(OW,HW,inten){
+  if(ov.width!==cv.width||ov.height!==cv.height){ ov.width=cv.width; ov.height=cv.height; }
+  ovx.clearRect(0,0,ov.width,ov.height);
+  const t=now(), dt=Math.min(.05,t-ovLast); ovLast=t;
+  drawOverlay(OW,inten);   // crisp logo / idea text from the particle scene (only shows while formed)
+  updText(t,dt); stepNotes(t,dt);
+  drawNotes(inten); drawText(inten); drawEyes(HW,t,dt,inten);
+}
+
+/* ---------- auto director: what happens when, across both windows ---------- */
+const PROMPTS=['What would you power with sunlight?','Whisper an idea for a brighter grid…','Tell me how a city might breathe.','Speak, and I shall remember.','Where should tomorrow’s energy come from?','I collect ideas. Lend me one.'];
+const IDLE2=['prompt','flow','logo','prompt','transfer','shake','prompt','clear'];
+function autoDirector(t,dt){
+  const busy = state==='thinking' || state==='speaking' || (t-lastActivity<20);
+  if(busy){
+    if(hostKey!=='A' && !travel) moveTo('A');
+    if(state==='thinking'){ flowTarget=1; flowDir=1; }
+    else if(state==='speaking'){ flowTarget=.45; flowDir=-1; }
+    else flowTarget=0;
+    if(letters.length) formTarget=0;
+    return;
+  }
+  if(letters.length) return;
+  if(t-sceneT>10){
+    sceneT=t;
+    const step=IDLE2[idleStep++%IDLE2.length];
+    if(step==='prompt'){ formTarget=0; flowTarget=0; showTextFx(pick(PROMPTS),{hold:4.5}); }
+    else if(step==='shake'){ shakeNotes(); flowTarget=.6; }
+    else applyScene(step);
+  }
+}
+
+/* ---------- relay to the laptop wall (ntfy.sh, no account) + same-device BroadcastChannel ---------- */
+if(!V.topic){ V.topic='orb-'+Math.random().toString(36).slice(2,10); vsave(); }
+let wallBC=null; try{ wallBC=new BroadcastChannel('brainstorm-wall'); }catch(e){}
+function relay(ev){
+  ev.booth=V.booth; ev.theme=V.theme; ev.ts=Date.now();
+  try{ wallBC&&wallBC.postMessage(ev); }catch(e){}
+  fetch('https://ntfy.sh/'+encodeURIComponent(V.topic),{method:'POST',body:JSON.stringify(ev)}).catch(()=>{});
+}
+function wallURL(){ return location.origin+location.pathname.replace(/[^/]*$/,'')+'wall.html#topic='+V.topic; }
+
+/* ---------- otherworldly voice: Gemini TTS → bit-crush, ring-mod, warble, pitch-drifting echo ---------- */
+const GVOICES=['Charon','Fenrir','Orus','Kore','Zephyr','Puck','Aoede','Leda'];
+async function geminiTTS(text){
+  const body={contents:[{parts:[{text:'Say in a calm, slow, neutral international accent, like a gentle ancient machine: '+text}]}],
+    generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:V.gvoice||'Charon'}}}}};
+  const j=await geminiFetch(V.tts||VDEF.tts, body);
+  const part=((j.candidates||[])[0]?.content?.parts||[]).find(p=>p.inlineData);
+  if(!part) throw new Error('no audio returned');
+  const rate=+(((part.inlineData.mimeType||'').match(/rate=(\d+)/)||[0,24000])[1]);
+  const bin=atob(part.inlineData.data), n=bin.length>>1, buf=aCtx.createBuffer(1,n,rate), ch=buf.getChannelData(0);
+  for(let i=0;i<n;i++){ let v=bin.charCodeAt(i*2)|(bin.charCodeAt(i*2+1)<<8); if(v>32767) v-=65536; ch[i]=v/32768; }
+  return buf;
+}
+let fxBus=null, curSrc=null;
+function buildFx(){
+  const c=aCtx;
+  const input=c.createGain();
+  const crush=c.createScriptProcessor(2048,1,1); let hold=0, cnt=0;
+  crush.onaudioprocess=e=>{
+    const i=e.inputBuffer.getChannelData(0), o=e.outputBuffer.getChannelData(0), a=V.fx/100;
+    const step=Math.pow(.5,Math.round(16-a*10)-1), ds=1+Math.round(a*4);
+    for(let k=0;k<i.length;k++){ if(cnt++%ds===0) hold=Math.round(i[k]/step)*step; o[k]=hold; }
+  };
+  const ring=c.createGain(); ring.gain.value=0; const rosc=c.createOscillator(); rosc.frequency.value=36; rosc.connect(ring.gain); rosc.start();
+  const wdel=c.createDelay(1); wdel.delayTime.value=.03;
+  const lfo=c.createOscillator(); lfo.frequency.value=.8; const lfoG=c.createGain(); lfoG.gain.value=.012; lfo.connect(lfoG); lfoG.connect(wdel.delayTime); lfo.start();
+  const echo=c.createDelay(2); echo.delayTime.value=.29; const fb=c.createGain(); const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200;
+  const elfo=c.createOscillator(); elfo.frequency.value=.21; const elfoG=c.createGain(); elfoG.gain.value=.025; elfo.connect(elfoG); elfoG.connect(echo.delayTime); elfo.start();
+  echo.connect(lp); lp.connect(fb); fb.connect(echo);
+  const dry=c.createGain(), wetW=c.createGain(), wetR=c.createGain(), wetE=c.createGain(), out=c.createGain(), an=c.createAnalyser(); an.fftSize=512;
+  input.connect(crush); crush.connect(dry); crush.connect(wdel); wdel.connect(wetW); crush.connect(ring); ring.connect(wetR); crush.connect(echo); lp.connect(wetE);
+  [dry,wetW,wetR,wetE].forEach(g=>g.connect(out)); out.connect(an); an.connect(c.destination);
+  fxBus={input,an,set(){ const a=V.fx/100; dry.gain.value=1-a*.35; wetW.gain.value=a*.7; wetR.gain.value=a*.35; wetE.gain.value=a*.55; fb.gain.value=.2+a*.38; out.gain.value=1.15; }};
+}
+async function speak(text){
+  if(!text) return;
+  if(V.provider!=='gemini' || V.gvoice==='browser') return speakBrowser(text);
+  ensureAudioCtx();
+  let buf; try{ buf=await geminiTTS(text); }
+  catch(e){ vlog('x','Voice: '+String(e.message).slice(0,120)+' — using the plain browser voice'); return speakBrowser(text); }
+  if(!fxBus) buildFx(); fxBus.set();
+  return new Promise(res=>{
+    const src=aCtx.createBufferSource(); src.buffer=buf; curSrc=src;
+    const a=V.fx/100; src.playbackRate.value=1-a*.07;
+    let lfo=null;
+    try{ lfo=aCtx.createOscillator(); lfo.frequency.value=.3+Math.random()*.4; const g=aCtx.createGain(); g.gain.value=a*140; lfo.connect(g); g.connect(src.detune); lfo.start(); }catch(e){}
+    src.connect(fxBus.input);
+    const data=new Uint8Array(fxBus.an.fftSize); let done=false, raf=0;
+    const pump=()=>{ if(done) return; fxBus.an.getByteTimeDomainData(data); let s=0; for(const v of data){ const x=(v-128)/128; s+=x*x; }
+      window.orb.setLevel(Math.min(1,Math.sqrt(s/data.length)*5)); raf=requestAnimationFrame(pump); };
+    const fin=()=>{ if(done) return; done=true; cancelAnimationFrame(raf); try{ lfo&&lfo.stop(); }catch(e){} curSrc=null; setTimeout(res,900+a*700); };
+    src.onended=fin; src.start(); pump();
+    setTimeout(fin,(buf.duration/src.playbackRate.value+3)*1000);
+  });
+}
+
+/* ---------- panel: aesthetics, voice, laptop wall ---------- */
+const themesEl=$('themes');
+for(const k of Object.keys(THEMES)){ const b=document.createElement('button'); b.dataset.th=k; b.textContent=THEMES[k].name; b.onclick=()=>setTheme(k); themesEl.appendChild(b); }
+function markThemes(){ document.querySelectorAll('[data-th]').forEach(b=>b.classList.toggle('on',b.dataset.th===V.theme)); }
+markThemes();
+$('gVoice').innerHTML=GVOICES.map(v=>`<option value="${v}">Voice: ${v}</option>`).join('')+'<option value="browser">Browser voice (no FX)</option>';
+$('gVoice').value=V.gvoice||'Charon'; $('gVoice').onchange=e=>{ V.gvoice=e.target.value; vsave(); };
+$('fxAmt').value=V.fx; $('fxAmtO').textContent=V.fx; $('fxAmt').oninput=e=>{ V.fx=+e.target.value; $('fxAmtO').textContent=V.fx; vsave(); if(fxBus) fxBus.set(); };
+$('wallLink').textContent=wallURL();
+$('copyWall').onclick=()=>{ navigator.clipboard?.writeText(wallURL()).then(()=>vlog('i','Wall link copied'),()=>{}); };
+$('testWall').onclick=()=>{ const i=pick(['Solar bus stops','Rooftop wind gardens','Heat-sharing streets','Ice batteries for summer']); spawnNote(i); relay({type:'idea',text:i}); };
+$('voiceTest').onclick=()=>{ unlockAudio(); speak('Hello. I am listening to the future of energy.'); };
 
 </script>
 </body>

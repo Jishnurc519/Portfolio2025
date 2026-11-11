@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Idea Wall</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:pointer}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh}
+  #st{position:fixed;left:14px;bottom:10px;font:12px -apple-system,"Segoe UI",system-ui,sans-serif;color:#4a5a6a}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="st">connecting…</div>
+<script>
+/* Idea wall for a laptop / second screen.
+   Receives events from the orb page (same device: BroadcastChannel; other devices: ntfy.sh topic in the link #topic=…).
+   Ideas fall in as sticky notes with physics; what visitors said drifts across in old-book type. Click = fullscreen, T = test note. */
+const BOOK='"Hoefler Text","Baskerville","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
+const MONO='"SF Mono",Menlo,Consolas,"Courier New",monospace';
+const THEMES={
+  seance:{base:'#8cffd2',text:'#dcfff1',note:['#a8ffd9','#e6fff3','#6fe0b0'],font:BOOK},
+  holo:{base:'#38a8ff',text:'#cdeeff',note:['#4fc3ff','#9fe8ff','#2a8cff'],font:BOOK},
+  ember:{base:'#ff8c26',text:'#ffe2b0',note:['#ffb347','#ffd27a','#ff8c3a'],font:BOOK},
+  phosphor:{base:'#40ff59',text:'#c2ffbc',note:['#4dff6a','#a6ff9a','#2fd04a'],font:MONO},
+  ultraviolet:{base:'#b861ff',text:'#f3dcff',note:['#d580ff','#ff7ad9','#8f7bff'],font:BOOK},
+  gilded:{base:'#ffcc59',text:'#fff2cc',note:['#ffd36b','#ffe9a8','#e0a940'],font:BOOK},
+};
+const q=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
+const topic=q.get('topic')||'';
+let TH=THEMES[q.get('theme')]||THEMES.seance;
+const cv=document.getElementById('c'), g=cv.getContext('2d'), st=document.getElementById('st');
+let W,H,dpr;
+function resize(){ dpr=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; g.setTransform(dpr,0,0,dpr,0,0); }
+addEventListener('resize',resize); resize();
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const now=()=>performance.now()/1000;
+
+/* ---- notes with physics ---- */
+let notes=[];
+function addNote(text,booth){
+  const w=Math.min(260,W*.17), h=w*.78;
+  notes.push({text,booth,x:W*(.15+Math.random()*.7),y:-h,vx:(Math.random()-.5)*120,vy:60,ang:(Math.random()-.5)*.6,va:(Math.random()-.5)*2,w,h,col:pick(TH.note),born:now(),a:0,glow:1});
+  if(notes.length>36) notes[0].dead=now();
+}
+function step(dt){
+  for(const n of notes){
+    n.a=Math.min(1,n.a+dt*2); n.glow=Math.max(0,n.glow-dt*.4);
+    n.vy+=900*dt; n.x+=n.vx*dt; n.y+=n.vy*dt; n.ang+=n.va*dt; n.vx*=.995; n.va*=.985;
+    n.ang=Math.atan2(Math.sin(n.ang),Math.cos(n.ang));
+    const c=Math.abs(Math.cos(n.ang)), s=Math.abs(Math.sin(n.ang)), hw=(c*n.w+s*n.h)/2, hh=(s*n.w+c*n.h)/2;
+    const fl=H-70;
+    if(n.y+hh>fl){ n.y=fl-hh; if(n.vy>0) n.vy*=-.25; n.vx*=.85; n.va=n.va*.5-n.ang*.6; }
+    if(n.x-hw<10){ n.x=10+hw; n.vx=Math.abs(n.vx)*.4; }
+    if(n.x+hw>W-10){ n.x=W-10-hw; n.vx=-Math.abs(n.vx)*.4; }
+  }
+  for(let i=0;i<notes.length;i++) for(let j=i+1;j<notes.length;j++){
+    const A=notes[i], B=notes[j], dx=B.x-A.x, dy=B.y-A.y, ox=(A.w+B.w)/2*.9-Math.abs(dx), oy=(A.h+B.h)/2*.9-Math.abs(dy);
+    if(ox>0&&oy>0){ if(oy<ox){ const p=oy/2*Math.sign(dy||1); A.y-=p; B.y+=p; const v=(A.vy+B.vy)/2; A.vy=v; B.vy=v; }
+      else { const p=ox/2*Math.sign(dx||1); A.x-=p; B.x+=p; const v=(A.vx+B.vx)/2; A.vx=v; B.vx=v; } }
+  }
+  notes=notes.filter(n=>!n.dead||now()-n.dead<1.2);
+}
+function wrap(text,maxW){ const ws=String(text).split(/\s+/), L=[]; let cur=''; for(const w of ws){ const t=cur?cur+' '+w:w; if(g.measureText(t).width>maxW&&cur){L.push(cur);cur=w;} else cur=t; } if(cur)L.push(cur); return L; }
+function drawNote(n){
+  const fade=n.dead?1-(now()-n.dead)/1.2:1;
+  g.save(); g.translate(n.x,n.y); g.rotate(n.ang); g.globalAlpha=n.a*fade;
+  g.fillStyle=n.col; g.globalAlpha*=.14; g.fillRect(-n.w/2,-n.h/2,n.w,n.h); g.globalAlpha=n.a*fade;
+  g.strokeStyle=n.col; g.lineWidth=2; g.shadowColor=n.col; g.shadowBlur=10+n.glow*30; g.strokeRect(-n.w/2,-n.h/2,n.w,n.h);
+  g.globalAlpha*=.45; g.fillStyle=n.col; g.fillRect(-n.w*.18,-n.h/2-n.h*.07,n.w*.36,n.h*.14); g.globalAlpha=n.a*fade;
+  g.shadowBlur=4; g.fillStyle=TH.text; g.textAlign='center'; g.textBaseline='middle';
+  let fs=n.h*.2, L; for(;fs>8;fs*=.9){ g.font=`italic ${fs}px ${TH.font}`; L=wrap(n.text,n.w*.84); if(L.length*fs*1.15<=n.h*.7) break; }
+  L.forEach((l,i)=>g.fillText(l,0,(i-(L.length-1)/2)*fs*1.15-n.h*.04));
+  if(n.booth){ g.font=`${n.h*.09}px ${TH.font}`; g.globalAlpha*=.6; g.fillText(n.booth,0,n.h*.38); }
+  g.restore();
+}
+
+/* ---- what visitors said: old-book type drifting across the top ---- */
+let lines=[];
+function addLine(text){ lines.push({text,t0:now(),y:H*(.12+Math.random()*.22)}); if(lines.length>4) lines.shift(); }
+function drawLines(){
+  g.textAlign='center'; g.textBaseline='middle';
+  for(const L of lines){
+    const e=now()-L.t0, n=Math.min(L.text.length,Math.floor(e*28)); const a=e<9?1:Math.max(0,1-(e-9)/2);
+    if(a<=0) continue;
+    g.font=`italic ${Math.min(46,W*.032)}px ${TH.font}`; g.globalAlpha=a*.9; g.fillStyle=TH.text; g.shadowColor=TH.base; g.shadowBlur=14;
+    g.fillText('“'+L.text.slice(0,n)+(n<L.text.length?'▍':'”'),W/2,L.y-e*3);
+  }
+  g.globalAlpha=1; g.shadowBlur=0;
+}
+
+/* ---- loop ---- */
+let last=now();
+function frame(){
+  const t=now(), dt=Math.min(.033,t-last); last=t;
+  g.clearRect(0,0,W,H);
+  g.font=`italic ${Math.min(30,W*.02)}px ${TH.font}`; g.fillStyle=TH.base; g.globalAlpha=.55; g.textAlign='left'; g.textBaseline='alphabetic';
+  g.fillText('ideas, as they arrive',24,40); g.globalAlpha=1;
+  g.strokeStyle=TH.base; g.globalAlpha=.25; g.beginPath(); g.moveTo(20,H-69); g.lineTo(W-20,H-69); g.stroke(); g.globalAlpha=1;
+  step(dt); for(const n of notes) drawNote(n); drawLines();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- receive ---- */
+function handle(ev){
+  if(!ev||!ev.type) return;
+  if(ev.theme && THEMES[ev.theme]) TH=THEMES[ev.theme];
+  if(ev.type==='idea') addNote(ev.text,ev.booth);
+  if(ev.type==='heard') addLine(ev.text);
+}
+try{ new BroadcastChannel('brainstorm-wall').onmessage=e=>handle(e.data); }catch(e){}
+if(topic){
+  const es=new EventSource('https://ntfy.sh/'+encodeURIComponent(topic)+'/sse');
+  es.onopen=()=>st.textContent='● connected · '+topic;
+  es.onerror=()=>st.textContent='○ reconnecting… · '+topic;
+  es.onmessage=e=>{ try{ const d=JSON.parse(e.data); if(d.event==='message') handle(JSON.parse(d.message)); }catch(err){} };
+} else st.textContent='No topic in the link. Open the link shown in the orb panel (Laptop wall).';
+addEventListener('click',()=>{ const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d); });
+addEventListener('keydown',e=>{ if(e.key==='t') addNote(pick(['Solar bus stops','Rooftop wind gardens','Heat-sharing streets']),'Test'); if(e.key==='h') addLine('what if every rooftop grew a little wind garden'); });
+setTimeout(()=>{ if(st.textContent.startsWith('●')) st.style.opacity=.4; },6000);
+</script>
+</body>
+</html>

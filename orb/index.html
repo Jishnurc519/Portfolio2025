@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="robots" content="noindex,nofollow">
+<title>Booth Orb</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;
+    font:14px/1.4 -apple-system,"Segoe UI",system-ui,sans-serif;color:#cfe3ff}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+  #panel{position:fixed;left:12px;top:12px;background:rgba(10,16,26,.94);border:1px solid #24324a;border-radius:10px;
+    padding:12px 14px;width:300px;max-height:calc(100vh - 24px);overflow:auto;display:none;z-index:2}
+  #panel.show{display:block}
+  #panel h3{margin:10px 0 4px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6f86a6}
+  #panel h3:first-child{margin-top:0}
+  label{display:flex;justify-content:space-between;align-items:center;margin:6px 0;font-size:13px;gap:10px}
+  input[type=range]{flex:1}
+  .row{display:flex;gap:5px;flex-wrap:wrap}
+  button{background:#111a27;color:#cfe3ff;border:1px solid #2a3a52;border-radius:6px;padding:6px 9px;font:inherit;font-size:12.5px}
+  button.on{background:#0f2d47;border-color:#3fb6ff;color:#fff}
+  .hint{font-size:11px;color:#6f86a6;margin-top:10px}
+  output{min-width:40px;text-align:right;color:#fff}
+  #panel input[type=text],#panel input[type=password],#panel select,#panel textarea{width:100%;background:#05080e;color:#cfe3ff;border:1px solid #2a3a52;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;margin:3px 0}
+  #panel textarea{height:90px;resize:vertical}
+  #vlog{font-size:11.5px;max-height:140px;overflow:auto;background:#05080e;border:1px solid #1b2433;border-radius:5px;padding:6px;margin-top:6px}
+  #vlog p{margin:2px 0} #vlog .u{color:#7dffb0} #vlog .a{color:#7fd8ff} #vlog .x{color:#ff8a8a} #vlog .i{color:#ffd84d}
+  #talk.big{width:100%;padding:10px;font-size:14px;margin-top:6px}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#f88;padding:30px;text-align:center}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="err"></div>
+
+<div id="panel">
+  <h3>State</h3>
+  <div class="row" id="states">
+    <button data-s="idle">Idle</button><button data-s="listening">Listening</button>
+    <button data-s="thinking">Thinking</button><button data-s="speaking">Speaking</button>
+    <button data-s="sent">Idea sent</button>
+  </div>
+  <h3>Emotion</h3>
+  <div class="row" id="emos"></div>
+  <h3>Emote (one-shot)</h3>
+  <div class="row">
+    <button data-e="nod">Nod</button><button data-e="shake">Shake</button>
+    <button data-e="jump">Jump</button><button data-e="burst">Burst</button>
+  </div>
+  <h3>Particles</h3>
+  <label>Dissolve <input id="dis" type="range" min="0" max="100" value="0"><output id="disO">0</output></label>
+  <h3>Placement</h3>
+  <label>Diameter <input id="dia" type="range" min="150" max="900"><output id="diaO"></output></label>
+  <label>Offset X <input id="ox" type="range" min="-500" max="500"><output id="oxO"></output></label>
+  <label>Offset Y <input id="oy" type="range" min="-500" max="500"><output id="oyO"></output></label>
+  <label>Brightness <input id="br" type="range" min="20" max="150"><output id="brO"></output></label>
+  <div class="row" style="margin-top:6px">
+    <button id="flip">Flip vertical</button><button id="guide">Guide circle</button>
+    <button id="demo">Demo loop</button><button id="mic">Use mic</button>
+  </div>
+  <h3>Voice assistant</h3>
+  <button id="talk" class="big">▶ Start conversation</button>
+  <div class="row" style="margin-top:5px"><button id="autoListen">Hands-free</button><button id="vSettingsBtn">Settings</button></div>
+  <div id="vSettings" style="display:none">
+    <select id="vProv"><option value="gemini">Provider: Google Gemini</option><option value="claude">Provider: Anthropic Claude</option></select>
+    <input id="vGKey" type="password" placeholder="Gemini API key (from Google AI Studio)">
+    <input id="vGModel" type="text" placeholder="Gemini model">
+    <input id="vKey" type="password" placeholder="Anthropic API key (sk-ant-…)">
+    <input id="vProxy" type="text" placeholder="Proxy URL (optional, hides the key)">
+    <input id="vModel" type="text" placeholder="Model">
+    <select id="vLang"><option value="en-IN">English (India)</option><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="hi-IN">Hindi</option></select>
+    <select id="vVoice"></select>
+    <input id="vWall" type="text" placeholder="LED wall webhook URL (optional)">
+    <input id="vBooth" type="text" placeholder="Booth name, e.g. Booth 1">
+    <textarea id="vSys" placeholder="Brief for the assistant"></textarea>
+  </div>
+  <input id="vType" type="text" placeholder="…or type here and press Enter">
+  <div id="vlog"></div>
+  <div class="row" style="margin-top:6px"><button id="fs">Fullscreen</button><button id="close">Hide panel</button></div>
+  <div class="hint">Tap the orb to talk. Triple-tap to open/close. Drag to spin the orb. Settings are saved on this iPad.<br>
+  Keys: 1–5 states · q w e r t y u emotions · n/s/j/b emotes · space dissolve · p panel</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+const DEF={dia:452,ox:0,oy:0,br:100,flip:true,guide:false,demo:true};
+let S=Object.assign({},DEF);
+try{Object.assign(S,JSON.parse(localStorage.getItem('orbSettings3d')||'{}'));}catch(e){}
+const save=()=>{try{localStorage.setItem('orbSettings3d',JSON.stringify(S));}catch(e){}};
+
+/* =========================================================
+   EMOTIONS  – each is a set of parameters the orb eases toward
+   ========================================================= */
+const EMO={
+  neutral  :{col:[.22,.66,1.0], int:1.0, spread:1.0, speed:1.0, orbit:.30, bounce:.03, droop:0,   jitter:0,   k:.34, tilt:0,   roll:0,   spin:.22, scale:1.0,  spark:0,   lean:0},
+  happy    :{col:[.32,.88,1.0], int:1.25,spread:1.05,speed:1.8, orbit:.65, bounce:.16, droop:-.18,jitter:0,   k:.40, tilt:.05, roll:0,   spin:.5,  scale:1.05, spark:.25, lean:0},
+  curious  :{col:[.28,.78,.95], int:1.1, spread:1.12,speed:.8,  orbit:.15, bounce:.02, droop:0,   jitter:0,   k:.30, tilt:.25, roll:.35, spin:.08, scale:1.0,  spark:0,   lean:.9},
+  sad      :{col:[.10,.26,.80], int:.55, spread:.82, speed:.45, orbit:.08, bounce:.0,  droop:.38, jitter:0,   k:.46, tilt:-.3, roll:0,   spin:.05, scale:.9,   spark:0,   lean:0},
+  excited  :{col:[.50,.95,1.0], int:1.4, spread:1.35,speed:2.6, orbit:1.3, bounce:.10, droop:-.05,jitter:.07, k:.28, tilt:0,   roll:0,   spin:1.3, scale:1.08, spark:.6,  lean:0},
+  surprised:{col:[.70,.92,1.0], int:1.5, spread:1.55,speed:1.1, orbit:.05, bounce:0,   droop:0,   jitter:.02, k:.20, tilt:.15, roll:0,   spin:.05, scale:1.16, spark:.35, lean:0},
+  angry    :{col:[1.0,.28,.16], int:1.2, spread:.88, speed:2.2, orbit:.4,  bounce:0,   droop:.05, jitter:.12, k:.18, tilt:-.15,roll:0,   spin:.7,  scale:1.0,  spark:.2,  lean:0},
+};
+const KEYS=Object.keys(EMO.neutral);
+const P=JSON.parse(JSON.stringify(EMO.neutral));   // live, eased params
+
+let state='idle', emotion='neutral', amp=0, ripple=0, dis=0, disTarget=0;
+let sentT=-99, emoteT=-99, emoteType='', micAmp=null, extLevel=0, extT=-1e9;
+let phase=0, orbitAcc=0, yaw=0, dragYaw=0, dragPitch=0;
+
+function setState(s){
+  if(s==='sent'){ sentT=now(); return; }
+  if(['idle','listening','thinking','speaking'].includes(s)) state=s;
+  markButtons();
+}
+function setEmotion(e){ if(EMO[e]){ emotion=e; if(e==='surprised') emote('jump'); markButtons(); } }
+function emote(e){ emoteType=e; emoteT=now(); if(e==='burst') sentT=-99, burstT=now(); }
+let burstT=-99;
+function setParticles(v){ disTarget=Math.max(0,Math.min(1,+v)); $('dis').value=Math.round(disTarget*100); $('disO').textContent=Math.round(disTarget*100); }
+const now=()=>performance.now()/1000;
+
+/* Hooks for the voice agent (same page or via postMessage):
+   orb.setState('idle'|'listening'|'thinking'|'speaking'|'sent')
+   orb.setEmotion('neutral'|'happy'|'curious'|'sad'|'excited'|'surprised'|'angry')
+   orb.emote('nod'|'shake'|'jump'|'burst')
+   orb.setParticles(0..1)      // 1 = fully dissolved into particles
+   orb.setLevel(0..1)          // live audio level, drives speaking/listening motion
+   postMessage({orb:'speaking', emotion:'happy', emote:'nod', particles:0, level:.5}) */
+window.orb={setState,setEmotion,emote,setParticles,setLevel:v=>{extLevel=Math.max(0,Math.min(1,v)); extT=performance.now();}};
+addEventListener('message',e=>{
+  const d=e.data||{}; let ext=false;
+  if(typeof d.orb==='string'){setState(d.orb);ext=true;}
+  if(typeof d.emotion==='string'){setEmotion(d.emotion);ext=true;}
+  if(typeof d.emote==='string'){emote(d.emote);ext=true;}
+  if(typeof d.particles==='number'){setParticles(d.particles);ext=true;}
+  if(typeof d.level==='number') window.orb.setLevel(d.level);
+  if(ext && S.demo){S.demo=false; syncUI(); if(typeof d.particles!=="number") setParticles(0);}
+});
+
+/* =========================================================
+   WEBGL
+   ========================================================= */
+const cv=document.getElementById('c');
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false,premultipliedAlpha:false});
+if(!gl){ const e=document.getElementById('err'); e.style.display='flex'; e.textContent='WebGL2 not available on this device.'; throw 0; }
+
+const NB=7;            // number of metaballs
+const COMMON=`
+const float F=2.6; const float CZ=4.0;
+uniform vec2 uRes; uniform vec2 uCenter; uniform float uRad; uniform float uFlip;
+uniform mat3 uRot; uniform float uTime; uniform vec3 uCol; uniform float uInt;
+`;
+
+const RAY_VS=`#version 300 es
+void main(){ vec2 p=vec2((gl_VertexID<<1)&2, gl_VertexID&2); gl_Position=vec4(p*2.-1.,0,1); }`;
+
+const RAY_FS=`#version 300 es
+precision highp float;
+out vec4 o;
+${COMMON}
+uniform vec4 uB[${NB}]; uniform float uK; uniform float uRipple; uniform float uAmp;
+uniform float uGuide; uniform float uSolid;
+
+float smin(float a,float b,float k){ k=max(k,1e-4); float h=clamp(.5+.5*(b-a)/k,0.,1.); return mix(b,a,h)-k*h*(1.-h); }
+
+float map(vec3 p, out vec3 q){
+  q = transpose(uRot)*p;                       // world -> object space
+  float d=1e3;
+  for(int i=0;i<${NB};i++){ if(uB[i].w>0.001) d=smin(d,length(q-uB[i].xyz)-uB[i].w,uK); }
+  // listening / speaking surface ripples
+  d += uRipple*.035*sin(q.x*10.+uTime*5.)*sin(q.y*10.-uTime*4.3)*sin(q.z*10.+uTime*3.1);
+  return d;
+}
+float map(vec3 p){ vec3 q; return map(p,q); }
+
+void main(){
+  vec2 uv=(gl_FragCoord.xy-uCenter)/uRad;
+  if(uFlip>.5) uv.y=-uv.y;
+  float r=length(uv);
+  vec3 col=vec3(0);
+  float ring = uGuide*smoothstep(1.5,0.,abs(r-1.)*uRad);
+  if(r>1.){ o=vec4(vec3(1.,.15,.25)*ring,1); return; }
+
+  if(uSolid>.002){
+    vec3 ro=vec3(0,0,CZ), rd=normalize(vec3(uv,-F));
+    float t=CZ-2.2, d=1e3, md=1e3; bool hit=false; vec3 q;
+    for(int i=0;i<80;i++){
+      d=map(ro+rd*t,q); md=min(md,d);
+      if(d<.0012){hit=true;break;}
+      t+=d*.85; if(t>CZ+2.5) break;
+    }
+    if(hit){
+      vec3 p=ro+rd*t; vec2 e=vec2(.0015,0);
+      vec3 n=normalize(vec3(map(p+e.xyy)-map(p-e.xyy), map(p+e.yxy)-map(p-e.yxy), map(p+e.yyx)-map(p-e.yyx)));
+      map(p,q);
+      vec3 nq=transpose(uRot)*n;
+      float ndv=max(dot(n,-rd),0.);
+      float fr=pow(1.-ndv,3.2);
+      vec3 L=normalize(vec3(-.45,.75,.55));
+      float spec=pow(max(dot(reflect(rd,n),L),0.),60.);
+      float dif=max(dot(n,L),0.);
+
+      // energy lines in object space: show depth + rotation
+      float lat = pow(abs(sin(q.y*16.+uTime*.6)),60.);
+      float lon = pow(abs(sin(atan(q.z,q.x)*6.)),80.)*smoothstep(.0,.3,1.-abs(nq.y));
+      float lines=(lat+lon)*(.15+.6*uAmp)*smoothstep(.1,.6,ndv);
+
+      col  = uCol*fr*1.5;                 // rim
+      col += uCol*lines*.55;              // surface lines
+      col += uCol*dif*.035;               // almost-black body
+      col += vec3(.8,.95,1.)*spec*.45;    // tight highlight
+      col *= uInt;
+    }else{
+      col += uCol*exp(-md*26.)*.07*uInt;  // small, tight halo (low bloom)
+    }
+    col *= uSolid;
+  }
+  col = pow(col, vec3(1.35));            // crush the blacks
+  col *= smoothstep(1.,.9,r);
+  col += vec3(1.,.15,.25)*ring;
+  o=vec4(col,1);
+}`;
+
+const PT_VS=`#version 300 es
+precision highp float;
+${COMMON}
+layout(location=0) in vec4 aD;   // xyz unit dir, w seed
+layout(location=1) in float aB;  // which metaball
+uniform vec4 uP[${NB}];          // full-size blobs (for particle homes)
+uniform float uDis; uniform float uSpark; uniform float uSent; uniform float uBurst; uniform float uDpr;
+out float vA; out vec2 vUv;
+void main(){
+  vec4 b=uP[int(aB)];
+  float s=aD.w;
+  vec3 home=b.xyz+aD.xyz*b.w*1.03;
+  vec3 swirl=vec3(sin(uTime*.7+s*40.), cos(uTime*.55+s*31.), sin(uTime*.5+s*17.));
+  float d=uDis;
+  vec3 obj=home + aD.xyz*(.25+s*1.3)*d + swirl*.22*d;
+  // burst: quick outward explosion
+  obj += aD.xyz*uBurst*(.6+s*1.4);
+  vec3 w=uRot*obj;
+  // idea sent: a stream of particles shoots upward (toward the LED wall)
+  float sentMask=step(s,.35);
+  w.y += sentMask*uSent*uSent*(2.5+s*3.);
+  w.xz *= 1.-sentMask*uSent*.5;
+
+  float persp=F/(CZ-w.z);
+  vec2 uv=w.xy*persp;
+  vUv=uv;
+  vec2 sv=uv; if(uFlip>.5) sv.y=-sv.y;
+  vec2 scr=uCenter+sv*uRad;
+  gl_Position=vec4(scr/uRes*2.-1.,0,1);
+  gl_PointSize=(1.2+s*2.4)*uDpr*persp*.55;
+
+  float vis=max(d, uSpark*step(s,.12)*(.5+.5*sin(uTime*3.+s*90.)));
+  vis=max(vis, sentMask*sin(clamp(uSent,0.,1.)*3.14159));
+  vis=max(vis, (uBurst>0.?1.:0.)*(1.-uBurst/1.6));
+  float back = w.z<0. ? mix(1.,.35,1.-d) : 1.;   // particles behind a solid orb are dimmer
+  vA=vis*back*smoothstep(1.,.8,length(uv))*(.5+.5*s);
+}`;
+
+const PT_FS=`#version 300 es
+precision highp float;
+uniform vec3 uCol; uniform float uInt;
+in float vA; in vec2 vUv;
+out vec4 o;
+void main(){
+  if(length(vUv)>1.) discard;
+  vec2 c=gl_PointCoord*2.-1.; float m=1.-dot(c,c); if(m<=0.) discard;
+  vec3 col=mix(uCol,vec3(.85,.97,1.),.35)*m*m*vA*uInt*.9;
+  o=vec4(col,1);
+}`;
+
+function prog(vs,fs){
+  const mk=(t,s)=>{const sh=gl.createShader(t); gl.shaderSource(sh,s); gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(sh); return sh;};
+  const p=gl.createProgram(); gl.attachShader(p,mk(gl.VERTEX_SHADER,vs)); gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw gl.getProgramInfoLog(p);
+  const u={}; const n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){const a=gl.getActiveUniform(p,i); u[a.name.replace('[0]','')]=gl.getUniformLocation(p,a.name);}
+  return {p,u};
+}
+let RAY,PT;
+try{ RAY=prog(RAY_VS,RAY_FS); PT=prog(PT_VS,PT_FS); }
+catch(e){ const el=document.getElementById('err'); el.style.display='flex'; el.textContent='Shader error: '+e; throw e; }
+
+// particles
+const NP=4200;
+const pd=new Float32Array(NP*4), pb=new Float32Array(NP);
+for(let i=0;i<NP;i++){
+  let x,y,z,l; do{x=Math.random()*2-1;y=Math.random()*2-1;z=Math.random()*2-1;l=x*x+y*y+z*z;}while(l>1||l<.01);
+  l=Math.sqrt(l); pd.set([x/l,y/l,z/l,Math.random()],i*4);
+  pb[i]= Math.random()<.42 ? 0 : 1+Math.floor(Math.random()*(NB-1));
+}
+const vao=gl.createVertexArray(); gl.bindVertexArray(vao);
+const b1=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b1); gl.bufferData(gl.ARRAY_BUFFER,pd,gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,4,gl.FLOAT,false,0,0);
+const b2=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b2); gl.bufferData(gl.ARRAY_BUFFER,pb,gl.STATIC_DRAW);
+gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
+const emptyVao=gl.createVertexArray();
+
+let W,H,dpr;
+function resize(){ dpr=Math.min(window.devicePixelRatio||1,1.6); W=innerWidth; H=innerHeight; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+addEventListener('resize',resize); resize();
+
+/* =========================================================
+   ANIMATION
+   ========================================================= */
+function rotMat(yaw,pitch,roll){ // returns column-major R = Ry*Rx*Rz
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cx=Math.cos(pitch),sx=Math.sin(pitch),cz=Math.cos(roll),sz=Math.sin(roll);
+  const Ry=[[cy,0,sy],[0,1,0],[-sy,0,cy]], Rx=[[1,0,0],[0,cx,-sx],[0,sx,cx]], Rz=[[cz,-sz,0],[sz,cz,0],[0,0,1]];
+  const mul=(A,B)=>A.map((r,i)=>B[0].map((_,j)=>r[0]*B[0][j]+r[1]*B[1][j]+r[2]*B[2][j]));
+  const M=mul(mul(Ry,Rx),Rz);
+  return new Float32Array([M[0][0],M[1][0],M[2][0], M[0][1],M[1][1],M[2][1], M[0][2],M[1][2],M[2][2]]);
+}
+const blobs=new Float32Array(NB*4), blobsFull=new Float32Array(NB*4);
+let last=now();
+
+function frame(){
+  const t=now(), dt=Math.min(.05,t-last); last=t;
+
+  // ease emotion params
+  const tgt=EMO[emotion], ke=Math.min(1,dt*2.6);
+  for(const k of KEYS){
+    if(k==='col') for(let i=0;i<3;i++) P.col[i]+=(tgt.col[i]-P.col[i])*ke;
+    else P[k]+=(tgt[k]-P[k])*ke;
+  }
+
+  // audio level
+  let a=0;
+  if(performance.now()-extT<300) a=extLevel;
+  else if(micAmp!==null && state==='listening') a=micAmp;
+  else if(state==='listening'||state==='speaking') a=.3+.45*Math.abs(Math.sin(t*9.3))*Math.abs(Math.sin(t*3.1))+.1*Math.random();
+  amp+=(a-amp)*.22;
+
+  // state modifiers
+  const thinking=state==='thinking', speaking=state==='speaking', listening=state==='listening';
+  ripple+=(((listening?.6+amp:0)+(speaking?.25*amp:0))-ripple)*.1;
+  const orbitBoost = thinking?2.2:0;
+  const kMod = thinking? .7 : 1;
+  dis+=(disTarget-dis)*Math.min(1,dt*1.6);
+
+  phase   += dt*P.speed;
+  orbitAcc+= dt*(P.orbit+orbitBoost)*P.speed*(thinking?1.6:1);
+  yaw     += dt*(P.spin+(thinking?.4:0));
+
+  // one-shot emotes
+  const et=t-emoteT, env=Math.exp(-et*3.2)*(et<2?1:0);
+  let ePitch=0,eYaw=0,eY=0;
+  if(emoteType==='nod')   ePitch=Math.sin(et*13)*.35*env;
+  if(emoteType==='shake') eYaw  =Math.sin(et*15)*.45*env;
+  if(emoteType==='jump')  eY    =Math.max(0,Math.sin(et*6))*.35*env;
+
+  const shrink=Math.pow(1-dis,.7);
+  const breathe=1+.03*Math.sin(t*1.4);
+  const speakPulse=1+(speaking?.22*amp:0)+(listening?.06*amp:0);
+
+  // core
+  const coreY=P.bounce*Math.abs(Math.sin(phase*3))+eY - P.droop*.15;
+  const cr=.5*P.scale*breathe*speakPulse;
+  blobsFull.set([0,coreY,0,cr],0); blobs.set([0,coreY,0,cr*shrink],0);
+
+  // satellites
+  for(let i=1;i<NB;i++){
+    const ang=i*(Math.PI*2/(NB-1))+orbitAcc;
+    const inc=Math.sin(phase*.6+i*1.7)*.65;
+    const dist=.56*P.spread*P.scale*(1+.18*Math.sin(phase*1.3+i*2.1))*(thinking?1.1:1);
+    let x=Math.cos(ang)*Math.cos(inc)*dist, y=Math.sin(inc)*dist, z=Math.sin(ang)*Math.cos(inc)*dist;
+    y-=P.droop*.55; y+=coreY*.8;
+    x+=P.jitter*Math.sin(t*37+i*11); y+=P.jitter*Math.sin(t*41+i*7); z+=P.jitter*Math.sin(t*29+i*5);
+    if(i===1 && P.lean>0){ // curious: one blob reaches toward the viewer
+      const l=P.lean*(.75+.1*Math.sin(t*2)); x+= (0.18-x)*l; y+=(0.22-y)*l; z+=(0.82-z)*l;
+    }
+    const r=.26*P.scale*(1+.14*Math.sin(phase*2+i))*(speaking?1+.3*amp*Math.abs(Math.sin(t*7+i)):1);
+    blobsFull.set([x,y,z,r],i*4); blobs.set([x,y,z,r*shrink],i*4);
+  }
+
+  const pitch=P.tilt*.5+Math.sin(t*.31)*.12+ePitch+dragPitch;
+  const R=rotMat(yaw+eYaw+dragYaw, pitch, P.roll*.5+Math.sin(t*.23)*.05);
+
+  // common uniforms
+  const cx=W/2+S.ox, cy=H/2+S.oy;
+  const center=[cx*dpr,(H-cy)*dpr], rad=S.dia/2*dpr, inten=P.int*(S.br/100);
+  const sentP=(t-sentT)/1.5, sent= sentP>=0&&sentP<=1 ? sentP : 0;
+  const bt=t-burstT, burst= bt>=0&&bt<1.6 ? (1-Math.exp(-bt*4))*1.6*Math.exp(-Math.max(0,bt-.6)*2) : 0;
+
+  gl.viewport(0,0,cv.width,cv.height);
+  gl.disable(gl.BLEND);
+  gl.useProgram(RAY.p); gl.bindVertexArray(emptyVao);
+  const U=RAY.u;
+  gl.uniform2f(U.uRes,cv.width,cv.height); gl.uniform2f(U.uCenter,...center); gl.uniform1f(U.uRad,rad);
+  gl.uniform1f(U.uFlip,S.flip?1:0); gl.uniformMatrix3fv(U.uRot,false,R); gl.uniform1f(U.uTime,t);
+  gl.uniform3fv(U.uCol,P.col); gl.uniform1f(U.uInt,inten);
+  gl.uniform4fv(U.uB,blobs); gl.uniform1f(U.uK,P.k*kMod*Math.max(.05,shrink));
+  gl.uniform1f(U.uRipple,ripple); gl.uniform1f(U.uAmp,amp);
+  gl.uniform1f(U.uGuide,S.guide?1:0); gl.uniform1f(U.uSolid,Math.max(0,1-dis*1.15));
+  gl.drawArrays(gl.TRIANGLES,0,3);
+
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE);
+  gl.useProgram(PT.p); gl.bindVertexArray(vao);
+  const V=PT.u;
+  gl.uniform2f(V.uRes,cv.width,cv.height); gl.uniform2f(V.uCenter,...center); gl.uniform1f(V.uRad,rad);
+  gl.uniform1f(V.uFlip,S.flip?1:0); gl.uniformMatrix3fv(V.uRot,false,R); gl.uniform1f(V.uTime,t);
+  gl.uniform3fv(V.uCol,P.col); gl.uniform1f(V.uInt,inten);
+  gl.uniform4fv(V.uP,blobsFull); gl.uniform1f(V.uDis,dis); gl.uniform1f(V.uSpark,P.spark);
+  gl.uniform1f(V.uSent,sent); gl.uniform1f(V.uBurst,burst); gl.uniform1f(V.uDpr,dpr);
+  gl.drawArrays(gl.POINTS,0,NP);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =========================================================
+   DEMO LOOP (until the real agent drives it)
+   ========================================================= */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+(async function demo(){
+  let n=0;
+  while(true){
+    if(!S.demo){ await sleep(400); continue; }
+    n++;
+    setState('idle'); setEmotion('neutral');
+    if(n%2===1){ setParticles(1); await sleep(3500); if(!S.demo) continue; setParticles(0); await sleep(1500); }
+    else await sleep(2500);
+    if(!S.demo) continue;
+    setEmotion('happy'); emote('nod'); setState('speaking'); await sleep(2600);
+    for(let i=0;i<2 && S.demo;i++){
+      setEmotion('neutral'); setState('listening'); await sleep(2800); if(!S.demo) break;
+      setEmotion('curious'); setState('thinking'); await sleep(1800); if(!S.demo) break;
+      setEmotion(pick(['excited','happy','surprised'])); setState('speaking'); await sleep(3200); if(!S.demo) break;
+      setState('sent'); await sleep(1500);
+    }
+    if(!S.demo) continue;
+    setEmotion('sad'); setState('idle'); await sleep(2200);
+  }
+})();
+
+/* =========================================================
+   MIC (optional test input for listening)
+   ========================================================= */
+async function startMic(){
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:true});
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const an=ac.createAnalyser(); an.fftSize=512; ac.createMediaStreamSource(st).connect(an);
+    const buf=new Uint8Array(an.fftSize);
+    (function loop(){an.getByteTimeDomainData(buf); let s=0; for(const v of buf){const x=(v-128)/128; s+=x*x;}
+      micAmp=Math.min(1,Math.sqrt(s/buf.length)*6); requestAnimationFrame(loop);})();
+    return true;
+  }catch(e){ alert('Mic not available: '+e.message); return false; }
+}
+
+/* =========================================================
+   UI
+   ========================================================= */
+const panel=$("panel");
+const emosEl=$('emos');
+for(const e of Object.keys(EMO)){ const b=document.createElement('button'); b.dataset.m=e; b.textContent=e[0].toUpperCase()+e.slice(1); emosEl.appendChild(b); }
+function stopDemo(){ if(S.demo){S.demo=false; save(); syncUI(); setParticles(0);} }
+function markButtons(){
+  document.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===state));
+  document.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===emotion));
+}
+function syncUI(){
+  for(const k of ['dia','ox','oy','br']){ $(k).value=S[k]; $(k+'O').textContent=S[k]; }
+  $('flip').classList.toggle('on',S.flip); $('guide').classList.toggle('on',S.guide); $('demo').classList.toggle('on',S.demo);
+  markButtons();
+}
+for(const k of ['dia','ox','oy','br']) $(k).oninput=e=>{S[k]=+e.target.value; $(k+'O').textContent=S[k]; save();};
+$('dis').oninput=e=>{stopDemo(); setParticles(e.target.value/100);};
+$('flip').onclick=()=>{S.flip=!S.flip; save(); syncUI();};
+$('guide').onclick=()=>{S.guide=!S.guide; save(); syncUI();};
+$('demo').onclick=()=>{S.demo=!S.demo; save(); syncUI();};
+$('mic').onclick=async e=>{ if(await startMic()) e.target.classList.add('on'); };
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{stopDemo(); setState(b.dataset.s);});
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{stopDemo(); setEmotion(b.dataset.m);});
+document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>emote(b.dataset.e));
+$('fs').onclick=()=>{const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);};
+$('close').onclick=()=>panel.classList.remove('show');
+syncUI();
+
+// triple-tap toggles panel, drag spins orb
+let taps=[], drag=null;
+cv.addEventListener('pointerdown',e=>{
+  const n=performance.now(); taps=taps.filter(x=>n-x<600); taps.push(n);
+  if(taps.length>=3){ panel.classList.toggle('show'); taps=[]; }
+  drag={x:e.clientX,y:e.clientY,yaw:dragYaw,pitch:dragPitch};
+});
+addEventListener('pointermove',e=>{ if(!drag) return;
+  dragYaw=drag.yaw+(e.clientX-drag.x)*.01;
+  dragPitch=Math.max(-1.2,Math.min(1.2,drag.pitch+(e.clientY-drag.y)*.01*(S.flip?-1:1)));
+});
+addEventListener('pointerup',()=>drag=null);
+setInterval(()=>{ if(!drag){ dragPitch*=.96; } },16); // pitch settles back
+
+addEventListener('keydown',e=>{
+  const st={'1':'idle','2':'listening','3':'thinking','4':'speaking','5':'sent'};
+  const em={q:'neutral',w:'happy',e:'curious',r:'sad',t:'excited',y:'surprised',u:'angry'};
+  const ex={n:'nod',s:'shake',j:'jump',b:'burst'};
+  if(st[e.key]){stopDemo(); setState(st[e.key]);}
+  if(em[e.key]){stopDemo(); setEmotion(em[e.key]);}
+  if(ex[e.key]) emote(ex[e.key]);
+  if(e.key===' '){stopDemo(); setParticles(disTarget>.5?0:1);}
+  if(e.key==='p') panel.classList.toggle('show');
+});
+(async()=>{try{await navigator.wakeLock?.request('screen');}catch(e){}})();
+document.addEventListener('visibilitychange',async()=>{if(!document.hidden){try{await navigator.wakeLock?.request('screen');}catch(e){}}});
+</script>
+<script>
+/* =========================================================
+   VOICE ASSISTANT  – speech in → Claude → speech out, driving the orb
+   ========================================================= */
+const VDEF={
+  provider:'gemini', gkey:'', gmodel:'gemini-3.5-flash-lite', key:'', proxy:'', model:'claude-haiku-5-5', lang:'en-IN', voice:'', wall:'', booth:'Booth 1', hands:true,
+  sys:`You are the glowing orb inside a brainstorm booth at a corporate energy event. Visitors pick up a phone handset and brainstorm with you about the future of energy: renewables, grids, storage, hydrogen, efficiency, cities, everyday life.
+Be warm, curious and quick. Speak in 1–2 short sentences (under 35 words): this is spoken aloud, so no lists, no markdown, no emoji.
+Build on the visitor's idea, add one sharp twist, then ask one short question to push it further.
+When the visitor has put forward an idea worth keeping, put a 3–8 word sticky-note version of it in "idea" (written like a headline, no quotes). Otherwise leave "idea" empty. At most one idea per turn.
+Choose the emotion that fits what you are saying. Use emotes sparingly.
+If the visitor says bye, thanks, or wants to stop, say a short goodbye and set end_conversation true.`
+};
+let V=Object.assign({},VDEF);
+try{Object.assign(V,JSON.parse(localStorage.getItem('orbVoice')||'{}'));}catch(e){}
+const vsave=()=>{try{localStorage.setItem('orbVoice',JSON.stringify(V));}catch(e){}};
+
+const RESPOND_TOOL={
+  name:'respond',
+  description:'Your spoken reply plus how the orb should look while saying it.',
+  input_schema:{type:'object',properties:{
+    say:{type:'string',description:'What to say out loud. 1–2 short sentences.'},
+    emotion:{type:'string',enum:['neutral','happy','curious','sad','excited','surprised','angry']},
+    emote:{type:'string',enum:['none','nod','shake','jump','burst']},
+    idea:{type:'string',description:'3–8 word sticky note for the LED wall, or empty string.'},
+    end_conversation:{type:'boolean'}
+  },required:['say','emotion','emote','idea','end_conversation']}
+};
+
+/* ---------- log ---------- */
+function vlog(cls,txt){
+  const el=$('vlog'); if(!el) return; const p=document.createElement('p'); p.className=cls; p.textContent=txt;
+  el.appendChild(p); while(el.children.length>40) el.firstChild.remove(); el.scrollTop=1e9;
+}
+
+/* ---------- level pump: keeps orb.setLevel fed while listening/speaking ---------- */
+let lvlMode='off', lvlKick=0;
+setInterval(()=>{
+  if(lvlMode==='off') return;
+  lvlKick*=.82;
+  const base= lvlMode==='speak' ? .35+.35*Math.abs(Math.sin(performance.now()/90)) : .08;
+  window.orb.setLevel(Math.min(1,base+lvlKick+Math.random()*.08));
+},50);
+
+/* ---------- speech out ---------- */
+let voices=[];
+function loadVoices(){
+  voices=speechSynthesis.getVoices();
+  const sel=$('vVoice'); if(!sel) return;
+  sel.innerHTML='<option value="">Default voice</option>'+voices.map(v=>`<option ${v.name===V.voice?'selected':''}>${v.name}</option>`).join('');
+}
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+
+function speak(text){
+  return new Promise(res=>{
+    if(!('speechSynthesis' in window)){ setTimeout(res,text.length*55); return; }
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    const v=voices.find(v=>v.name===V.voice) || voices.find(v=>v.lang===V.lang) || voices.find(v=>v.lang.startsWith('en'));
+    if(v) u.voice=v; u.lang=v?v.lang:V.lang; u.rate=1.02; u.pitch=1.0;
+    u.onboundary=()=>{ lvlKick=.45; };
+    u.onstart=()=>{ lvlMode='speak'; };
+    let done=false; const fin=()=>{ if(done) return; done=true; lvlMode='off'; res(); };
+    u.onend=fin; u.onerror=fin;
+    setTimeout(fin, 4000+text.length*90);       // safety net (iOS sometimes skips onend)
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ---------- speech in ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function listenOnce(){
+  return new Promise(res=>{
+    if(!SR){ res(null); return; }
+    const r=new SR(); r.lang=V.lang; r.interimResults=true; r.continuous=false; r.maxAlternatives=1;
+    let final='', heard=false, done=false;
+    const fin=v=>{ if(done) return; done=true; lvlMode='off'; try{r.stop();}catch(e){} res(v); };
+    r.onresult=e=>{
+      heard=true; lvlKick=.6; let t='';
+      for(const x of e.results){ t+=x[0].transcript; }
+      final=t;
+      if(e.results[e.results.length-1].isFinal) fin(final.trim());
+    };
+    r.onspeechstart=()=>{ lvlKick=.4; };
+    r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') vlog('x','Mic: '+e.error); fin(final.trim()||null); };
+    r.onend=()=>fin(final.trim()||null);
+    lvlMode='listen';
+    try{ r.start(); }catch(e){ fin(null); }
+    setTimeout(()=>fin(final.trim()||null), 12000);
+    currentRec=r;
+  });
+}
+let currentRec=null;
+
+/* ---------- Claude ---------- */
+async function askClaude(history){
+  const url=V.proxy||'https://api.anthropic.com/v1/messages';
+  const headers={'content-type':'application/json','anthropic-version':'2023-06-01'};
+  if(!V.proxy){
+    if(!V.key) throw new Error('Add an API key or proxy URL in Settings');
+    headers['x-api-key']=V.key;
+    headers['anthropic-dangerous-direct-browser-access']='true';
+  }
+  const body={model:V.model,max_tokens:400,system:V.sys,tools:[RESPOND_TOOL],
+    tool_choice:{type:'tool',name:'respond'},messages:history};
+  const r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
+  if(!r.ok){ const t=await r.text(); throw new Error(r.status+' '+t.slice(0,200)); }
+  const j=await r.json();
+  const tu=(j.content||[]).find(c=>c.type==='tool_use');
+  if(tu) return tu.input;
+  const txt=(j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(' ');
+  return {say:txt||'Sorry, say that again?',emotion:'neutral',emote:'none',idea:'',end_conversation:false};
+}
+
+
+const GEMINI_SCHEMA={type:'OBJECT',properties:{
+  say:{type:'STRING'},
+  emotion:{type:'STRING',enum:['neutral','happy','curious','sad','excited','surprised','angry']},
+  emote:{type:'STRING',enum:['none','nod','shake','jump','burst']},
+  idea:{type:'STRING'},
+  end_conversation:{type:'BOOLEAN'}},
+  required:['say','emotion','emote','idea','end_conversation']};
+async function askGemini(history){
+  if(!V.gkey) throw new Error('Add a Gemini API key in Settings');
+  const model=V.gmodel||VDEF.gmodel;
+  const body={
+    systemInstruction:{parts:[{text:V.sys}]},
+    contents:history.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),
+    generationConfig:{responseMimeType:'application/json',responseSchema:GEMINI_SCHEMA,maxOutputTokens:400}
+  };
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {method:'POST',headers:{'content-type':'application/json','x-goog-api-key':V.gkey},body:JSON.stringify(body)});
+  if(!r.ok){ const t=await r.text(); throw new Error('Gemini '+r.status+' '+t.slice(0,200)); }
+  const j=await r.json();
+  const txt=((j.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+  try{ return JSON.parse(txt); }
+  catch(e){ return {say:txt||'Sorry, say that again?',emotion:'neutral',emote:'none',idea:'',end_conversation:false}; }
+}
+async function askLLM(history){ return V.provider==='claude' ? askClaude(history) : askGemini(history); }
+
+/* ---------- ideas → wall ---------- */
+function sendIdea(idea){
+  setState('sent');
+  vlog('i','✦ '+idea);
+  const payload={type:'idea',text:idea,booth:V.booth,ts:Date.now()};
+  try{ window.parent!==window && window.parent.postMessage(payload,'*'); }catch(e){}
+  try{ new BroadcastChannel('brainstorm-wall').postMessage(payload); }catch(e){}
+  if(V.wall) fetch(V.wall,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).catch(e=>vlog('x','Wall: '+e.message));
+}
+
+/* ---------- conversation loop ---------- */
+let session=0, inConvo=false;
+async function startConversation(){
+  if(inConvo) return;
+  const my=++session; inConvo=true; updTalk();
+  stopDemo(); setParticles(0);
+  const history=[]; let misses=0;
+  const alive=()=>session===my;
+  const turn=async userText=>{
+    history.push({role:'user',content:userText});
+    setState('thinking'); setEmotion('curious');
+    let out;
+    try{ out=await askLLM(history); }
+    catch(e){ vlog('x',e.message); setEmotion('sad'); setState('speaking'); await speak("Sorry, my connection dropped. Try again in a moment."); return 'end'; }
+    if(!alive()) return 'end';
+    history.push({role:'assistant',content:out.say});
+    vlog('a',out.say);
+    setEmotion(out.emotion||'neutral');
+    if(out.emote && out.emote!=='none') emote(out.emote);
+    setState('speaking');
+    await speak(out.say);
+    if(!alive()) return 'end';
+    if(out.idea && out.idea.trim()){ sendIdea(out.idea.trim()); await sleep(900); }
+    return out.end_conversation?'end':'go';
+  };
+
+  // greeting
+  let res=await turn('[A visitor just picked up the phone. Greet them in one short sentence and invite an idea about the future of energy.]');
+  while(alive() && res==='go'){
+    if(!V.hands && !pendingTyped){ setState('idle'); setEmotion('neutral'); await waitForTap(); if(!alive()) break; }
+    setState('listening'); setEmotion('neutral');
+    const heard=await listenOnce();
+    if(!alive()) break;
+    if(!heard){
+      if(pendingTyped) continue;
+      misses++;
+      if(misses>=2){ res=await turn('[The visitor has gone quiet. Say a short friendly goodbye and end the conversation.]'); break; }
+      continue;
+    }
+    misses=0; if(!typedEcho.has(heard)) vlog('u',heard); typedEcho.delete(heard);
+    res=await turn(heard);
+  }
+  if(alive()) endConversation();
+}
+let tapResolver=null;
+const waitForTap=()=>new Promise(r=>tapResolver=r);
+function endConversation(){
+  session++; inConvo=false; lvlMode='off';
+  try{ speechSynthesis.cancel(); }catch(e){} try{ currentRec&&currentRec.abort(); }catch(e){}
+  setState('idle'); setEmotion('neutral'); setTimeout(()=>{ if(!inConvo) setParticles(1); },1500);
+  updTalk();
+}
+function updTalk(){ const b=$('talk'); if(b){ b.textContent=inConvo?'■ End conversation':'▶ Start conversation'; b.classList.toggle('on',inConvo);} }
+
+/* typed input (testing / no speech recognition) */
+async function typed(text){
+  vlog('u',text); typedEcho.add(text);
+  // inject as if heard: cancel any listen and push through a one-off turn
+  try{ currentRec&&currentRec.abort(); }catch(e){}
+  pendingTyped=text;
+  if(!inConvo){ startConversation(); return; }
+  if(tapResolver){ const r=tapResolver; tapResolver=null; r(); }
+}
+let pendingTyped=null; const typedEcho=new Set();
+const _listenOnce=listenOnce;
+listenOnce=async function(){ if(pendingTyped){ const t=pendingTyped; pendingTyped=null; return t; } return _listenOnce(); };
+
+/* ---------- UI wiring ---------- */
+function syncVoiceUI(){
+  $('vProv').value=V.provider; $('vGKey').value=V.gkey; $('vGModel').value=V.gmodel;
+  $('vKey').value=V.key; $('vProxy').value=V.proxy; $('vModel').value=V.model; $('vLang').value=V.lang;
+  $('vWall').value=V.wall; $('vBooth').value=V.booth; $('vSys').value=V.sys;
+  $('autoListen').classList.toggle('on',V.hands);
+}
+for(const [id,k] of [['vProv','provider'],['vGKey','gkey'],['vGModel','gmodel'],['vKey','key'],['vProxy','proxy'],['vModel','model'],['vLang','lang'],['vWall','wall'],['vBooth','booth'],['vSys','sys'],['vVoice','voice']])
+  $(id).addEventListener('change',e=>{ V[k]=e.target.value.trim()||(k in {model:1,gmodel:1,sys:1,provider:1}?VDEF[k]:''); vsave(); });
+$('autoListen').onclick=()=>{ V.hands=!V.hands; vsave(); syncVoiceUI(); };
+$('vSettingsBtn').onclick=()=>{ const s=$('vSettings'); s.style.display=s.style.display==='none'?'block':'none'; };
+$('talk').onclick=()=>{ inConvo?endConversation():startConversation(); };
+$('vType').addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.value.trim()){ typed(e.target.value.trim()); e.target.value=''; } });
+syncVoiceUI(); updTalk();
+if(!SR) vlog('x','Speech recognition not supported in this browser. Use Safari (iOS 14.5+) or Chrome, or type below.');
+if(V.provider==='gemini' ? !V.gkey : (!V.key && !V.proxy)) vlog('x','Open Settings and add your '+(V.provider==='gemini'?'Gemini':'Anthropic')+' API key.');
+
+/* single tap on the orb = start / next turn (push-to-talk) / end; triple-tap still opens the panel */
+let vt=[], vtTimer=null, downXY=null;
+cv.addEventListener('pointerdown',e=>{ downXY=[e.clientX,e.clientY]; });
+cv.addEventListener('pointerup',e=>{
+  if(downXY && Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>12) return;  // was a drag
+  vt.push(performance.now()); clearTimeout(vtTimer);
+  vtTimer=setTimeout(()=>{
+    const n=vt.length; vt=[];
+    if(n!==1) return;
+    if(tapResolver){ const r=tapResolver; tapResolver=null; r(); return; }
+    if(!inConvo) startConversation();
+  },450);
+});
+
+</script>
+</body>
+</html>

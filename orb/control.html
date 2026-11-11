@@ -56,8 +56,6 @@
     <div class="row" style="margin-top:5px"><button data-c="emote" data-a="nod">Nod</button><button data-c="emote" data-a="shake">Shake</button><button data-c="emote" data-a="jump">Jump</button><button data-c="emote" data-a="burst">Burst</button></div>
     <h3>Scene</h3>
     <div class="row"><button data-c="scene" data-a="auto">Auto (base state)</button><button data-c="scene" data-a="clear">Clear</button><button data-c="scene" data-a="logo">Logo</button><button data-c="scene" data-a="transfer">Transfer</button><button data-c="scene" data-a="flow">Flow</button><button data-c="clearNotes">Clear notes</button></div>
-    <h3>Aesthetic</h3>
-    <div class="row" id="themes"></div>
     <h3>Words on the glass</h3>
     <textarea id="txt" rows="2" placeholder="Type something…"></textarea>
     <div class="row">
@@ -93,34 +91,34 @@ let col=THEME.seance;
 function tint(k){ if(THEME[k]){ col=THEME[k]; document.documentElement.style.setProperty('--c',col); } }
 
 /* ---------- the deck ---------- */
+// [ms, command, ...args]. toLaptop/toGlass move the ONE ghost between this screen and the glass; goto moves it around the laptop.
 const SLIDES=[
   {kick:'Brainstorm Booths', title:'Talk to a ghost in a glass.', line:'A small glowing being lives inside a glass vessel. You speak to it, and your ideas take shape in front of you.',
-   cue:[[0,'listen',0],[0,'hide'],[0,'scene','clear'],[0,'clearNotes'],[0,'theme','seance'],[0,'dissolve',1],[0,'emotion','neutral'],[900,'show'],[1600,'dissolve',0],
-        [3400,'emote','nod'],[3600,'say','Hello. I live in the glass. Speak to me, and I will remember.']]},
+   cue:[[0,'listen',0],[0,'scene','clear'],[0,'clearNotes'],[0,'theme','seance'],[0,'emotion','neutral'],[0,'hide'],[0,'dissolve',1],
+        [600,'toLaptop','right'],[2600,'emote','nod'],[2800,'say','Hello. I live in the glass. Speak to me, and I will remember.'],
+        [9000,'goto','title'],[10500,'say','Let me show you my home.'],[13500,'toGlass']]},
   {kick:'How it works', title:'Pick up. Speak. Watch.', line:'Anyone walks up, picks up the handset and says an idea out loud.',
    pts:['It listens, and its eyes open wide','Your words appear in the glass','It answers in its own strange voice','A good idea becomes a sticky note'], ask:true,
-   cue:[[0,'show'],[0,'scene','clear'],[300,'ask','Tell me an idea for tomorrow’s energy.',
+   cue:[[0,'toGlass'],[0,'scene','clear'],[1600,'ask','Tell me an idea for tomorrow’s energy.',
         {text:'What if bus stops ran on sunlight and charged your phone?',reply:'Sunlit shelters. I like that very much.',idea:'Solar bus stops'}]]},
   {kick:'Words become matter', title:'What you say, you can see.', line:'Spoken words appear in old-book type, then fall, burn away, or get swallowed by the orb.',
-   cue:[[0,'show'],[0,'scene','clear'],[200,'say','Your words become something you can see.'],
-        [3200,'text','Heat that warms one home could warm the whole street.','rain','collapse',2],
-        [9000,'text','Speak, and I shall remember.','scramble','burn',1.6],
-        [13500,'text','Every rooftop, a little wind garden.','assemble','scatter',1.8]]},
+   cue:[[0,'toGlass'],[0,'scene','clear'],[400,'say','Your words become something you can see.'],
+        [3400,'text','Heat that warms one home could warm the whole street.','rain','collapse',2],
+        [9200,'text','Speak, and I shall remember.','scramble','burn',1.6],
+        [13700,'text','Every rooftop, a little wind garden.','assemble','scatter',1.8]]},
   {kick:'Ideas you can hold', title:'Good ideas become sticky notes.', line:'They drop, tumble and stack inside the glass, then fly out to the big wall for everyone to see.',
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','excited'],[200,'say','Good ideas become notes. I keep every one.'],
-        [2800,'note','Rooftop wind gardens'],[4200,'note','Heat-sharing streets'],[5600,'note','Ice batteries for summer'],[7000,'emote','jump']]},
+   cue:[[0,'toGlass'],[0,'scene','clear'],[0,'emotion','excited'],[400,'say','Good ideas become notes. I keep every one.'],
+        [3000,'note','Rooftop wind gardens'],[4400,'note','Heat-sharing streets'],[5800,'note','Ice batteries for summer'],[7200,'emote','jump']]},
   {kick:'It has feelings', title:'It reacts, like a creature would.', line:'Curious at odd ideas, delighted by bold ones, surprised by wild ones. Its face is made of simple characters.',
    pts:['curious   o O','delighted   ^ ^','surprised   O O','thinking   @ @'],
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','curious'],[300,'say','I feel things too.'],[2600,'emotion','happy'],[2700,'emote','nod'],
-        [4400,'emotion','surprised'],[4500,'say','Oh!'],[6400,'state','thinking'],[8400,'state','idle'],[8400,'emotion','sad'],[10000,'emotion','neutral']]},
-  {kick:'One object, many moods', title:'Six looks for six brands.', line:'Séance, Holo, Ember, Phosphor, Ultraviolet, Gilded. Each recolours the being, its words and its notes.',
-   cue:[[0,'show'],[0,'say','I can wear many colours.'],[1800,'theme','ember'],[3600,'theme','holo'],[5400,'theme','phosphor'],[7200,'theme','ultraviolet'],[9000,'theme','gilded'],[10800,'theme','seance']]},
+   cue:[[0,'toLaptop','list'],[0,'emotion','curious'],[1800,'say','I feel things too.'],[4000,'goto','right'],[4200,'emotion','happy'],[4300,'emote','nod'],
+        [6200,'emotion','surprised'],[6300,'say','Oh!'],[8000,'goto','title'],[8200,'state','thinking'],[10200,'state','idle'],[10200,'emotion','sad'],[12000,'emotion','neutral'],[12200,'goto','right']]},
   {kick:'Brand moments', title:'Between two vessels.', line:'Particles stream across, a logo assembles itself, and the being travels from one glass to the other.',
-   cue:[[0,'show'],[0,'scene','flow'],[200,'say','I can travel between vessels.'],[3000,'scene','logo'],[8000,'scene','clear'],[8500,'scene','transfer'],[12500,'scene','transfer']]},
-  {kick:'Appear on cue', title:'It shows up only when it should.', line:'The hologram can vanish and return on cue, hiding behind a reveal or waking up for a keynote moment.',
-   cue:[[0,'show'],[200,'say','Now you see me.'],[2600,'dissolve',1],[3600,'hide'],[6000,'show'],[6200,'dissolve',0],[7600,'emote','burst'],[7700,'emotion','happy'],[8000,'say','And now, I am back.']]},
+   cue:[[0,'toGlass'],[1600,'scene','flow'],[1800,'say','I can travel between vessels.'],[4600,'scene','logo'],[9600,'scene','clear'],[10100,'scene','transfer'],[14100,'scene','transfer']]},
+  {kick:'Appear on cue', title:'It shows up only when it should.', line:'It can vanish and return on cue, hiding behind a reveal or waking up for a keynote moment.',
+   cue:[[0,'toGlass'],[1400,'say','Now you see me.'],[3800,'toLaptop','center'],[6000,'emote','burst'],[6100,'emotion','happy'],[6200,'say','And now, I am here.'],[10000,'toGlass']]},
   {kick:'Every idea, kept', title:'Every idea, kept.', line:'Everything said in the room today, gathered in one place. Now it is listening. Go ahead and try it.', finale:true, ask:true,
-   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','happy'],[300,'say','Every idea, kept. Now, tell me yours.'],[5000,'scene','auto'],[5100,'listen',1]]},
+   cue:[[0,'toGlass'],[0,'scene','clear'],[0,'emotion','happy'],[1600,'say','Every idea, kept. Now, tell me yours.'],[6000,'scene','auto'],[6100,'listen',1]]},
 ];
 const LINES=[]; SLIDES.forEach(S=>S.cue.forEach(c=>{ if(c[1]==='say') LINES.push(c[2]); if(c[1]==='ask'){ LINES.push(c[2]); if(c[3]) LINES.push(c[3].reply); } }));
 
@@ -137,12 +135,21 @@ function render(){
 }
 function go(i){
   const n=Math.max(0,Math.min(SLIDES.length-1,i)); if(n===cur && i!==cur) return;
-  slideEl.classList.add('out');
+  slideEl.classList.add('out'); for(const c of captions) c.kill=now();
   setTimeout(()=>{ slideEl.classList.remove('out'); cur=n; render(); fire(); },380);
+}
+function expand(cue){                       // the iPad only hears about show/hide/dissolve, the laptop does the travelling
+  const out=[];
+  for(const st of cue){ const [d,c]=st;
+    if(c==='toLaptop'){ if(ghostHere) continue; out.push([d,'dissolve',1],[d+900,'hide']); }
+    else if(c==='toGlass'){ if(!ghostHere && glassOn) continue; out.push([d+700,'show'],[d+800,'dissolve',0]); }
+    else if(c==='goto') continue;
+    else out.push(st); }
+  return out;
 }
 function fire(){
   const S=SLIDES[cur]; timers.forEach(clearTimeout); timers=[];
-  send({cmd:'seq',steps:S.cue});
+  send({cmd:'seq',steps:expand(S.cue)});
   for(const [d,c,...a] of S.cue) timers.push(setTimeout(()=>mirror(c,a),d));
   if(S.finale) timers.push(setTimeout(rainIdeas,2200));
 }
@@ -164,7 +171,8 @@ addEventListener('resize',resize); resize();
 const now=()=>performance.now()/1000;
 const EYES={neutral:['o','o'],happy:['^','^'],curious:['o','O'],sad:['T','T'],excited:['*','*'],surprised:['O','O'],angry:['>','<']};
 const EMO={neutral:{sp:1,spr:1},happy:{sp:1.8,spr:1.05},curious:{sp:.8,spr:1.1},sad:{sp:.45,spr:.85},excited:{sp:2.6,spr:1.3},surprised:{sp:1.1,spr:1.45},angry:{sp:2.2,spr:.9}};
-let emotion='neutral', state='idle', vis=1, visT=1, form=1, formT=1, emoteT=-9, emoteK='', speakUntil=0, phase=0, spr=1, sp=1;
+let ghostHere=false, glassOn=false, gx=0, gy=0, gtx=0, gty=0, gmode='right', wanderT=0, leaving=false, streams=[];
+let emotion='neutral', state='idle', vis=1, visT=1, form=0, formT=0, emoteT=-9, emoteK='', speakUntil=0, phase=0, spr=1, sp=1;
 let captions=[], ideas=[], notes=[], blinkT=0, nextBlink=3;
 const dust=Array.from({length:110},()=>({x:Math.random(),y:Math.random(),z:Math.random(),v:.004+Math.random()*.01}));
 function mirror(c,a){
@@ -172,14 +180,32 @@ function mirror(c,a){
   if(c==='state') state=a[0];
   if(c==='emote'){ emoteK=a[0]; emoteT=now(); }
   if(c==='theme') tint(a[0]);
-  if(c==='hide') visT=0; if(c==='show') visT=1;
-  if(c==='dissolve') formT=1-(+a[0]);
+  if(c==='toLaptop') enterLaptop(a[0]||'right');
+  if(c==='toGlass') leaveLaptop();
+  if(c==='goto') gmode=a[0];
   if(c==='say') caption(a[0]);
   if(c==='ask'){ caption(a[0]); setTimeout(()=>{ if(SLIDES[cur].ask) askEl.classList.add('on'); state='listening'; },Math.min(5000,1500+a[0].length*70)); }
   if(c==='note') addIdea(a[0]);
   if(c==='clearNotes') notes=[];
 }
-function caption(t){ captions.push({t,t0:now()}); if(captions.length>2) captions.shift(); speakUntil=now()+Math.max(1.6,t.length*.07); }
+const SPOTS={right:[.76,.44],title:[.8,.22],list:[.72,.7],center:[.68,.5],left:[.86,.72],top:[.82,.18]};
+function spot(m){ const p=SPOTS[m]||SPOTS.right; return [p[0]*W,p[1]*H]; }
+function enterLaptop(m){
+  if(ghostHere && !leaving){ gmode=m; return; }
+  ghostHere=true; leaving=false; glassOn=false; gmode=m; formT=1; form=0;
+  gx=W+Math.min(W,H)*.2; gy=H*.42; streamBurst(W+40,H*.42,true);          // flies in from the glass side
+}
+function leaveLaptop(){
+  glassOn=true; if(!ghostHere) return;
+  leaving=true; formT=0; streamBurst(gx,gy,false);
+  setTimeout(()=>{ if(leaving){ ghostHere=false; leaving=false; } },1300);
+}
+function streamBurst(x,y,incoming){   // particles that carry the ghost between screens
+  for(let i=0;i<160;i++){ const a=Math.random()*6.28, sp=60+Math.random()*260;
+    streams.push({x:incoming?W+Math.random()*80:x+Math.cos(a)*30, y:incoming?y+(Math.random()-.5)*H*.3:y+Math.sin(a)*30,
+      vx:incoming?-sp*1.8:sp*1.2+120, vy:(Math.random()-.5)*sp*.6, life:1+Math.random()*.6, incoming}); }
+}
+function caption(t){ for(const c of captions) c.kill=now(); captions.push({t,t0:now()}); if(captions.length>2) captions.shift(); speakUntil=now()+Math.max(1.6,t.length*.07); }
 function addIdea(t){ if(ideas.includes(t)) return; ideas.push(t); if(SLIDES[cur].finale && notes.length) dropNote(t); }
 function dropNote(t){ const w=Math.min(230,W*.15), h=w*.75; notes.push({t,x:W*(.1+Math.random()*.8),y:-h,vx:(Math.random()-.5)*80,vy:40,ang:(Math.random()-.5)*.6,va:(Math.random()-.5)*2,w,h,a:0}); }
 function rainIdeas(){
@@ -200,14 +226,24 @@ let last=now();
 function frame(){
   const t=now(), dt=Math.min(.033,t-last); last=t;
   g.clearRect(0,0,W,H);
-  vis+=(visT-vis)*Math.min(1,dt*2); form+=(formT-form)*Math.min(1,dt*1.5);
+  form+=(formT-form)*Math.min(1,dt*(formT>form?1.1:2.2));
+  if(ghostHere){
+    if(leaving){ gtx=W+Math.min(W,H)*.3; gty=H*.4; }
+    else if(gmode==='wander'){ wanderT-=dt; if(wanderT<=0){ wanderT=2.6+Math.random()*1.5; gtx=W*(.6+Math.random()*.32); gty=H*(.18+Math.random()*.64); } }
+    else { [gtx,gty]=spot(gmode); }
+    const k=Math.min(1,dt*(leaving?2.2:1.4)); gx+=(gtx-gx)*k; gy+=(gty-gy)*k;
+  }
+  for(const p of streams){ p.life-=dt; if(p.incoming){ const dx=gx-p.x, dy=gy-p.y; p.vx+=dx*dt*3; p.vy+=dy*dt*3; p.vx*=.96; p.vy*=.96; } p.x+=p.vx*dt; p.y+=p.vy*dt; }
+  streams=streams.filter(p=>p.life>0);
   const E=EMO[emotion]||EMO.neutral; sp+=(E.sp-sp)*dt*2; spr+=(E.spr-spr)*dt*2; phase+=dt*sp*(state==='thinking'?2.5:1);
   // dust
   g.fillStyle=col;
   for(const d of dust){ d.y-=d.v*dt*(1+d.z); if(d.y<0){ d.y=1; d.x=Math.random(); }
     g.globalAlpha=.08+d.z*.25; g.fillRect(d.x*W,d.y*H,1+d.z*1.6,1+d.z*1.6); }
   // ghost orb (right side)
-  const cx=W*.72, cy=H*.46+Math.sin(t*.8)*H*.012, R=Math.min(W,H)*.15;
+  g.fillStyle=col; for(const p of streams){ g.globalAlpha=Math.min(1,p.life)*.8; g.fillRect(p.x,p.y,2,2); } g.globalAlpha=1;
+  const cx=gx, cy=gy+Math.sin(t*.8)*H*.012, R=Math.min(W,H)*.15;
+  const ghostVis=ghostHere?1:0;
   const talking=t<speakUntil, lvl=talking?.5+.5*Math.abs(Math.sin(t*11)):0;
   g.save(); g.globalCompositeOperation='lighter';
   const blobs=[[0,0,1]];
@@ -215,7 +251,7 @@ function frame(){
     blobs.push([Math.cos(a)*Math.cos(inc)*d*(1+(1-form)*2.5), Math.sin(inc)*d*(1+(1-form)*2.5)+(emotion==='sad'?.25:0), .5+.08*Math.sin(phase*2+i)+lvl*.08]); }
   for(const [bx,by,br] of blobs){ const x=cx+bx*R, y=cy+by*R, r=R*.55*br*(.3+.7*form);
     const gr=g.createRadialGradient(x,y,r*.2,x,y,r*1.6); gr.addColorStop(0,col+'00'); gr.addColorStop(.55,col+'22'); gr.addColorStop(.68,col+'aa'); gr.addColorStop(.74,col+'22'); gr.addColorStop(1,col+'00');
-    g.globalAlpha=vis*(.55+.45*form); g.fillStyle=gr; g.beginPath(); g.arc(x,y,r*1.6,0,7); g.fill(); }
+    g.globalAlpha=ghostVis*(.55+.45*form)*form; g.fillStyle=gr; g.beginPath(); g.arc(x,y,r*1.6,0,7); g.fill(); }
   g.restore();
   // ASCII eyes
   nextBlink-=dt; if(nextBlink<0){ blinkT=.13; nextBlink=2.5+Math.random()*4; }
@@ -226,16 +262,17 @@ function frame(){
   const et=t-emoteT, env=Math.exp(-et*3)*(et<2?1:0);
   const ny= emoteK==='nod'?Math.sin(et*13)*R*.06*env : emoteK==='jump'?-Math.max(0,Math.sin(et*6))*R*.12*env : 0;
   const nx= emoteK==='shake'?Math.sin(et*15)*R*.08*env : 0;
-  g.globalAlpha=vis*form; g.fillStyle='#fff'; g.shadowColor=col; g.shadowBlur=R*.12;
+  g.globalAlpha=ghostVis*form*form; g.fillStyle='#fff'; g.shadowColor=col; g.shadowBlur=R*.12;
   g.font=`700 ${R*.3}px ${MONO}`; g.textAlign='center'; g.textBaseline='middle';
   g.fillText(pair[0],cx-R*.22+nx,cy-R*.04+ny); g.fillText(pair[1],cx+R*.22+nx,cy-R*.04+ny); g.shadowBlur=0;
   // captions with dub echoes
   for(const C of captions){
-    const e=t-C.t0, n=Math.min(C.t.length,Math.floor(e*24)), a=e<C.t.length*.07+2.5?1:Math.max(0,1-(e-C.t.length*.07-2.5)/1.2);
+    const e=t-C.t0, n=Math.min(C.t.length,Math.floor(e*24)); let a=e<C.t.length*.07+2.5?1:Math.max(0,1-(e-C.t.length*.07-2.5)/1.2);
+    if(C.kill) a=Math.min(a,Math.max(0,1-(t-C.kill)/.35));
     if(a<=0) continue;
-    const txt=C.t.slice(0,n), y=cy+R*1.35;
+    const txt=C.t.slice(0,n), onL=ghostHere&&!leaving, y=onL?Math.min(H*.92,cy+R*1.35):H*.88, x0=onL?cx:W*.5;
     g.font=`italic ${Math.min(30,W*.019)}px ${BOOK}`; g.textAlign='center';
-    for(let k=3;k>=0;k--){ g.globalAlpha=vis*a*(k?.14/k:.95); g.fillStyle=k?col:'#fff'; g.fillText('“'+txt+(n<C.t.length?'':'”'),cx+k*9,y+k*7); }
+    for(let k=3;k>=0;k--){ g.globalAlpha=a*(k?.14/k:.95); g.fillStyle=k?col:'#fff'; g.fillText('“'+txt+(n<C.t.length?'':'”'),x0+k*9,y+k*7); }
   }
   // sticky notes (finale)
   stepNotes(dt);
@@ -255,8 +292,6 @@ requestAnimationFrame(frame);
 document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; cmd(b.dataset.c, a===undefined?undefined:(isNaN(+a)?a:+a)); });
 const emosEl=document.getElementById('emos');
 for(const e of ['neutral','happy','curious','sad','excited','surprised','angry']){ const b=document.createElement('button'); b.textContent=e[0].toUpperCase()+e.slice(1); b.onclick=()=>cmd('emotion',e); emosEl.appendChild(b); }
-const thEl=document.getElementById('themes');
-for(const k of Object.keys(THEME)){ const b=document.createElement('button'); b.textContent=NAMES[k]; b.onclick=()=>cmd('theme',k); thEl.appendChild(b); }
 const txt=document.getElementById('txt');
 document.getElementById('bText').onclick=()=>txt.value.trim()&&cmd('text',txt.value.trim(),document.getElementById('fx').value,document.getElementById('out').value);
 document.getElementById('bNote').onclick=()=>txt.value.trim()&&cmd('note',txt.value.trim());

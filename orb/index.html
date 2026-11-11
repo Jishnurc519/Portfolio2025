@@ -880,6 +880,7 @@ const GEMINI_SCHEMA={type:'OBJECT',properties:{
   idea:{type:'STRING'},
   end_conversation:{type:'BOOLEAN'}},
   required:['heard','say','emotion','emote','idea','end_conversation']};
+let geminiAuth=0;
 async function askGemini(history){
   if(!V.gkey) throw new Error('Add a Gemini API key in Settings');
   const model=V.gmodel||VDEF.gmodel;
@@ -889,9 +890,21 @@ async function askGemini(history){
       parts: m.audio ? [{text:'(visitor speaking)'},{inlineData:{mimeType:'audio/wav',data:m.audio}}] : [{text:m.content}]})),
     generationConfig:{responseMimeType:'application/json',responseSchema:GEMINI_SCHEMA,maxOutputTokens:300}
   };
-  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    {method:'POST',headers:{'content-type':'application/json','x-goog-api-key':V.gkey},body:JSON.stringify(body)});
-  if(!r.ok){ const t=await r.text(); throw new Error('Gemini '+r.status+' '+t.slice(0,200)); }
+  const base=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  // try the credential styles Google accepts: API key header, key in URL, then OAuth-style bearer token
+  const tries=[
+    [base,{'content-type':'application/json','x-goog-api-key':V.gkey}],
+    [base+'?key='+encodeURIComponent(V.gkey),{'content-type':'application/json'}],
+    [base,{'content-type':'application/json','authorization':'Bearer '+V.gkey}],
+  ];
+  const order=[geminiAuth,...[0,1,2].filter(i=>i!==geminiAuth)];
+  let r, lastErr='';
+  for(const i of order){
+    r=await fetch(tries[i][0],{method:'POST',headers:tries[i][1],body:JSON.stringify(body)}).catch(e=>{ lastErr=e.message; return null; });
+    if(r && r.ok){ geminiAuth=i; break; }
+    if(r && r.status!==401 && r.status!==403){ break; }     // a real error, not an auth one
+  }
+  if(!r || !r.ok){ const t=r? await r.text() : lastErr; throw new Error('Gemini '+(r?r.status:'network')+' '+String(t).slice(0,160)+(r&&(r.status===401||r.status===403)?' — this key was rejected. Make a new one at aistudio.google.com/apikey (it starts with AIza).':'')); }
   const j=await r.json();
   const txt=((j.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
   try{ return JSON.parse(txt); }

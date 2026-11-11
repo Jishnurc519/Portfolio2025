@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Orb · Presentation & Control</title>
+<style>
+  :root{--c:#8cffd2;--t:#dcfff1;--dim:#5d7a70;--book:"Hoefler Text","Baskerville","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:var(--t);font:14px/1.4 -apple-system,"Segoe UI",system-ui,sans-serif;overflow:hidden}
+  #app{display:grid;grid-template-columns:1fr 340px;height:100%}
+  /* slides */
+  #stage{position:relative;display:flex;flex-direction:column;justify-content:center;padding:6vh 7vw;border-right:1px solid #12201b}
+  .kick{font:italic 1.3vw var(--book);color:var(--c);opacity:.75;letter-spacing:.04em;margin-bottom:1.2vh}
+  .title{font:italic 4.2vw/1.08 var(--book);color:var(--t);text-shadow:0 0 30px color-mix(in srgb,var(--c) 45%,transparent);margin:0 0 2.4vh}
+  .line{font:1.55vw/1.45 var(--book);color:var(--t);opacity:.82;max-width:46vw}
+  .pts{margin:2.4vh 0 0;padding:0;list-style:none;font:1.25vw/1.6 var(--book);opacity:.8}
+  .pts li::before{content:"✦ ";color:var(--c)}
+  #cueNow{position:absolute;left:7vw;bottom:9vh;font:italic 1vw var(--book);color:var(--c);opacity:.7}
+  #nav{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:14px 7vw;border-top:1px solid #12201b}
+  #dots{display:flex;gap:6px;flex:1} #dots i{width:22px;height:3px;background:#1d2e28;border-radius:2px} #dots i.on{background:var(--c)}
+  .fade{animation:fade .7s ease both} @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  /* controls */
+  #side{overflow:auto;padding:14px 16px;background:#030605}
+  h3{margin:14px 0 6px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  h3:first-child{margin-top:0}
+  .row{display:flex;flex-wrap:wrap;gap:5px}
+  button{background:#0a1411;color:var(--t);border:1px solid #1f3a31;border-radius:6px;padding:6px 9px;font:inherit;font-size:12.5px;cursor:pointer}
+  button:hover{border-color:var(--c)} button.on{border-color:var(--c);background:#0f2a21}
+  button.big{padding:9px 14px;font-size:14px}
+  input,select,textarea{width:100%;background:#050b09;color:var(--t);border:1px solid #1f3a31;border-radius:6px;padding:6px 8px;font:inherit;font-size:12.5px;margin:3px 0}
+  input[type=range]{padding:0}
+  #st{font-size:11.5px;color:var(--dim)}
+  #feed{font:italic 13px var(--book);max-height:150px;overflow:auto;border:1px solid #12201b;border-radius:6px;padding:6px 8px;margin-top:6px}
+  #feed p{margin:3px 0} #feed .i{color:var(--c);font-style:normal}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="stage">
+    <div id="slide"></div>
+    <div id="cueNow"></div>
+    <div id="nav"><button id="prev">←</button><div id="dots"></div><button id="replay">↻ replay cue</button><button id="next" class="big">Next →</button></div>
+  </section>
+  <aside id="side">
+    <div id="st">connecting…</div>
+    <h3>Hologram</h3>
+    <div class="row"><button data-c="show">Show</button><button data-c="hide">Hide</button><button data-c="dissolve" data-a="1">Dissolve</button><button data-c="dissolve" data-a="0">Form</button></div>
+    <h3>Emotion</h3>
+    <div class="row" id="emos"></div>
+    <div class="row" style="margin-top:5px"><button data-c="emote" data-a="nod">Nod</button><button data-c="emote" data-a="shake">Shake</button><button data-c="emote" data-a="jump">Jump</button><button data-c="emote" data-a="burst">Burst</button></div>
+    <h3>Scene</h3>
+    <div class="row"><button data-c="scene" data-a="auto">Auto (base state)</button><button data-c="scene" data-a="clear">Clear</button><button data-c="scene" data-a="logo">Logo</button><button data-c="scene" data-a="transfer">Transfer</button><button data-c="scene" data-a="flow">Flow</button><button data-c="clearNotes">Clear notes</button></div>
+    <h3>Aesthetic</h3>
+    <div class="row" id="themes"></div>
+    <h3>Words on the glass</h3>
+    <textarea id="txt" rows="2" placeholder="Type something…"></textarea>
+    <div class="row">
+      <select id="fx" style="width:auto;flex:1"><option value="">random entrance</option><option>type</option><option>rain</option><option>assemble</option><option>wave</option><option>flicker</option><option>spiral</option><option>scramble</option></select>
+      <select id="out" style="width:auto;flex:1"><option value="">random exit</option><option>collapse</option><option>eat</option><option>burn</option><option>scatter</option></select>
+    </div>
+    <div class="row"><button id="bText">Show as text</button><button id="bNote">Drop as note</button><button id="bSay">Say it</button></div>
+    <h3>Voice FX</h3>
+    <input id="fxAmt" type="range" min="0" max="100" value="70">
+    <h3>Listening</h3>
+    <div class="row"><button data-c="listen" data-a="1">Start listening</button><button data-c="listen" data-a="0">Stop</button><button data-c="reload">Reload iPad</button></div>
+    <h3>From the booth</h3>
+    <div id="feed"></div>
+  </aside>
+</div>
+<script>
+/* Presentation + live control for the orb. Link carries the pairing topic: control.html#topic=orb-xxxx
+   Commands go to ntfy.sh/<topic>-ctl (and a same-device BroadcastChannel). Each slide fires one "seq" cue. */
+const q=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
+const topic=q.get('topic')||'';
+const THEME={seance:'#8cffd2',holo:'#38a8ff',ember:'#ff8c26',phosphor:'#40ff59',ultraviolet:'#b861ff',gilded:'#ffcc59'};
+const NAMES={seance:'Séance',holo:'Holo',ember:'Ember',phosphor:'Phosphor',ultraviolet:'Ultraviolet',gilded:'Gilded'};
+let bc=null; try{ bc=new BroadcastChannel('brainstorm-ctl'); }catch(e){}
+function send(m){
+  try{ bc&&bc.postMessage(m); }catch(e){}
+  if(topic) fetch('https://ntfy.sh/'+encodeURIComponent(topic+'-ctl'),{method:'POST',body:JSON.stringify(m)}).catch(()=>{});
+}
+const cmd=(c,...args)=>send({cmd:c,args});
+const seq=steps=>send({cmd:'seq',steps});
+function tint(k){ if(THEME[k]) document.documentElement.style.setProperty('--c',THEME[k]); }
+
+/* ---------- the deck: brief, about the idea and the possibilities. Each cue: [ms, command, args…] ---------- */
+const SLIDES=[
+  {kick:'Brainstorm Booths', title:'Talk to a ghost in a glass.', line:'A small glowing being lives inside a glass vessel. You speak to it, and your ideas take shape in front of you.',
+   note:'Hologram fades in from nothing',
+   cue:[[0,'hide'],[0,'scene','clear'],[0,'theme','seance'],[0,'dissolve',1],[0,'emotion','neutral'],[900,'show'],[1600,'dissolve',0],[3600,'emote','nod']]},
+
+  {kick:'How it works · the base state', title:'Pick up. Speak. Watch.', line:'Anyone walks up, picks up the handset and says an idea out loud.',
+   pts:['It listens, and its eyes open wide','Your words appear in the glass','It answers in its own strange voice','A good idea becomes a sticky note'],
+   note:'Plays one full visitor exchange on the glass',
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','neutral'],[300,'state','listening'],
+        [3200,'text','What if bus stops ran on sunlight and charged your phone?','type','eat',2.6],
+        [3400,'state','thinking'],[3400,'emotion','curious'],
+        [8200,'emotion','happy'],[8300,'emote','nod'],[8400,'say','Sunlit shelters. I like that very much.'],
+        [11800,'note','Solar bus stops'],[12200,'state','idle']]},
+
+  {kick:'Possibility · words become matter', title:'What you say, you can see.', line:'Spoken words appear in old-book type, then fall, burn away, or get swallowed by the orb.',
+   note:'Three text effects in a row',
+   cue:[[0,'show'],[0,'scene','clear'],[200,'text','Heat that warms one home could warm the whole street.','rain','collapse',2],
+        [6200,'text','Speak, and I shall remember.','scramble','burn',1.6],
+        [10800,'text','Every rooftop, a little wind garden.','assemble','scatter',1.8]]},
+
+  {kick:'Possibility · ideas you can hold', title:'Good ideas become sticky notes.', line:'They drop, tumble and stack inside the glass, then fly out to the big wall for everyone to see.',
+   note:'Notes drop into the cube and appear on the wall',
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','excited'],[300,'note','Rooftop wind gardens'],[1700,'note','Heat-sharing streets'],[3100,'note','Ice batteries for summer'],[4500,'emote','jump']]},
+
+  {kick:'Possibility · it has feelings', title:'It reacts, like a creature would.', line:'Curious at odd ideas, delighted by bold ones, surprised by wild ones. Its face is made of simple characters.',
+   pts:['curious  o O','delighted  ^ ^','surprised  O O','thinking  @ @'],
+   note:'Cycles through emotions',
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','curious'],[1800,'emotion','happy'],[1900,'emote','nod'],[3600,'emotion','surprised'],[5400,'state','thinking'],[7400,'state','idle'],[7400,'emotion','sad'],[9000,'emotion','neutral']]},
+
+  {kick:'Possibility · one object, many moods', title:'Six looks for six brands.', line:'Séance, Holo, Ember, Phosphor, Ultraviolet, Gilded. Each recolours the being, its words and its notes.',
+   note:'Cycles through the aesthetics',
+   cue:[[0,'show'],[0,'theme','ember'],[2000,'theme','holo'],[4000,'theme','phosphor'],[6000,'theme','ultraviolet'],[8000,'theme','gilded'],[10000,'theme','seance']]},
+
+  {kick:'Possibility · brand moments', title:'Between two vessels.', line:'Particles stream across, a logo assembles itself, and the being travels from one glass to the other.',
+   note:'Logo, then the orb moves across',
+   cue:[[0,'show'],[0,'scene','flow'],[2500,'scene','logo'],[7500,'scene','clear'],[8000,'scene','transfer']]},
+
+  {kick:'Possibility · appear on cue', title:'It shows up only when it should.', line:'The hologram can vanish and return on cue, so it can hide behind a reveal or wake up for a keynote moment.',
+   note:'Vanishes, then returns',
+   cue:[[0,'show'],[600,'dissolve',1],[1800,'hide'],[4200,'show'],[4400,'dissolve',0],[6000,'emote','burst'],[6100,'emotion','happy']]},
+
+  {kick:'Brainstorm Booths', title:'Every idea, kept.', line:'Now it is listening. Go ahead and try it.',
+   note:'Returns to the live base state and starts listening',
+   cue:[[0,'show'],[0,'scene','clear'],[0,'emotion','happy'],[300,'say','Every idea, kept. Now, tell me yours.'],[4500,'scene','auto'],[4600,'listen',1]]},
+];
+let cur=0;
+const slideEl=document.getElementById('slide'), dots=document.getElementById('dots'), cueNow=document.getElementById('cueNow');
+SLIDES.forEach((_,i)=>{ const d=document.createElement('i'); d.onclick=()=>go(i); dots.appendChild(d); });
+function render(){
+  const S=SLIDES[cur];
+  slideEl.innerHTML=`<div class="fade"><div class="kick">${S.kick}</div><h1 class="title">${S.title}</h1><div class="line">${S.line}</div>${S.pts?'<ul class="pts">'+S.pts.map(p=>'<li>'+p+'</li>').join('')+'</ul>':''}</div>`;
+  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i<=cur));
+  cueNow.textContent='On the glass: '+S.note;
+}
+function go(i,fire=true){ cur=Math.max(0,Math.min(SLIDES.length-1,i)); render(); if(fire){ seq(SLIDES[cur].cue); const th=SLIDES[cur].cue.find(c=>c[1]==='theme'); if(th) tint(th[2]); } }
+document.getElementById('next').onclick=()=>go(cur+1);
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('replay').onclick=()=>go(cur);
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ e.preventDefault(); go(cur+1); }
+  if(e.key==='ArrowLeft'||e.key==='PageUp') go(cur-1);
+  if(e.key==='h') cmd('hide'); if(e.key==='s') cmd('show');
+});
+render();
+
+/* ---------- live controls ---------- */
+document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; cmd(b.dataset.c, a===undefined?undefined:(isNaN(+a)?a:+a)); });
+const emosEl=document.getElementById('emos');
+for(const e of ['neutral','happy','curious','sad','excited','surprised','angry']){ const b=document.createElement('button'); b.textContent=e[0].toUpperCase()+e.slice(1); b.onclick=()=>cmd('emotion',e); emosEl.appendChild(b); }
+const thEl=document.getElementById('themes');
+for(const k of Object.keys(THEME)){ const b=document.createElement('button'); b.textContent=NAMES[k]; b.onclick=()=>{ cmd('theme',k); tint(k); }; thEl.appendChild(b); }
+const txt=document.getElementById('txt');
+document.getElementById('bText').onclick=()=>txt.value.trim()&&cmd('text',txt.value.trim(),document.getElementById('fx').value,document.getElementById('out').value);
+document.getElementById('bNote').onclick=()=>txt.value.trim()&&cmd('note',txt.value.trim());
+document.getElementById('bSay').onclick=()=>txt.value.trim()&&cmd('say',txt.value.trim());
+document.getElementById('fxAmt').onchange=e=>cmd('fx',+e.target.value);
+
+/* ---------- what comes back from the booth ---------- */
+const feed=document.getElementById('feed'), st=document.getElementById('st');
+function addFeed(cls,t){ const p=document.createElement('p'); p.className=cls; p.textContent=t; feed.prepend(p); while(feed.children.length>30) feed.lastChild.remove(); }
+function handle(ev){ if(!ev) return; if(ev.theme) tint(ev.theme); if(ev.type==='heard') addFeed('','“'+ev.text+'”'); if(ev.type==='idea') addFeed('i','✦ '+ev.text); }
+try{ new BroadcastChannel('brainstorm-wall').onmessage=e=>handle(e.data); }catch(e){}
+if(topic){
+  const es=new EventSource('https://ntfy.sh/'+encodeURIComponent(topic)+'/sse');
+  es.onopen=()=>st.textContent='● paired with '+topic;
+  es.onerror=()=>st.textContent='○ reconnecting… ('+topic+')';
+  es.onmessage=e=>{ try{ const d=JSON.parse(e.data); if(d.event==='message') handle(JSON.parse(d.message)); }catch(err){} };
+} else st.textContent='No pairing code in the link. Open the Control link shown in the orb panel.';
+</script>
+</body>
+</html>

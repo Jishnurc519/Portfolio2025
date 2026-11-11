@@ -82,6 +82,9 @@
   <h3>Laptop wall</h3>
   <div id="wallLink" style="font-size:11px;word-break:break-all;color:#9fb6d6;margin:4px 0"></div>
   <div class="row"><button id="copyWall">Copy link</button><button id="testWall">Send test note</button></div>
+  <h3>Laptop control + presentation</h3>
+  <div id="ctlLink" style="font-size:11px;word-break:break-all;color:#9fb6d6;margin:4px 0"></div>
+  <div class="row"><button id="copyCtl">Copy link</button><button id="hideBtn">Hide hologram</button></div>
   <h3>Voice assistant</h3>
   <button id="talk" class="big">▶ Start conversation</button>
   <div class="row" style="margin-top:5px"><button id="autoListen">Hands-free</button><button id="vSettingsBtn">Settings</button></div>
@@ -1223,6 +1226,7 @@ function stepNotes(t,dt){
     if(t-n.born>45){ n.state='leave'; n.lt=t; n.vy=-R*.4; continue; }
     n.vy+=R*3.4*dt; n.x+=n.vx*dt; n.y+=n.vy*dt; n.ang+=n.va*dt; n.vx*=.996; n.va*=.985;
     n.ang=Math.atan2(Math.sin(n.ang),Math.cos(n.ang));            // keep notes readable (settle toward upright)
+    n.va+=-n.ang*2.2*dt; if(Math.abs(n.ang)>1.2) n.va+=-Math.sign(n.ang)*3*dt;
     const c=Math.abs(Math.cos(n.ang)), s=Math.abs(Math.sin(n.ang));
     const hw=(c*n.w+s*n.h)/2*n.s, hh=(s*n.w+c*n.h)/2*n.s;
     const fl=floorAt(W,n.x,.94);
@@ -1376,6 +1380,52 @@ $('wallLink').textContent=wallURL();
 $('copyWall').onclick=()=>{ navigator.clipboard?.writeText(wallURL()).then(()=>vlog('i','Wall link copied'),()=>{}); };
 $('testWall').onclick=()=>{ const i=pick(['Solar bus stops','Rooftop wind gardens','Heat-sharing streets','Ice batteries for summer']); spawnNote(i); relay({type:'idea',text:i}); };
 $('voiceTest').onclick=()=>{ unlockAudio(); speak('Hello. I am listening to the future of energy.'); };
+
+/* ---------- live control from the laptop (control.html): ntfy topic "<topic>-ctl" + same-device BroadcastChannel ---------- */
+let holoVisible=true, seqTok=0;
+function setVisible(v){
+  holoVisible=v; for(const el of [cv,ov]){ el.style.transition='opacity 1.4s ease'; el.style.opacity=v?1:0; }
+  const b=$('hideBtn'); if(b){ b.textContent=v?'Hide hologram':'Show hologram'; b.classList.toggle('on',!v); }
+}
+function runCmd(cmd,a=[]){
+  switch(cmd){
+    case 'show': setVisible(true); break;
+    case 'hide': setVisible(false); break;
+    case 'scene': setScene(a[0]); break;
+    case 'emotion': setEmotion(a[0]); break;
+    case 'emote': emote(a[0]); break;
+    case 'state': setState(a[0]); break;
+    case 'theme': setTheme(a[0]); break;
+    case 'text': showTextFx(a[0],{fx:a[1]||undefined,out:a[2]||undefined,hold:a[3]||undefined}); break;
+    case 'note': spawnNote(a[0]); relay({type:'idea',text:a[0]}); break;
+    case 'say': (async()=>{ const prev=state; setState('speaking'); await speak(a[0]); setState(prev==='speaking'?'idle':prev); })(); break;
+    case 'fx': V.fx=+a[0]; vsave(); if(fxBus) fxBus.set(); const f=$('fxAmt'); if(f){ f.value=V.fx; $('fxAmtO').textContent=V.fx; } break;
+    case 'dissolve': setParticles(+a[0]); break;
+    case 'move': moveTo(a[0]); break;
+    case 'listen': a[0] ? startConversation() : endConversation(); break;
+    case 'clearText': if(textState) startOut(now()); break;
+    case 'clearNotes': notes.forEach(n=>{ n.state='leave'; n.lt=now(); n.vy=-win(n.key).r*.5; }); break;
+    case 'reload': location.reload(); break;
+  }
+}
+function handleCtl(m){
+  if(!m||!m.cmd) return;
+  if(S.demo){ S.demo=false; save(); syncUI(); }
+  vlog('i','⌁ '+m.cmd+(m.args&&m.args[0]!==undefined?' '+String(m.args[0]).slice(0,30):''));
+  if(m.cmd==='seq'){ const tok=++seqTok; for(const st of m.steps||[]){ const [d,cmd,...args]=st; setTimeout(()=>{ if(tok===seqTok) runCmd(cmd,args); },d); } }
+  else runCmd(m.cmd,m.args||[]);
+}
+try{ new BroadcastChannel('brainstorm-ctl').onmessage=e=>handleCtl(e.data); }catch(e){}
+try{
+  const es=new EventSource('https://ntfy.sh/'+encodeURIComponent(V.topic+'-ctl')+'/sse');
+  es.onmessage=e=>{ try{ const d=JSON.parse(e.data); if(d.event==='message') handleCtl(JSON.parse(d.message)); }catch(err){} };
+}catch(e){}
+function ctlURL(){ return location.origin+location.pathname.replace(/[^/]*$/,'')+'control.html#topic='+V.topic; }
+$('ctlLink').textContent=ctlURL();
+$('copyCtl').onclick=()=>{ navigator.clipboard?.writeText(ctlURL()).then(()=>vlog('i','Control link copied'),()=>{}); };
+$('hideBtn').onclick=()=>setVisible(!holoVisible);
+window.orb.cmd=handleCtl;
+
 
 </script>
 </body>

@@ -787,7 +787,13 @@ let currentRec=null, lastMicErr='', srBroken=false;
 
 /* ---------- speech in, any browser: record audio ourselves and send it to Gemini ---------- */
 let micStream=null, aCtx=null;
-function ensureAudioCtx(){ try{ if(!aCtx) aCtx=new (window.AudioContext||window.webkitAudioContext)(); if(aCtx.state==='suspended') aCtx.resume(); }catch(e){} }
+function ensureAudioCtx(){ try{ if(!aCtx) aCtx=new (window.AudioContext||window.webkitAudioContext)(); if(aCtx.state!=='running') aCtx.resume(); }catch(e){} }
+let speechUnlocked=false;
+function unlockAudio(){            // must run synchronously inside a tap/click (iPad rule)
+  ensureAudioCtx();
+  try{ if(!speechUnlocked && 'speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); speechUnlocked=true; } }catch(e){}
+  if(useAudioListen()) getMic().catch(e=>vlog('x','Mic blocked: '+(e.message||e.name)));
+}
 async function getMic(){
   if(micStream && micStream.active) return micStream;
   micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
@@ -811,14 +817,15 @@ function encodeWav(chunks, sr){
 function listenAudio(){
   return new Promise(async res=>{
     let stream;
-    try{ ensureAudioCtx(); stream=await getMic(); }
+    try{ ensureAudioCtx(); stream=await getMic(); if(aCtx.state!=='running') await aCtx.resume().catch(()=>{}); }
     catch(e){ lastMicErr=e.name||e.message; vlog('x','Mic blocked: '+(e.message||e.name)+'. Allow the microphone for this site.'); res(null); return; }
     const sr=aCtx.sampleRate, src=aCtx.createMediaStreamSource(stream), proc=aCtx.createScriptProcessor(4096,1,1);
-    const chunks=[], pre=[], TH=0.015, t0=performance.now();
-    let started=false, lastLoud=0, done=false;
+    const chunks=[], pre=[], t0=performance.now();
+    let started=false, lastLoud=0, done=false, frames=0, noise=0, peak=0, TH=0.02;
     const finish=()=>{
       if(done) return; done=true; lvlMode='off';
       try{ proc.disconnect(); src.disconnect(); }catch(e){}
+      if(!started && quietLogs<3){ quietLogs++; vlog('x', frames ? 'Heard nothing loud enough (peak '+peak.toFixed(3)+', needs '+TH.toFixed(3)+'). Speak closer to the iPad.' : 'Mic gave no audio ('+aCtx.state+'). Tap the orb to wake it.'); }
       res(started ? {audio:encodeWav(chunks,sr)} : null);
     };
     proc.onaudioprocess=e=>{
@@ -826,6 +833,8 @@ function listenAudio(){
       const d=e.inputBuffer.getChannelData(0), copy=new Float32Array(d);
       let sum=0; for(let i=0;i<d.length;i++) sum+=d[i]*d[i];
       const rms=Math.sqrt(sum/d.length), now=performance.now();
+      frames++; peak=Math.max(peak,rms);
+      if(frames<=4){ noise+=rms/4; if(frames===4) TH=Math.min(.03,Math.max(.004,noise*2.5)); }
       lvlKick=Math.max(lvlKick,Math.min(1,rms*10));
       if(rms>TH){ if(!started){ started=true; chunks.push(...pre); } lastLoud=now; }
       if(started) chunks.push(copy); else { pre.push(copy); if(pre.length>6) pre.shift(); }
@@ -833,10 +842,12 @@ function listenAudio(){
       else if(!started && now-t0>15000) finish();
     };
     src.connect(proc); proc.connect(aCtx.destination);
+    setTimeout(()=>{ if(!done && frames===0){ aCtx.resume().catch(()=>{}); } },2000);
     lvlMode='listen';
     currentRec={abort:finish, stop:finish};
   });
 }
+let quietLogs=0;
 const useAudioListen=()=> V.listen==='audio' || srBroken || (V.listen!=='browser' && (V.provider==='gemini' || !SR));
 
 /* ---------- Claude ---------- */
@@ -932,6 +943,7 @@ async function startConversation(){
   while(alive() && res==='go'){
     if(!V.hands && !pendingTyped){ setState('idle'); setEmotion('neutral'); await waitForTap(); if(!alive()) break; }
     setState('listening'); setEmotion('neutral');
+    if(!listenLogged){ vlog('a','(listening…)'); listenLogged=true; }
     const t0=performance.now();
     const heard=await listenOnce();
     if(!alive()) break;
@@ -952,7 +964,7 @@ async function startConversation(){
   }
   if(alive()) endConversation();
 }
-let tapResolver=null;
+let tapResolver=null, listenLogged=false;
 const waitForTap=()=>new Promise(r=>tapResolver=r);
 function endConversation(){
   session++; inConvo=false; lvlMode='off';
@@ -986,7 +998,7 @@ for(const [id,k] of [['vListen','listen'],['vProv','provider'],['vGKey','gkey'],
   $(id).addEventListener('change',e=>{ if(k==='sys') V.sysCustom=!!e.target.value.trim(); V[k]=e.target.value.trim()||(k in {model:1,gmodel:1,sys:1,provider:1,listen:1}?VDEF[k]:''); vsave(); });
 $('autoListen').onclick=()=>{ V.hands=!V.hands; vsave(); syncVoiceUI(); };
 $('vSettingsBtn').onclick=()=>{ const s=$('vSettings'); s.style.display=s.style.display==='none'?'block':'none'; };
-$('talk').onclick=()=>{ inConvo?endConversation():startConversation(); };
+$('talk').onclick=()=>{ unlockAudio(); inConvo?endConversation():startConversation(); };
 $('vType').addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.value.trim()){ typed(e.target.value.trim()); e.target.value=''; } });
 syncVoiceUI(); updTalk();
 if(!SR && V.provider==='claude') vlog('x','This browser has no speech recognition. Use Chrome/Edge, or switch the provider to Gemini (it listens to the audio directly).');
@@ -997,6 +1009,7 @@ let vt=[], vtTimer=null, downXY=null;
 cv.addEventListener('pointerdown',e=>{ downXY=[e.clientX,e.clientY]; });
 cv.addEventListener('pointerup',e=>{
   if(downXY && Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>12) return;  // was a drag
+  unlockAudio();
   vt.push(performance.now()); clearTimeout(vtTimer);
   vtTimer=setTimeout(()=>{
     const n=vt.length; vt=[];

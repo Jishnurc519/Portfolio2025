@@ -522,10 +522,11 @@ Be warm, curious and quick. Speak in 1–2 short sentences (under 35 words): thi
 Build on the visitor's idea, add one sharp twist, then ask one short question to push it further.
 When the visitor has put forward an idea worth keeping, put a 3–8 word sticky-note version of it in "idea" (written like a headline, no quotes). Otherwise leave "idea" empty. At most one idea per turn.
 Choose the emotion that fits what you are saying. Use emotes sparingly.
-If the visitor says bye, thanks, or wants to stop, say a short goodbye and set end_conversation true.`
+Only set end_conversation true when the visitor clearly says goodbye or asks to stop. Never end the conversation for any other reason, and never say you have somewhere else to be.`
 };
 let V=Object.assign({},VDEF);
 try{Object.assign(V,JSON.parse(localStorage.getItem('orbVoice')||'{}'));}catch(e){}
+if(!V.sysCustom) V.sys=VDEF.sys;
 const vsave=()=>{try{localStorage.setItem('orbVoice',JSON.stringify(V));}catch(e){}};
 
 const RESPOND_TOOL={
@@ -595,7 +596,7 @@ function listenOnce(){
       if(e.results[e.results.length-1].isFinal) fin(final.trim());
     };
     r.onspeechstart=()=>{ lvlKick=.4; };
-    r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') vlog('x','Mic: '+e.error); fin(final.trim()||null); };
+    r.onerror=e=>{ lastMicErr=e.error; if(e.error!=='no-speech' && e.error!=='aborted') vlog('x','Mic: '+e.error); fin(final.trim()||null); };
     r.onend=()=>fin(final.trim()||null);
     lvlMode='listen';
     try{ r.start(); }catch(e){ fin(null); }
@@ -603,7 +604,7 @@ function listenOnce(){
     currentRec=r;
   });
 }
-let currentRec=null;
+let currentRec=null, lastMicErr='';
 
 /* ---------- Claude ---------- */
 async function askClaude(history){
@@ -692,12 +693,18 @@ async function startConversation(){
   while(alive() && res==='go'){
     if(!V.hands && !pendingTyped){ setState('idle'); setEmotion('neutral'); await waitForTap(); if(!alive()) break; }
     setState('listening'); setEmotion('neutral');
+    const t0=performance.now();
     const heard=await listenOnce();
     if(!alive()) break;
     if(!heard){
       if(pendingTyped) continue;
-      misses++;
-      if(misses>=2){ res=await turn('[The visitor has gone quiet. Say a short friendly goodbye and end the conversation.]'); break; }
+      // never hang up on silence: just listen again.
+      // If the mic keeps failing instantly, pause and wait for a tap instead of looping.
+      if(performance.now()-t0<1500) misses++; else misses=0;
+      if(misses>=3){
+        vlog('x','Mic is not picking anything up'+(lastMicErr?' ('+lastMicErr+')':'')+'. Tap the orb to try again.');
+        setState('idle'); misses=0; await waitForTap(); if(!alive()) break;
+      } else await sleep(300);
       continue;
     }
     misses=0; if(!typedEcho.has(heard)) vlog('u',heard); typedEcho.delete(heard);
@@ -736,7 +743,7 @@ function syncVoiceUI(){
   $('autoListen').classList.toggle('on',V.hands);
 }
 for(const [id,k] of [['vProv','provider'],['vGKey','gkey'],['vGModel','gmodel'],['vKey','key'],['vProxy','proxy'],['vModel','model'],['vLang','lang'],['vWall','wall'],['vBooth','booth'],['vSys','sys'],['vVoice','voice']])
-  $(id).addEventListener('change',e=>{ V[k]=e.target.value.trim()||(k in {model:1,gmodel:1,sys:1,provider:1}?VDEF[k]:''); vsave(); });
+  $(id).addEventListener('change',e=>{ if(k==='sys') V.sysCustom=!!e.target.value.trim(); V[k]=e.target.value.trim()||(k in {model:1,gmodel:1,sys:1,provider:1}?VDEF[k]:''); vsave(); });
 $('autoListen').onclick=()=>{ V.hands=!V.hands; vsave(); syncVoiceUI(); };
 $('vSettingsBtn').onclick=()=>{ const s=$('vSettings'); s.style.display=s.style.display==='none'?'block':'none'; };
 $('talk').onclick=()=>{ inConvo?endConversation():startConversation(); };

@@ -103,10 +103,10 @@ const $=id=>document.getElementById(id);
 /* =========================================================
    SETTINGS
    ========================================================= */
-const DEF={dia:452,ox:-280,oy:0,bsize:369,bx:280,by:0,br:100,flip:true,guide:false,demo:true,scene:'auto',logoText:'ENERGY',layoutV:2};
+const DEF={dia:545,ox:-320,oy:0,bsize:445,bx:320,by:0,br:100,flip:true,guide:false,demo:true,scene:'auto',logoText:'ENERGY',layoutV:3};
 let S=Object.assign({},DEF);
 try{Object.assign(S,JSON.parse(localStorage.getItem('orbSettings3d')||'{}'));}catch(e){}
-if(S.layoutV!==2){ Object.assign(S,{ox:DEF.ox,bx:DEF.bx,by:DEF.by,bsize:DEF.bsize,scene:'auto',logoText:DEF.logoText,layoutV:2}); }
+if(S.layoutV!==3){ Object.assign(S,{dia:DEF.dia,ox:DEF.ox,oy:DEF.oy,bx:DEF.bx,by:DEF.by,bsize:DEF.bsize,scene:S.scene||'auto',logoText:S.logoText||DEF.logoText,layoutV:3}); }
 const save=()=>{try{localStorage.setItem('orbSettings3d',JSON.stringify(S));}catch(e){}};
 
 /* =========================================================

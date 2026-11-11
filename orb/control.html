@@ -9,9 +9,14 @@
   :root{--c:#8cffd2;--t:#dcfff1;--dim:#5d7a70;--book:"Hoefler Text","Baskerville","Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000;color:var(--t);font:14px/1.4 -apple-system,"Segoe UI",system-ui,sans-serif;overflow:hidden}
-  #app{display:grid;grid-template-columns:1fr 340px;height:100%}
+  #app{display:grid;grid-template-columns:1fr;height:100%}
+  body.ctl #app{grid-template-columns:1fr 340px}
+  #side{display:none} body.ctl #side{display:block}
+  #nav button,#cueNow{display:none} body.ctl #nav button,body.ctl #cueNow{display:block}
+  #nav{border-top:none!important} body.ctl #nav{border-top:1px solid #12201b!important}
   /* slides */
   #stage{position:relative;display:flex;flex-direction:column;justify-content:center;padding:6vh 7vw;border-right:1px solid #12201b}
+  body:not(.ctl) #stage{border-right:none}
   .kick{font:italic 1.3vw var(--book);color:var(--c);opacity:.75;letter-spacing:.04em;margin-bottom:1.2vh}
   .title{font:italic 4.2vw/1.08 var(--book);color:var(--t);text-shadow:0 0 30px color-mix(in srgb,var(--c) 45%,transparent);margin:0 0 2.4vh}
   .line{font:1.55vw/1.45 var(--book);color:var(--t);opacity:.82;max-width:46vw}
@@ -32,6 +37,7 @@
   input,select,textarea{width:100%;background:#050b09;color:var(--t);border:1px solid #1f3a31;border-radius:6px;padding:6px 8px;font:inherit;font-size:12.5px;margin:3px 0}
   input[type=range]{padding:0}
   #st{font-size:11.5px;color:var(--dim)}
+  #cursorHide{cursor:none}
   #feed{font:italic 13px var(--book);max-height:150px;overflow:auto;border:1px solid #12201b;border-radius:6px;padding:6px 8px;margin-top:6px}
   #feed p{margin:3px 0} #feed .i{color:var(--c);font-style:normal}
 </style>
@@ -151,8 +157,10 @@ document.getElementById('replay').onclick=()=>go(cur);
 addEventListener('keydown',e=>{
   if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ e.preventDefault(); go(cur+1); }
-  if(e.key==='ArrowLeft'||e.key==='PageUp') go(cur-1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); go(cur-1); }
   if(e.key==='h') cmd('hide'); if(e.key==='s') cmd('show');
+  if(e.key==='c') document.body.classList.toggle('ctl');
+  if(e.key==='f'){ const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d); }
 });
 render();
 

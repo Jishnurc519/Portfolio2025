@@ -597,7 +597,7 @@ function listenOnce(){
       if(e.results[e.results.length-1].isFinal) fin(final.trim());
     };
     r.onspeechstart=()=>{ lvlKick=.4; };
-    r.onerror=e=>{ lastMicErr=e.error; if(e.error!=='no-speech' && e.error!=='aborted') vlog('x','Mic: '+e.error); fin(final.trim()||null); };
+    r.onerror=e=>{ lastMicErr=e.error; if(['network','service-not-allowed','language-not-supported'].includes(e.error) && !srBroken){ srBroken=true; vlog('x','Browser speech recognition failed ('+e.error+'). Switching to recording audio for Gemini.'); } if(e.error!=='no-speech' && e.error!=='aborted') vlog('x','Mic: '+e.error); fin(final.trim()||null); };
     r.onend=()=>fin(final.trim()||null);
     lvlMode='listen';
     try{ r.start(); }catch(e){ fin(null); }
@@ -605,7 +605,7 @@ function listenOnce(){
     currentRec=r;
   });
 }
-let currentRec=null, lastMicErr='';
+let currentRec=null, lastMicErr='', srBroken=false;
 
 
 /* ---------- speech in, any browser: record audio ourselves and send it to Gemini ---------- */
@@ -660,7 +660,7 @@ function listenAudio(){
     currentRec={abort:finish, stop:finish};
   });
 }
-const useAudioListen=()=> V.listen==='audio' || (V.listen!=='browser' && (V.provider==='gemini' || !SR));
+const useAudioListen=()=> V.listen==='audio' || srBroken || (V.listen!=='browser' && (V.provider==='gemini' || !SR));
 
 /* ---------- Claude ---------- */
 async function askClaude(history){
@@ -762,6 +762,7 @@ async function startConversation(){
       if(pendingTyped) continue;
       // never hang up on silence: just listen again.
       // If the mic keeps failing instantly, pause and wait for a tap instead of looping.
+      if(srBroken && lastMicErr==='network'){ lastMicErr=''; continue; }
       if(performance.now()-t0<1500) misses++; else misses=0;
       if(misses>=3){
         vlog('x','Mic is not picking anything up'+(lastMicErr?' ('+lastMicErr+')':'')+'. Tap the orb to try again.');
